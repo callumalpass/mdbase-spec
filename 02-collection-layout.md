@@ -160,3 +160,27 @@ my-collection/
 ```
 
 Note that `README.md` is a valid record in this structure. If you want to exclude documentation files from the collection, add them to `settings.exclude`.
+
+---
+
+## 2.8 Nested Collections
+
+If a subdirectory within a collection also contains an `mdbase.yaml` file, it defines an **independent nested collection**:
+
+- The parent collection's scan MUST NOT descend into the nested collection.
+- The nested collection's files are NOT records of the parent collection.
+- The nested `mdbase.yaml` acts as a boundary marker, similar to exclude patterns.
+- Implementations SHOULD automatically exclude directories containing `mdbase.yaml`.
+
+```
+my-collection/
+├── mdbase.yaml          # Parent collection
+├── tasks/
+│   └── task-001.md      # Record in parent
+└── sub-project/
+    ├── mdbase.yaml      # Nested collection (independent)
+    └── docs/
+        └── readme.md    # Record in sub-project, NOT in parent
+```
+
+This behavior ensures that collections remain self-contained and do not interfere with each other.

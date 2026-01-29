@@ -6,7 +6,7 @@ This section defines conformance levels and testing requirements for implementat
 
 ## 14.1 Conformance Levels
 
-Implementations may claim conformance at different levels. Each level builds on the previous.
+Implementations may claim conformance at different levels. Each level builds on all previous levels.
 
 ### Level 1: Core
 
@@ -20,6 +20,7 @@ Implementations may claim conformance at different levels. Each level builds on 
 - Single-type matching via explicit declaration (`type` field)
 - Validate fields against type schemas
 - Implement Create, Read, Update, Delete operations
+- Type coercion (per §7.16)
 
 **Test coverage:** Basic parsing, validation, CRUD operations
 
@@ -29,23 +30,24 @@ Implementations may claim conformance at different levels. Each level builds on 
 
 - Path-based type matching (`path_glob`)
 - Field presence matching (`fields_present`)
-- Field value matching (`where` conditions)
+- Field value matching (`where` conditions in match rules)
 - Multi-type matching (files matching multiple types)
-- Multi-type validation
+- Multi-type validation with constraint merging (per §6.5)
 
-**Test coverage:** Match rule evaluation, multi-type scenarios
+**Test coverage:** Match rule evaluation, multi-type scenarios, constraint merging
 
 ### Level 3: Querying
 
 **Additional capabilities:**
 
-- Full query model (filter, sort, limit, offset)
+- Core query model (filter, sort, limit, offset)
 - Expression evaluation (all operators in §11)
-- String and list methods
-- Date arithmetic
-- Formulas (computed fields)
+- String, list, and object methods
+- Date arithmetic (including date subtraction)
+- Duration parsing (`duration()`)
+- Null coalescing (`??`)
 
-**Test coverage:** Query result correctness, expression edge cases
+**Test coverage:** Core query correctness, expression edge cases
 
 ### Level 4: Links
 
@@ -54,7 +56,7 @@ Implementations may claim conformance at different levels. Each level builds on 
 - Parse all link formats (wikilink, markdown, bare path)
 - Resolve links to files
 - `asFile()` traversal in expressions
-- `file.hasLink()` function
+- `file.hasLink()` and `file.hasTag()` functions
 - `file.links` property
 
 **Test coverage:** Link parsing, resolution, traversal
@@ -73,12 +75,19 @@ Implementations may claim conformance at different levels. Each level builds on 
 
 **All capabilities including:**
 
-- Caching with staleness detection
+- Caching with staleness detection (per §13)
 - Batch operations
 - Watch mode / continuous validation
-- Type creation via the tool
+- Type creation via tooling
+- Nested collection detection (per §2)
 
 **Test coverage:** Performance, cache correctness, edge cases
+
+---
+
+## 14.1.1 Optional Profiles (Non-Normative)
+
+Implementations MAY support optional profiles beyond the core levels. The Query+ profile adds advanced query features (`formulas`, `groupBy`, `summaries`, `property_summaries`, `properties`) as defined in [Querying §10.7](./10-querying.md). Support for Query+ is not required for conformance.
 
 ---
 

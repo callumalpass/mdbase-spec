@@ -20,7 +20,7 @@ Queries operate on the collection as a flat list of files. The result is a list 
 
 ---
 
-## 10.2 Query Structure
+## 10.2 Core Query Structure
 
 A query is expressed as a YAML object with optional clauses:
 
@@ -38,25 +38,39 @@ query:
       - 'status != "done"'
       - "priority >= 3"
   
-  # Computed fields - optional
-  formulas:
-    overdue: "due_date < today() && status != 'done'"
-  
   # Sorting - optional
   order_by:
     - field: due_date
       direction: asc
     - field: priority
       direction: desc
-  
+
   # Pagination - optional
   limit: 20
   offset: 0
 ```
 
+**Core Query checklist:** `types`, `folder`, `where`, `order_by`, `limit`, `offset`, `include_body`
+
+### Core vs Query+ Summary
+
+| Clause | Core | Query+ |
+|--------|------|--------|
+| `types` | ✅ | — |
+| `folder` | ✅ | — |
+| `where` | ✅ | — |
+| `order_by` | ✅ | — |
+| `limit` / `offset` | ✅ | — |
+| `include_body` | ✅ | — |
+| `formulas` | — | ✅ |
+| `groupBy` | — | ✅ |
+| `summaries` | — | ✅ |
+| `property_summaries` | — | ✅ |
+| `properties` | — | ✅ |
+
 ---
 
-## 10.3 Query Clauses
+## 10.3 Core Query Clauses
 
 ### `types`
 
@@ -105,19 +119,6 @@ where:
 ```
 
 See [Expressions](./11-expressions.md) for the full expression language.
-
-### `formulas`
-
-Define computed fields evaluated for each result:
-
-```yaml
-formulas:
-  overdue: "due_date < today() && status != 'done'"
-  days_until_due: "due_date - today()"
-  display_priority: 'if(priority >= 4, "🔴", if(priority >= 2, "🟡", "🟢"))'
-```
-
-Formulas are accessible via the `formula.` namespace in subsequent expressions and in results.
 
 ### `order_by`
 
@@ -220,15 +221,19 @@ In query expressions, properties are accessed through namespaces:
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `file.name` | string | Filename without path |
+| `file.name` | string | Filename with extension |
+| `file.basename` | string | Filename without extension |
 | `file.path` | string | Full path from collection root |
 | `file.folder` | string | Parent folder path |
 | `file.ext` | string | File extension |
-| `file.size` | integer | File size in bytes |
+| `file.size` | number | File size in bytes |
 | `file.ctime` | datetime | Created time |
 | `file.mtime` | datetime | Modified time |
 | `file.links` | list | Outgoing links |
 | `file.backlinks` | list | Incoming links (requires index) |
+| `file.tags` | list | All tags (frontmatter `tags` + inline `#tags`) |
+| `file.properties` | object | All frontmatter properties (mapping) |
+| `file.embeds` | list | All embed links in the file body |
 
 ### The `this` Context
 
@@ -281,9 +286,96 @@ This increases memory usage for large result sets.
 
 ---
 
-## 10.7 Query Examples
+## 10.7 Query+ (Optional Advanced Features)
 
-### All Open Tasks
+The following clauses are OPTIONAL and are part of the Query+ profile. Implementations are not required to support Query+ to claim conformance at Level 3.
+
+### `formulas`
+
+Define computed fields evaluated for each result:
+
+```yaml
+formulas:
+  overdue: "due_date < today() && status != 'done'"
+  days_until_due: "due_date - today()"
+  display_priority: 'if(priority >= 4, "🔴", if(priority >= 2, "🟡", "🟢"))'
+```
+
+Formulas are accessible via the `formula.` namespace in subsequent expressions and in results.
+
+### `groupBy`
+
+Group results by a property value. Each unique value creates a group:
+
+```yaml
+groupBy:
+  property: status
+  direction: ASC    # ASC or DESC
+```
+
+- Only one `groupBy` property is supported per query.
+- `direction` controls the sort order of groups: `ASC` (default) or `DESC`.
+- Results within each group follow the `order_by` sort.
+- Ungrouped results (null/missing group value) appear in a separate group.
+
+### `summaries`
+
+Define custom summary formulas. In summary expressions, the `values` keyword represents all values for the associated property across the result set:
+
+```yaml
+summaries:
+  custom_avg: "values.reduce(acc + value, 0) / values.length"
+  rounded_mean: "values.reduce(acc + value, 0) / values.length"
+```
+
+**Summary semantics:**
+
+- `values` is an ordered list matching the result order (or group order when `groupBy` is used).
+- Missing properties contribute `null` values to `values`.
+- Implementations SHOULD preserve `null` values in `values` for custom summaries.
+- Built-in summaries SHOULD ignore `null`/empty values unless otherwise specified (e.g., `Empty`, `Filled`).
+
+See [Expressions §11.13](./11-expressions.md) for default summary functions.
+
+### `property_summaries`
+
+Assign summary functions to specific properties. These calculate an aggregate value across all records (or per group when `groupBy` is used):
+
+```yaml
+property_summaries:
+  priority: Average
+  estimate_hours: Sum
+  due_date: Earliest
+  formula.overdue: Checked
+```
+
+Values reference either default summary names (see [Expressions §11.13](./11-expressions.md)) or custom summaries defined in the `summaries` section.
+
+When `groupBy` is present, property summaries are computed **per group**.
+
+### `properties`
+
+Display configuration for properties. Does not affect query logic---used by view renderers:
+
+```yaml
+properties:
+  status:
+    displayName: "Current Status"
+  formula.overdue:
+    displayName: "Overdue?"
+  file.ext:
+    displayName: "Extension"
+```
+
+Display names are not used in filters or formulas.
+
+---
+
+## 10.8 Query Examples
+
+### Core Examples
+
+#### All Open Tasks
 
 ```yaml
 query:
@@ -291,7 +383,7 @@ query:
   where: 'status == "open"'
 ```
 
-### High Priority Tasks Due This Week
+#### High Priority Tasks Due This Week
 
 ```yaml
 query:
@@ -303,14 +395,14 @@ query:
       - 'status != "done"'
 ```
 
-### Files Modified Today
+#### Files Modified Today
 
 ```yaml
 query:
   where: "file.mtime > today()"
 ```
 
-### Tasks Tagged Urgent or Blocker
+#### Tasks Tagged Urgent or Blocker
 
 ```yaml
 query:
@@ -318,7 +410,7 @@ query:
   where: 'tags.containsAny(["urgent", "blocker"])'
 ```
 
-### Tasks Assigned to Engineering Team Members
+#### Tasks Assigned to Engineering Team Members
 
 ```yaml
 query:
@@ -326,7 +418,7 @@ query:
   where: 'assignee.asFile().team == "engineering"'
 ```
 
-### Notes Linking to a Specific Task
+#### Notes Linking to a Specific Task
 
 ```yaml
 query:
@@ -334,14 +426,26 @@ query:
   where: 'file.hasLink(link("tasks/task-001"))'
 ```
 
-### Backlinks to Current File
+#### Backlinks to Current File
 
 ```yaml
 query:
   where: "file.hasLink(this.file)"
 ```
 
-### Overdue Tasks Sorted by Priority
+#### Files Matching Multiple Types
+
+```yaml
+query:
+  where:
+    and:
+      - 'types.contains("actionable")'
+      - 'types.contains("urgent")'
+```
+
+### Query+ Examples
+
+#### Overdue Tasks Sorted by Priority
 
 ```yaml
 query:
@@ -359,24 +463,31 @@ query:
   limit: 10
 ```
 
-### Files Matching Multiple Types
+#### Tasks Grouped by Status (Query+)
 
 ```yaml
 query:
-  where:
-    and:
-      - 'types.contains("actionable")'
-      - 'types.contains("urgent")'
+  types: [task]
+  where: 'status != "cancelled"'
+  groupBy:
+    property: status
+    direction: ASC
+  property_summaries:
+    priority: Average
+    estimate_hours: Sum
+  order_by:
+    - field: priority
+      direction: desc
 ```
 
-### Untyped Files
+#### Untyped Files
 
 ```yaml
 query:
   where: "types.length == 0"
 ```
 
-### Paginated Results
+#### Paginated Results
 
 ```yaml
 # Page 1
@@ -400,7 +511,7 @@ query:
 
 ---
 
-## 10.8 Query Optimization
+## 10.9 Query Optimization
 
 Implementations SHOULD optimize queries where possible:
 
@@ -413,7 +524,7 @@ Complex queries (link traversal, formulas) may require full scans. Implementatio
 
 ---
 
-## 10.9 Query API Considerations
+## 10.10 Query API Considerations
 
 Implementations exposing queries via API SHOULD support:
 

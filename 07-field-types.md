@@ -434,7 +434,7 @@ fields:
 
 ## 7.16 Type Coercion
 
-When reading values, implementations SHOULD attempt to coerce compatible types:
+When reading values, implementations MUST attempt to coerce compatible types:
 
 | Schema Type | Accepts |
 |-------------|---------|

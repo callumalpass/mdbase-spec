@@ -4,6 +4,12 @@ This section defines the structure and semantics of the `mdbase.yaml` configurat
 
 ---
 
+## 4.0 File Encoding
+
+The `mdbase.yaml` configuration file and all type definition files MUST be encoded in UTF-8 (consistent with the UTF-8 requirement for markdown files in [§3.2](./03-frontmatter.md)).
+
+---
+
 ## 4.1 File Location and Format
 
 The configuration file MUST be named `mdbase.yaml` and MUST be located at the collection root. This file:
@@ -59,10 +65,10 @@ settings:
   # File Discovery
   # ---------------------------------------------------------------------------
   
-  # File extensions to treat as markdown (in addition to .md)
-  # Default: ["md"]
+  # Additional file extensions to treat as markdown (beyond .md which is always included)
+  # Default: []
   # Common additions: ["mdx", "markdown"]
-  extensions: ["md", "mdx"]
+  extensions: ["mdx"]
   
   # Paths to exclude from scanning (relative to collection root)
   # Default: [".git", "node_modules", ".mdbase"]
@@ -168,14 +174,14 @@ Human-readable metadata about the collection. These have no semantic effect but 
 
 ### `settings.extensions`
 
-Additional file extensions to treat as markdown files. The extension `.md` is always included; this setting adds to it.
+File extensions to scan. The extension `.md` is always implicitly included. This setting specifies **additional** extensions beyond `.md`:
 
-**Default:** `["md"]`
+**Default:** `[]`
 
 **Example:** To include MDX files:
 ```yaml
 settings:
-  extensions: ["md", "mdx"]
+  extensions: ["mdx"]
 ```
 
 ### `settings.exclude`
@@ -356,3 +362,33 @@ settings:
 ```
 
 This feature is OPTIONAL. If not supported, implementations MUST treat `${...}` as literal strings.
+
+---
+
+## 4.8 Security Considerations
+
+### Regular Expressions
+
+Match rules and expressions may contain regular expressions (the `matches` operator). Implementations SHOULD guard against [Regular Expression Denial of Service (ReDoS)](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS) by:
+
+- Setting timeouts on regex evaluation
+- Rejecting patterns with known dangerous constructs (e.g., nested quantifiers)
+- Documenting any regex restrictions
+
+### Environment Variables
+
+If an implementation supports environment variable expansion in configuration (e.g., `${VAR}`), it MUST:
+
+- Only expand variables explicitly referenced in configuration
+- Never log expanded values that may contain secrets
+- Document which config fields support expansion
+
+### Expression Evaluation
+
+Implementations SHOULD set resource limits on expression evaluation:
+
+- Maximum expression nesting depth
+- Maximum number of function calls per evaluation
+- Timeout for individual expression evaluations
+
+These limits prevent pathological expressions from consuming unbounded resources.

@@ -157,8 +157,8 @@ fields:
 Every type MUST have a `name` field that matches the filename (without extension).
 
 ```
-_types/task.md  →  name: task
-_types/note.md  →  name: note
+_types/task.md    →  name: task
+_types/person.md  →  name: person
 ```
 
 If the name doesn't match the filename, implementations MUST emit a warning and use the `name` value as the canonical type name.
@@ -285,6 +285,7 @@ Patterns use `{}` to reference field values. Common placeholders:
 - Replace spaces and special characters with hyphens
 - Remove consecutive hyphens
 - Trim hyphens from start and end
+- **Unicode handling:** Implementations MUST use Unicode-aware lowercasing (not locale-dependent). Non-ASCII letters SHOULD be transliterated to their ASCII equivalents where a well-known mapping exists (e.g., `ü` → `u`, `ñ` → `n`). Characters with no ASCII equivalent SHOULD be removed rather than replaced with hyphens.
 
 ---
 

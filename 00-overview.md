@@ -42,7 +42,7 @@ A tool implementing this specification:
 2. **Loads type definitions** from markdown files in a designated folder
 3. **Matches files to types** based on explicit declaration or configurable rules
 4. **Validates frontmatter** against type schemas, reporting errors at configurable severity levels
-5. **Executes queries** using an expression language for filtering, sorting, and computed fields
+5. **Executes queries** using an expression language for filtering and sorting (with optional advanced features like grouping and summaries)
 6. **Performs CRUD operations** with validation, default values, and auto-generated fields
 7. **Updates references** when files are renamed, keeping links consistent across the collection
 

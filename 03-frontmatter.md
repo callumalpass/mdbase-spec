@@ -138,7 +138,8 @@ present_string: "hello"
 - `missing_field` is **missing** (not present at all)
 
 This distinction matters for:
-- The `exists()` function in expressions
+- The `exists()` function in expressions (returns `true` when key is present, even if null)
+- The `isEmpty()` method (returns `true` when value is null, empty, or missing)
 - The `required` constraint (requires present and non-null)
 - Default value application (applies to missing, not to null)
 
@@ -151,6 +152,14 @@ This distinction matters for:
 | `field:` | null | true | No |
 | `field: ""` | `""` (empty string) | true | Yes (string value) |
 | *(key absent)* | undefined | false | No |
+
+### Presence vs Meaningful Value
+
+- `exists(field)` is **true** when the key is present, even if the value is `null`.
+- `field.isEmpty()` is **true** when the value is `null`, empty, or missing.
+- `required: true` requires the key to be present **and** the value to be non-null.
+
+Implementations MUST preserve these distinctions in validation and query evaluation.
 
 ---
 
@@ -300,7 +309,7 @@ YAML has automatic type inference that can cause surprises. Implementations MUST
 | `null`, `~` | Null | |
 | `"123"` | String | Quoted values are strings |
 
-When schema specifies a type, implementations SHOULD coerce compatible values (e.g., reading `123` for a string field as `"123"`). When coercion is not possible, it is a validation error.
+When schema specifies a type, implementations MUST coerce compatible values (e.g., reading `123` for a string field as `"123"`). When coercion is not possible, it is a validation error.
 
 ---
 

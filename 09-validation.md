@@ -38,6 +38,8 @@ Fields marked `required: true` MUST be:
 1. Present in frontmatter (key exists)
 2. Non-null (value is not `null`)
 
+**Note:** `exists(field)` in expressions returns `true` for a present key even if its value is `null`. Required fields must be present and non-null.
+
 ```yaml
 # Type definition
 fields:
@@ -106,6 +108,13 @@ extra_field: "not allowed"
 ```
 
 With `strict: "warn"`, unknown fields trigger warnings but pass validation.
+
+**Implicit fields:** The following frontmatter keys are always implicitly allowed, even in strict mode:
+
+- `type` / `types` — type declaration keys (configurable via `settings.explicit_type_keys`)
+- Any keys listed in `settings.explicit_type_keys`
+
+These keys are structural and do not need to be declared in the type's `fields` definition.
 
 ### 9.2.5 Multi-Type Validation
 

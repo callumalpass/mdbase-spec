@@ -115,9 +115,11 @@ match:
   fields_present: [status, assignee]
 ```
 
-A field is "present" if:
+A field is "present" for matching purposes if:
 - The key exists in frontmatter, AND
 - The value is not `null`
+
+**Note:** This is stricter than the `exists()` expression function, which returns `true` even for null values. The `fields_present` match condition requires a meaningful (non-null) value.
 
 ### `where`
 
@@ -143,7 +145,7 @@ match:
     
     # String prefix
     title:
-      starts_with: "URGENT:"
+      startsWith: "URGENT:"
 ```
 
 **Available operators in `where`:**
@@ -159,11 +161,34 @@ match:
 | `lt` | Less than | `priority: { lt: 4 }` |
 | `lte` | Less than or equal | `priority: { lte: 5 }` |
 | `contains` | List contains value | `tags: { contains: "bug" }` |
-| `contains_all` | List contains all values | `tags: { contains_all: ["bug", "urgent"] }` |
-| `contains_any` | List contains any value | `tags: { contains_any: ["bug", "feature"] }` |
-| `starts_with` | String starts with | `title: { starts_with: "WIP:" }` |
-| `ends_with` | String ends with | `file: { ends_with: ".draft.md" }` |
+| `containsAll` | List contains all values | `tags: { containsAll: ["bug", "urgent"] }` |
+| `containsAny` | List contains any value | `tags: { containsAny: ["bug", "feature"] }` |
+| `startsWith` | String starts with | `title: { startsWith: "WIP:" }` |
+| `endsWith` | String ends with | `file: { endsWith: ".draft.md" }` |
 | `matches` | Regex match | `title: { matches: "^TASK-\\d+" }` |
+
+---
+
+### Match `where` vs Query `where`
+
+The match rule `where` clause uses a **YAML-structured** form with operator keys:
+
+```yaml
+# Match rule where (YAML-structured)
+match:
+  where:
+    status:
+      neq: "done"
+```
+
+The query `where` clause (see [Querying §10.3](./10-querying.md)) uses **expression strings**:
+
+```yaml
+# Query where (expression string)
+where: 'status != "done"'
+```
+
+These are two distinct syntaxes. Match rules use the structured form because they are evaluated during type matching (before the expression engine is available). Query where clauses use expression strings for greater flexibility.
 
 ---
 
@@ -195,21 +220,36 @@ This file must:
 
 When two types define the same field differently:
 
-**Compatible definitions** (same base type, constraints can merge):
+**Compatible definitions** occur when both types define the same field with the same base type. Constraints are merged by taking the **most restrictive** intersection:
+
+| Constraint | Merge Rule |
+|-----------|------------|
+| `required` | `true` if EITHER type requires it |
+| `min` / `min_length` / `min_items` | Take the **higher** minimum |
+| `max` / `max_length` / `max_items` | Take the **lower** maximum |
+| `pattern` | Value must match **all** patterns |
+| `values` (enum) | Take the **intersection** of allowed values |
+| `default` | If both define defaults, they MUST be equal; otherwise it is an error |
+| `unique` (list) | `true` if EITHER type requires it |
+
 ```yaml
 # Type A: priority as integer 1-5
 # Type B: priority as integer 1-3
-# Effective: priority as integer, max(1,1)-min(5,3) = 1-3 (most restrictive)
+# Effective: priority as integer 1-3 (most restrictive)
 ```
 
-**Incompatible definitions** (different base types):
+**Incompatible definitions** occur when:
+- The base types differ (e.g., `string` vs `integer`)
+- Enum intersections produce an empty set
+- Merged min exceeds merged max
+
 ```yaml
 # Type A: status as string
 # Type B: status as enum [open, closed]
-# This is a validation error - types are incompatible
+# Incompatible: different base types → validation error
 ```
 
-When field types are incompatible, implementations MUST report an error. The file cannot satisfy both schemas.
+When field types are incompatible, implementations MUST report a `type_conflict` error. The file cannot satisfy both schemas simultaneously.
 
 ### Querying
 

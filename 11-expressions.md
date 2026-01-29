@@ -149,14 +149,22 @@ value ?? default    // Returns default if value is null
 
 | Method | Description | Example |
 |--------|-------------|---------|
-| `.length` | String length | `title.length` |
+| `.length` | String length (field) | `title.length` |
 | `.contains(str)` | Contains substring | `title.contains("bug")` |
+| `.containsAll(...strs)` | Contains all substrings | `title.containsAll("bug", "fix")` |
+| `.containsAny(...strs)` | Contains any substring | `title.containsAny("bug", "fix")` |
 | `.startsWith(str)` | Starts with prefix | `title.startsWith("WIP:")` |
 | `.endsWith(str)` | Ends with suffix | `file.name.endsWith(".draft.md")` |
-| `.toLowerCase()` | Convert to lowercase | `status.toLowerCase()` |
-| `.toUpperCase()` | Convert to uppercase | `status.toUpperCase()` |
+| `.isEmpty()` | Empty or absent | `title.isEmpty()` |
+| `.lower()` | Convert to lowercase | `status.lower()` |
+| `.upper()` | Convert to uppercase | `status.upper()` |
+| `.title()` | Title case | `name.title()` |
 | `.trim()` | Remove whitespace | `title.trim()` |
-| `.slice(start, end)` | Extract substring | `id.slice(0, 4)` |
+| `.slice(start, end?)` | Extract substring | `id.slice(0, 4)` |
+| `.split(sep, n?)` | Split to list | `tags_str.split(",")` |
+| `.replace(pattern, repl)` | Replace pattern | `title.replace("old", "new")` |
+| `.repeat(count)` | Repeat string | `"-".repeat(3)` |
+| `.reverse()` | Reverse string | `name.reverse()` |
 | `.matches(regex)` | Regex match | `title.matches("^TASK-\\d+")` |
 
 ---
@@ -165,19 +173,23 @@ value ?? default    // Returns default if value is null
 
 | Method | Description | Example |
 |--------|-------------|---------|
-| `.length` | List length | `tags.length` |
+| `.length` | List length (field) | `tags.length` |
 | `.contains(value)` | Contains element | `tags.contains("urgent")` |
-| `.containsAll(list)` | Contains all elements | `tags.containsAll(["a", "b"])` |
-| `.containsAny(list)` | Contains any element | `tags.containsAny(["a", "b"])` |
+| `.containsAll(...values)` | Contains all elements | `tags.containsAll("a", "b")` |
+| `.containsAny(...values)` | Contains any element | `tags.containsAny("a", "b")` |
 | `.isEmpty()` | List is empty | `tags.isEmpty()` |
-| `.first()` | First element | `tags.first()` |
-| `.last()` | Last element | `tags.last()` |
 | `[index]` | Element at index | `tags[0]` |
-| `.map(expr)` | Transform elements | `tags.map(t => t.toLowerCase())` |
-| `.filter(expr)` | Filter elements | `items.filter(i => i.done)` |
-| `.sort()` | Sort elements | `tags.sort()` |
+| `.filter(expr)` | Filter elements | `items.filter(value > 2)` |
+| `.map(expr)` | Transform elements | `tags.map(value.lower())` |
+| `.reduce(expr, init)` | Reduce to single value | `nums.reduce(acc + value, 0)` |
 | `.flat()` | Flatten nested lists | `nested.flat()` |
+| `.reverse()` | Reverse element order | `items.reverse()` |
+| `.slice(start, end?)` | Extract portion | `items.slice(0, 3)` |
+| `.sort()` | Sort ascending | `tags.sort()` |
+| `.unique()` | Remove duplicates | `tags.unique()` |
 | `.join(sep)` | Join to string | `tags.join(", ")` |
+
+In `filter()`, `map()`, and `reduce()`, the implicit variables `value` and `index` refer to the current element and its position. For `reduce()`, `acc` is the accumulator.
 
 ---
 
@@ -266,6 +278,25 @@ due_date < today() + "7d"             // Due within a week
 file.mtime > now() - "1h"             // Modified in last hour
 ```
 
+**Date subtraction:**
+
+Subtracting two dates returns the difference in **milliseconds**:
+
+```javascript
+now() - file.ctime                    // Milliseconds since creation
+(today() - due_date) / 86400000       // Days overdue (negative if not yet due)
+(now() + "1d") - now()                // Returns 86400000
+```
+
+**Duration function:**
+
+The `duration()` function explicitly parses a duration string. This is needed when performing arithmetic on durations themselves:
+
+```javascript
+now() + (duration("1d") * 2)          // 2 days from now
+duration("5h") * 3                    // Duration must be on the left
+```
+
 ---
 
 ## 11.9 Conditional Expression
@@ -289,8 +320,11 @@ if(due_date < today(), "overdue", if(due_date < today() + "7d", "soon", "ok"))
 ### Check Existence
 
 ```javascript
-exists(field)    // true if field is present and non-null
+exists(field)    // true if field key is present (including null values)
+field.isEmpty()  // true if field is null, empty, or absent
 ```
+
+**Note:** `exists()` checks for key presence in frontmatter. A field with value `null` exists but is empty. Use `isEmpty()` to check if a field has a meaningful value.
 
 ### Provide Default
 
@@ -309,16 +343,28 @@ assignee ?? "unassigned"            // Default to "unassigned"
 
 ---
 
-## 11.11 Type Checking
+## 11.11 Type Checking and Conversion
+
+### Type Checking
 
 ```javascript
-typeof(value)           // Returns type as string
-isString(value)
-isNumber(value)
-isBoolean(value)
-isList(value)
-isObject(value)
-isNull(value)
+value.isType("string")     // true if value is a string
+value.isType("number")     // true if value is a number
+value.isType("boolean")    // true if value is a boolean
+value.isType("date")       // true if value is a date
+value.isType("list")       // true if value is a list
+value.isType("object")     // true if value is an object
+```
+
+### Type Conversion
+
+```javascript
+value.toString()           // Convert any value to string
+number("3.14")             // Parse string to number
+number(true)               // Returns 1 (false returns 0)
+number(date_value)         // Milliseconds since epoch
+value.isTruthy()           // Coerce to boolean
+list(value)                // Wrap in list if not already a list
 ```
 
 ---
@@ -330,22 +376,61 @@ isNull(value)
 | `link.asFile()` | Resolve link to file | `parent.asFile().status` |
 | `link(path)` | Construct link | `link("tasks/task-001")` |
 | `file.hasLink(target)` | File links to target | `file.hasLink(link("api-docs"))` |
-| `file.hasTag(tag)` | File has tag | `file.hasTag("important")` |
-| `file.inFolder(path)` | File is in folder | `file.inFolder("archive")` |
+| `file.hasTag(...tags)` | File has any tag (includes nested) | `file.hasTag("important")` |
+| `file.hasProperty(name)` | File has frontmatter property | `file.hasProperty("status")` |
+| `file.inFolder(path)` | File is in folder (or subfolder) | `file.inFolder("archive")` |
+| `file.asLink(display?)` | Convert file to link | `file.asLink("display text")` |
 
 ---
 
-## 11.13 Aggregation Functions (in formulas)
+## 11.12.1 Object Methods
 
-When used in formula context with grouped data:
+| Method | Description | Example |
+|--------|-------------|---------|
+| `.isEmpty()` | Has no properties | `metadata.isEmpty()` |
+| `.keys()` | List of property names | `metadata.keys()` |
+| `.values()` | List of property values | `metadata.values()` |
+
+---
+
+## 11.13 Summary Functions
+
+Summary functions operate on a collection of values across all matching records. They are used in the `summaries` section of a query (see [Querying](./10-querying.md)).
+
+In summary formulas, the `values` keyword represents all values for a given property across the result set. The formula MUST return a single value.
+
+**Summary value semantics:**
+
+- `values` is ordered to match the query result order (or group order when grouped).
+- Missing properties contribute `null` values to `values`.
+- Custom summaries receive `values` with `null` entries intact.
+- Built-in summaries SHOULD ignore `null`/empty values unless the function is explicitly about emptiness (e.g., `Empty`, `Filled`).
 
 ```javascript
-count()                 // Count of items
-sum(field)              // Sum of field values
-avg(field)              // Average of field values
-min(field)              // Minimum value
-max(field)              // Maximum value
+values.reduce(acc + value, 0)         // Sum
+values.reduce(acc + value, 0) / values.length  // Average
+values.filter(value.isTruthy()).length // Count of truthy values
 ```
+
+### Default Summary Functions
+
+Implementations SHOULD provide these built-in summary functions:
+
+| Name | Input Type | Description |
+|------|-----------|-------------|
+| `Average` | Number | Mean of all numeric values |
+| `Min` | Number | Smallest number |
+| `Max` | Number | Largest number |
+| `Sum` | Number | Sum of all numbers |
+| `Range` | Number | Difference between Max and Min |
+| `Median` | Number | Median value |
+| `Earliest` | Date | Earliest date |
+| `Latest` | Date | Latest date |
+| `Checked` | Boolean | Count of `true` values |
+| `Unchecked` | Boolean | Count of `false` values |
+| `Empty` | Any | Count of empty/null values |
+| `Filled` | Any | Count of non-empty values |
+| `Unique` | Any | Count of unique values |
 
 ---
 
@@ -371,17 +456,23 @@ Use parentheses to clarify complex expressions.
 
 ## 11.15 Lambda Expressions
 
-For methods like `map` and `filter`:
+List methods like `filter()`, `map()`, and `reduce()` use implicit variables rather than arrow function syntax:
 
 ```javascript
-// Single parameter (implicit)
-tags.map(t => t.toLowerCase())
+// value refers to the current element, index to its position
+items.filter(value > 2)
+tags.map(value.lower())
+items.map(value.toString() + " (" + index.toString() + ")")
 
-// Multiple parameters
-items.map((item, index) => item.name + index)
+// reduce also provides acc (accumulator)
+numbers.reduce(acc + value, 0)
+```
 
-// With expression body
-tasks.filter(t => t.status != "done" && t.priority > 3)
+Implementations MAY also support arrow function syntax as an extension:
+
+```javascript
+tags.map(t => t.lower())
+tasks.filter(t => t.status != "done")
 ```
 
 ---
@@ -417,7 +508,7 @@ created_at.year == 2024
 
 ```javascript
 title.contains("bug")
-title.toLowerCase().contains("urgent")
+title.lower().contains("urgent")
 file.name.startsWith("draft-")
 id.matches("^TASK-\\d{4}$")
 ```
@@ -437,8 +528,8 @@ assignees.filter(a => a.asFile().team == "eng").length > 0
 // Is overdue?
 due_date < today() && status != "done"
 
-// Days until due (negative if overdue)
-(due_date - today()) / 86400000
+// Days overdue (date subtraction returns milliseconds)
+(today() - due_date) / 86400000
 
 // Priority display
 if(priority >= 4, "🔴 Critical", if(priority >= 2, "🟡 Normal", "🟢 Low"))

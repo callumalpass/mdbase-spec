@@ -20,21 +20,30 @@ This specification was designed with Obsidian Bases compatibility as a goal. Man
 | String methods | `.contains()`, `.startsWith()` | Same |
 | List methods | `.contains()`, `.length` | Same |
 | Link traversal | `link.asFile()` | Same |
-| File metadata | `file.mtime`, `file.path` | Same |
+| File metadata | `file.mtime`, `file.path`, `file.tags` | Same |
 | Context | `this.file`, `this.property` | Same |
 | Logical structure | `and:`, `or:`, `not:` in YAML | Same |
+| Type checking | `.isType("string")` | Same |
+| Type conversion | `number()`, `list()`, `.toString()` | Same |
+| List methods | `.unique()`, `.reduce()`, `.reverse()` | Same |
+| String methods | `.lower()`, `.upper()`, `.split()` | Same |
+| Summaries | `values` keyword, default functions | Same |
+| Grouping | `groupBy` (single property) | Same |
 
 ### Extended Features
 
 This specification adds features not in Obsidian Bases:
 
-- Type definitions as markdown files
-- Multi-type matching
-- Formal validation with error codes
+- Type definitions as markdown files (version-controlled schemas)
+- Multi-type matching with constraint merging
+- Formal validation with error codes and levels
 - Rename with reference updates
 - CRUD operations specification
-- Generated fields (ULID, timestamps)
-- Filename patterns
+- Generated fields (ULID, UUID, timestamps)
+- Filename patterns with slug generation
+- Match rules for automatic type assignment
+- Nested collection detection
+- Security considerations (ReDoS, resource limits)
 
 ### Differences
 
@@ -43,7 +52,18 @@ This specification adds features not in Obsidian Bases:
 | Type storage | Markdown files in types folder | Obsidian internal |
 | Configuration | `mdbase.yaml` | Obsidian settings |
 | Views | Not specified (query only) | Table, Board, Gallery, etc. |
-| Grouping | Query returns flat list | Built-in groupBy |
+| Grouping | `groupBy` clause (single property, per §10.7) | Built-in groupBy |
+| Summaries | `property_summaries` and custom `summaries` (per §10.7, §11.13) | Built-in summary functions |
+| Lambda style | Implicit variables (`value`, `index`, `acc`); arrow syntax optional | Implicit variables |
+| Method names | `.lower()`, `.upper()`, `.title()` | Same |
+
+### Optional Compatibility Profile (Non-Normative)
+
+Implementations MAY provide an optional "Bases compatibility" profile that mirrors Obsidian Bases query and expression behavior. This is **not** a required part of conformance. If provided, tools SHOULD document:
+
+- Which Bases features are supported
+- Any behavioral differences
+- How to enable the profile (if applicable)
 
 ### Migration from Bases Queries
 

@@ -22,9 +22,12 @@ This grammar uses Extended Backus-Naur Form (EBNF):
 
 ```ebnf
 (* Top-level *)
-expression = or_expression ;
+expression = null_coalescing_expression ;
 
-(* Logical operators - lowest precedence *)
+(* Null coalescing - low precedence *)
+null_coalescing_expression = or_expression { "??" or_expression } ;
+
+(* Logical operators *)
 or_expression = and_expression { "||" and_expression } ;
 
 and_expression = not_expression { "&&" not_expression } ;
@@ -141,9 +144,15 @@ true
 false
 null
 if
+note
+file
+formula
+this
 ```
 
-These cannot be used as field names without bracket notation.
+These cannot be used as bare field names without bracket notation (e.g., use `note["file"]` to access a frontmatter field named `file`).
+
+The keywords `note`, `file`, `formula`, and `this` serve as namespace prefixes for property access (see [Querying §10.5](./10-querying.md)). When a frontmatter field name collides with a namespace keyword, use the `note.` prefix with bracket notation: `note["file"]`, `note["formula"]`.
 
 ---
 

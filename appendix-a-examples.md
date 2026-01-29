@@ -365,7 +365,9 @@ None known.
 
 ## A.3 Query Examples
 
-### All Open Tasks
+### Core Examples
+
+#### All Open Tasks
 
 ```yaml
 query:
@@ -376,7 +378,7 @@ query:
       direction: desc
 ```
 
-### My Tasks (Assigned to Alice)
+#### My Tasks (Assigned to Alice)
 
 ```yaml
 query:
@@ -390,24 +392,7 @@ query:
       direction: asc
 ```
 
-### Overdue Tasks
-
-```yaml
-query:
-  types: [task]
-  where:
-    and:
-      - "due_date < today()"
-      - 'status != "done"'
-      - 'status != "cancelled"'
-  formulas:
-    days_overdue: "(today() - due_date) / 86400000"
-  order_by:
-    - field: formula.days_overdue
-      direction: desc
-```
-
-### Tasks Due This Week
+#### Tasks Due This Week
 
 ```yaml
 query:
@@ -422,7 +407,7 @@ query:
       direction: asc
 ```
 
-### High Priority Blockers
+#### High Priority Blockers
 
 ```yaml
 query:
@@ -433,7 +418,7 @@ query:
       - 'status == "blocked"'
 ```
 
-### Urgent Items (Multi-Type)
+#### Urgent Items (Multi-Type)
 
 ```yaml
 query:
@@ -443,7 +428,26 @@ query:
       direction: asc
 ```
 
-### Workload by Person
+### Query+ Examples
+
+#### Overdue Tasks (Query+)
+
+```yaml
+query:
+  types: [task]
+  where:
+    and:
+      - "due_date < today()"
+      - 'status != "done"'
+      - 'status != "cancelled"'
+  formulas:
+    days_overdue: "(today() - due_date) / 86400000"  # date subtraction returns milliseconds
+  order_by:
+    - field: formula.days_overdue
+      direction: desc
+```
+
+#### Workload by Person (Query+)
 
 ```yaml
 query:
@@ -453,7 +457,19 @@ query:
     assignee_name: "assignee.asFile().name"
 ```
 
-(Group by `assignee_name` in application logic)
+To group by assignee (Query+):
+```yaml
+query:
+  types: [task]
+  where: 'status != "done" && exists(assignee)'
+  formulas:
+    assignee_name: "assignee.asFile().name"
+  groupBy:
+    property: formula.assignee_name
+    direction: ASC
+  property_summaries:
+    estimate_hours: Sum
+```
 
 ---
 
@@ -467,7 +483,7 @@ A personal wiki / knowledge base setup.
 knowledge-base/
 ├── mdbase.yaml
 ├── _types/
-│   ├── note.md
+│   ├── document.md
 │   ├── concept.md
 │   ├── source.md
 │   └── daily.md
@@ -486,10 +502,10 @@ knowledge-base/
 
 ### Types
 
-**_types/note.md:**
+**_types/document.md:**
 ```markdown
 ---
-name: note
+name: document
 description: General note or document
 
 match:
@@ -510,7 +526,7 @@ fields:
     default: []
 ---
 
-# Note
+# Document
 
 Base type for all notes. Matched by default for any markdown file.
 ```
@@ -520,7 +536,7 @@ Base type for all notes. Matched by default for any markdown file.
 ---
 name: concept
 description: A concept or topic being studied
-extends: note
+extends: document
 
 match:
   path_glob: "concepts/**/*.md"
@@ -556,7 +572,7 @@ Represents a topic or idea being studied. Evolves from stub to mature.
 ---
 name: daily
 description: Daily journal entry
-extends: note
+extends: document
 
 match:
   path_glob: "daily/**/*.md"
