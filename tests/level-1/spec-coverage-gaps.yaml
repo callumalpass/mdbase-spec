@@ -1,0 +1,1184 @@
+name: "spec coverage gaps — cross-cutting MUST requirements"
+level: 1
+category: validation
+spec_ref: "§7, §9, §12"
+
+groups:
+  # =============================================================================
+  # Group 1: Object field — nested required validation and unknown nested fields
+  # =============================================================================
+
+  - name: "object field nested validation depth"
+    spec_ref: "§7.12, §9.2.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        article.md: |
+          ---
+          name: article
+          strict: true
+          fields:
+            title:
+              type: string
+              required: true
+            author:
+              type: object
+              required: true
+              fields:
+                name:
+                  type: string
+                  required: true
+                email:
+                  type: string
+                  pattern: "^[^@]+@[^@]+$"
+                address:
+                  type: object
+                  fields:
+                    city:
+                      type: string
+                      required: true
+                    zip:
+                      type: string
+                      pattern: "^\\d{5}$"
+          ---
+
+    tests:
+      - name: "deeply nested object with all valid fields"
+        setup:
+          files:
+            articles/a1.md: |
+              ---
+              type: article
+              title: "Test Article"
+              author:
+                name: "Alice"
+                email: "alice@example.com"
+                address:
+                  city: "Portland"
+                  zip: "97201"
+              ---
+        operation: validate
+        input:
+          path: "articles/a1.md"
+        expect:
+          valid: true
+
+      - name: "nested required field missing at depth 2"
+        setup:
+          files:
+            articles/a2.md: |
+              ---
+              type: article
+              title: "Test"
+              author:
+                name: "Bob"
+                address:
+                  zip: "12345"
+              ---
+        operation: validate
+        input:
+          path: "articles/a2.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: "author.address.city"
+
+      - name: "nested pattern constraint violation at depth 2"
+        setup:
+          files:
+            articles/a3.md: |
+              ---
+              type: article
+              title: "Test"
+              author:
+                name: "Carol"
+                address:
+                  city: "Portland"
+                  zip: "bad-zip"
+              ---
+        operation: validate
+        input:
+          path: "articles/a3.md"
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: "author.address.zip"
+
+      - name: "nested email pattern validation"
+        setup:
+          files:
+            articles/a4.md: |
+              ---
+              type: article
+              title: "Test"
+              author:
+                name: "Dave"
+                email: "not-an-email"
+              ---
+        operation: validate
+        input:
+          path: "articles/a4.md"
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: "author.email"
+
+      - name: "non-mapping value for nested object"
+        setup:
+          files:
+            articles/a5.md: |
+              ---
+              type: article
+              title: "Test"
+              author: "just a string"
+              ---
+        operation: validate
+        input:
+          path: "articles/a5.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_mismatch
+              field: "author"
+
+      - name: "null nested object when required"
+        setup:
+          files:
+            articles/a6.md: |
+              ---
+              type: article
+              title: "Test"
+              author: null
+              ---
+        operation: validate
+        input:
+          path: "articles/a6.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: "author"
+
+  # =============================================================================
+  # Group 2: List item type coercion (§7.16 + §7.11)
+  # =============================================================================
+
+  - name: "list item coercion per §7.16"
+    spec_ref: "§7.11, §7.16"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        record.md: |
+          ---
+          name: record
+          fields:
+            string_tags:
+              type: list
+              items:
+                type: string
+            int_scores:
+              type: list
+              items:
+                type: integer
+                min: 1
+                max: 10
+            num_values:
+              type: list
+              items:
+                type: number
+          ---
+
+    tests:
+      - name: "integer list items coerced to string"
+        spec_ref: "§7.16"
+        setup:
+          files:
+            records/r1.md: |
+              ---
+              type: record
+              string_tags:
+                - 1
+                - 2
+                - 3
+              ---
+        operation: validate
+        input:
+          path: "records/r1.md"
+        expect:
+          valid: true
+
+      - name: "boolean list items coerced to string"
+        spec_ref: "§7.16"
+        setup:
+          files:
+            records/r2.md: |
+              ---
+              type: record
+              string_tags:
+                - true
+                - false
+              ---
+        operation: validate
+        input:
+          path: "records/r2.md"
+        expect:
+          valid: true
+
+      - name: "string integer list items coerced to integer"
+        spec_ref: "§7.16"
+        setup:
+          files:
+            records/r3.md: |
+              ---
+              type: record
+              int_scores:
+                - "5"
+                - "3"
+              ---
+        operation: validate
+        input:
+          path: "records/r3.md"
+        expect:
+          valid: true
+
+      - name: "float-with-no-decimal list items coerced to integer"
+        spec_ref: "§7.16"
+        setup:
+          files:
+            records/r4.md: |
+              ---
+              type: record
+              int_scores:
+                - 5.0
+                - 3.0
+              ---
+        operation: validate
+        input:
+          path: "records/r4.md"
+        expect:
+          valid: true
+
+      - name: "non-coercible list item fails with list_item_invalid"
+        spec_ref: "§7.11, Appendix C.1"
+        setup:
+          files:
+            records/r5.md: |
+              ---
+              type: record
+              int_scores:
+                - 5
+                - "not a number"
+                - 3
+              ---
+        operation: validate
+        input:
+          path: "records/r5.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_item_invalid
+
+      - name: "list item constraint violation detected"
+        spec_ref: "§7.11"
+        setup:
+          files:
+            records/r6.md: |
+              ---
+              type: record
+              int_scores:
+                - 5
+                - 15
+              ---
+        operation: validate
+        input:
+          path: "records/r6.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_item_invalid
+
+      - name: "integer list items coerced to number"
+        spec_ref: "§7.16"
+        setup:
+          files:
+            records/r7.md: |
+              ---
+              type: record
+              num_values:
+                - 1
+                - 2
+                - 3
+              ---
+        operation: validate
+        input:
+          path: "records/r7.md"
+        expect:
+          valid: true
+
+      - name: "string numeric list items coerced to number"
+        spec_ref: "§7.16"
+        setup:
+          files:
+            records/r8.md: |
+              ---
+              type: record
+              num_values:
+                - "3.14"
+                - "2.71"
+              ---
+        operation: validate
+        input:
+          path: "records/r8.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 3: Nested list validation (§7.11)
+  # =============================================================================
+
+  - name: "nested list validation"
+    spec_ref: "§7.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        matrix.md: |
+          ---
+          name: matrix
+          fields:
+            grid:
+              type: list
+              items:
+                type: list
+                items:
+                  type: integer
+                min_items: 1
+          ---
+
+    tests:
+      - name: "valid nested list of integers"
+        setup:
+          files:
+            data/m1.md: |
+              ---
+              type: matrix
+              grid:
+                - [1, 2, 3]
+                - [4, 5, 6]
+              ---
+        operation: validate
+        input:
+          path: "data/m1.md"
+        expect:
+          valid: true
+
+      - name: "inner list too short"
+        setup:
+          files:
+            data/m2.md: |
+              ---
+              type: matrix
+              grid:
+                - [1, 2]
+                - []
+              ---
+        operation: validate
+        input:
+          path: "data/m2.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_item_invalid
+
+      - name: "inner list with wrong item type"
+        setup:
+          files:
+            data/m3.md: |
+              ---
+              type: matrix
+              grid:
+                - [1, 2]
+                - [3, "not an int"]
+              ---
+        operation: validate
+        input:
+          path: "data/m3.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_item_invalid
+
+  # =============================================================================
+  # Group 4: Batch partial failure — MUST NOT roll back, MUST continue (§12.7)
+  # =============================================================================
+
+  - name: "batch partial failure behavior"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [open, done]
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Task 1"
+          status: "open"
+          ---
+        tasks/t2.md: |
+          ---
+          type: task
+          title: "Task 2"
+          status: "open"
+          ---
+        tasks/t3.md: |
+          ---
+          type: task
+          title: "Task 3"
+          status: "open"
+          ---
+
+    tests:
+      - name: "batch with I/O failure continues processing remaining files"
+        operation: batch_update
+        input:
+          where: 'status == "open"'
+          fields:
+            status: "done"
+          simulate:
+            io_error_on: "tasks/t2.md"
+        expect:
+          batch_result:
+            total: 3
+            succeeded: 2
+            failed: 1
+            details:
+              - path: "tasks/t2.md"
+                status: "failed"
+
+      - name: "already-written files not rolled back on partial failure"
+        operation: batch_update
+        input:
+          where: 'status == "open"'
+          fields:
+            status: "done"
+          simulate:
+            io_error_on: "tasks/t3.md"
+        expect:
+          batch_result:
+            failed: 1
+        verify_after:
+          - operation: read
+            input:
+              path: "tasks/t1.md"
+            expect:
+              frontmatter:
+                status: "done"
+
+  # =============================================================================
+  # Group 5: Concurrency — MUST NOT auto-retry (§12.10)
+  # =============================================================================
+
+  - name: "concurrent modification — no automatic retry"
+    spec_ref: "§12.10"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            content:
+              type: string
+          ---
+      files:
+        notes/n1.md: |
+          ---
+          type: note
+          title: "Original"
+          content: "First version"
+          ---
+
+    tests:
+      - name: "concurrent modification aborts without retry"
+        operation: update
+        input:
+          path: "notes/n1.md"
+          fields:
+            content: "Updated version"
+          simulate:
+            external_modify:
+              path: "notes/n1.md"
+              frontmatter:
+                title: "Changed externally"
+                content: "External version"
+        expect:
+          error:
+            code: concurrent_modification
+        verify_after:
+          - operation: read
+            input:
+              path: "notes/n1.md"
+            expect:
+              frontmatter:
+                content: "External version"
+
+  # =============================================================================
+  # Group 6: Schema evolution — added required field (§5.11)
+  # =============================================================================
+
+  - name: "schema evolution — added required field"
+    spec_ref: "§5.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+
+    tests:
+      - name: "existing file fails validation after required field added to type"
+        setup:
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+                  required: true
+                priority:
+                  type: integer
+                  required: true
+              ---
+          files:
+            tasks/old.md: |
+              ---
+              type: task
+              title: "Old task without priority"
+              ---
+        operation: validate
+        input:
+          path: "tasks/old.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: "priority"
+
+      - name: "existing file with wrong type fails after field type changed"
+        spec_ref: "§5.11"
+        setup:
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+                priority:
+                  type: integer
+              ---
+          files:
+            tasks/old.md: |
+              ---
+              type: task
+              title: "Old task"
+              priority: "high"
+              ---
+        operation: validate
+        input:
+          path: "tasks/old.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_mismatch
+              field: "priority"
+
+      - name: "removed field treated as unknown in strict mode"
+        spec_ref: "§5.11, §5.5"
+        setup:
+          types:
+            task.md: |
+              ---
+              name: task
+              strict: true
+              fields:
+                title:
+                  type: string
+              ---
+          files:
+            tasks/old.md: |
+              ---
+              type: task
+              title: "Task"
+              old_field: "leftover"
+              ---
+        operation: validate
+        input:
+          path: "tasks/old.md"
+        expect:
+          valid: false
+          issues:
+            - code: unknown_field
+              field: "old_field"
+
+  # =============================================================================
+  # Group 7: any field type — accepts any YAML value (§7.14)
+  # =============================================================================
+
+  - name: "any field type accepts all YAML values"
+    spec_ref: "§7.14"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        flexible.md: |
+          ---
+          name: flexible
+          strict: true
+          fields:
+            data:
+              type: any
+          ---
+
+    tests:
+      - name: "any accepts string"
+        setup:
+          files:
+            items/s.md: |
+              ---
+              type: flexible
+              data: "hello"
+              ---
+        operation: validate
+        input:
+          path: "items/s.md"
+        expect:
+          valid: true
+
+      - name: "any accepts integer"
+        setup:
+          files:
+            items/i.md: |
+              ---
+              type: flexible
+              data: 42
+              ---
+        operation: validate
+        input:
+          path: "items/i.md"
+        expect:
+          valid: true
+
+      - name: "any accepts list"
+        setup:
+          files:
+            items/l.md: |
+              ---
+              type: flexible
+              data:
+                - 1
+                - "two"
+                - true
+              ---
+        operation: validate
+        input:
+          path: "items/l.md"
+        expect:
+          valid: true
+
+      - name: "any accepts nested object"
+        setup:
+          files:
+            items/o.md: |
+              ---
+              type: flexible
+              data:
+                nested:
+                  key: "value"
+                  list: [1, 2]
+              ---
+        operation: validate
+        input:
+          path: "items/o.md"
+        expect:
+          valid: true
+
+      - name: "any accepts null"
+        setup:
+          files:
+            items/n.md: |
+              ---
+              type: flexible
+              data: null
+              ---
+        operation: validate
+        input:
+          path: "items/n.md"
+        expect:
+          valid: true
+
+      - name: "any accepts boolean"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              type: flexible
+              data: false
+              ---
+        operation: validate
+        input:
+          path: "items/b.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 8: Generated fields — user value never overwritten (§7.15)
+  # =============================================================================
+
+  - name: "generated field preservation rules"
+    spec_ref: "§7.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+              generated: ulid
+            title:
+              type: string
+              required: true
+            created_at:
+              type: datetime
+              generated: now
+            updated_at:
+              type: datetime
+              generated: now_on_write
+          ---
+
+    tests:
+      - name: "user-provided id not overwritten by ulid on create"
+        operation: create
+        input:
+          type: task
+          path: "tasks/t1.md"
+          frontmatter:
+            id: "my-custom-id"
+            title: "Custom ID task"
+        expect:
+          frontmatter:
+            id: "my-custom-id"
+
+      - name: "user-provided id not overwritten by ulid on update"
+        setup:
+          files:
+            tasks/t2.md: |
+              ---
+              type: task
+              id: "my-custom-id"
+              title: "Existing task"
+              created_at: "2024-01-01T00:00:00Z"
+              updated_at: "2024-01-01T00:00:00Z"
+              ---
+        operation: update
+        input:
+          path: "tasks/t2.md"
+          fields:
+            title: "Updated title"
+        expect:
+          frontmatter:
+            id: "my-custom-id"
+
+      - name: "user-provided created_at not overwritten by now on update"
+        setup:
+          files:
+            tasks/t3.md: |
+              ---
+              type: task
+              id: "test-001"
+              title: "Test"
+              created_at: "2020-01-01T00:00:00Z"
+              updated_at: "2024-01-01T00:00:00Z"
+              ---
+        operation: update
+        input:
+          path: "tasks/t3.md"
+          fields:
+            title: "Changed"
+        expect:
+          frontmatter:
+            created_at: "2020-01-01T00:00:00Z"
+
+      - name: "now_on_write updates field on every write even if user-provided"
+        setup:
+          files:
+            tasks/t4.md: |
+              ---
+              type: task
+              id: "test-002"
+              title: "Test"
+              created_at: "2024-01-01T00:00:00Z"
+              updated_at: "2020-01-01T00:00:00Z"
+              ---
+        operation: update
+        input:
+          path: "tasks/t4.md"
+          fields:
+            title: "Changed"
+        expect:
+          frontmatter_changed:
+            - updated_at
+
+      - name: "generated field with missing source produces null"
+        spec_ref: "§7.15"
+        setup:
+          types:
+            post.md: |
+              ---
+              name: post
+              fields:
+                title:
+                  type: string
+                slug:
+                  type: string
+                  generated:
+                    from: title
+                    transform: slugify
+              ---
+        operation: create
+        input:
+          type: post
+          path: "posts/p1.md"
+          frontmatter: {}
+        expect:
+          frontmatter:
+            slug: null
+
+  # =============================================================================
+  # Group 9: Field override — child completely replaces parent field (§5.4)
+  # =============================================================================
+
+  - name: "field override in inheritance"
+    spec_ref: "§5.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        base-task.md: |
+          ---
+          name: base-task
+          fields:
+            priority:
+              type: integer
+              min: 1
+              max: 3
+              required: true
+          ---
+        task.md: |
+          ---
+          name: task
+          extends: base-task
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+              min: 1
+              max: 5
+          ---
+
+    tests:
+      - name: "child override expands max beyond parent limit"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              priority: 4
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "child override removes required constraint from parent"
+        setup:
+          files:
+            tasks/t2.md: |
+              ---
+              type: task
+              title: "No priority"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t2.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 10: List of objects validation
+  # =============================================================================
+
+  - name: "list of objects validation"
+    spec_ref: "§7.11, §7.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        meeting.md: |
+          ---
+          name: meeting
+          fields:
+            title:
+              type: string
+              required: true
+            decisions:
+              type: list
+              items:
+                type: object
+                fields:
+                  topic:
+                    type: string
+                    required: true
+                  decision:
+                    type: string
+                    required: true
+              min_items: 0
+          ---
+
+    tests:
+      - name: "valid list of objects"
+        setup:
+          files:
+            meetings/m1.md: |
+              ---
+              type: meeting
+              title: "Sprint Review"
+              decisions:
+                - topic: "API design"
+                  decision: "Use REST"
+                - topic: "Database"
+                  decision: "PostgreSQL"
+              ---
+        operation: validate
+        input:
+          path: "meetings/m1.md"
+        expect:
+          valid: true
+
+      - name: "list item missing required object field"
+        setup:
+          files:
+            meetings/m2.md: |
+              ---
+              type: meeting
+              title: "Sprint Review"
+              decisions:
+                - topic: "API design"
+                - topic: "Database"
+                  decision: "PostgreSQL"
+              ---
+        operation: validate
+        input:
+          path: "meetings/m2.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_item_invalid
+
+      - name: "empty decisions list passes min_items 0"
+        setup:
+          files:
+            meetings/m3.md: |
+              ---
+              type: meeting
+              title: "Quick Sync"
+              decisions: []
+              ---
+        operation: validate
+        input:
+          path: "meetings/m3.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 11: Config validation — MUST NOT process collection on invalid config
+  # =============================================================================
+
+  - name: "config validation rejects collection processing on error"
+    spec_ref: "§4.5"
+
+    tests:
+      - name: "non-mapping config YAML rejects collection"
+        setup:
+          config: |
+            - item1
+            - item2
+        operation: validate
+        input: {}
+        expect:
+          error:
+            code: invalid_config
+
+      - name: "missing spec_version rejects collection"
+        setup:
+          config: |
+            name: "Test"
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+              ---
+        operation: validate
+        input: {}
+        expect:
+          error:
+            code: invalid_config
+
+      - name: "invalid type for settings.default_validation"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: 42
+        operation: validate
+        input: {}
+        expect:
+          error:
+            code: invalid_config
+
+  # =============================================================================
+  # Group 12: Write behavior — MUST preserve body, MUST preserve line endings
+  # =============================================================================
+
+  - name: "write operations MUST preserve body and line endings"
+    spec_ref: "§12.8, §3.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            status:
+              type: string
+          ---
+
+    tests:
+      - name: "frontmatter update preserves body content unchanged"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "My Note"
+              status: "draft"
+              ---
+
+              # Heading
+
+              Body with **bold** and `code`.
+
+              ```python
+              def foo():
+                  return 42
+              ```
+
+              More content after code block.
+        operation: update
+        input:
+          path: "notes/n1.md"
+          fields:
+            status: "published"
+        expect:
+          body_contains_all:
+            - "# Heading"
+            - "**bold**"
+            - "`code`"
+            - "def foo():"
+            - "More content after code block."
+
+      - name: "update preserves body that looks like frontmatter"
+        setup:
+          files:
+            notes/n2.md: |
+              ---
+              type: note
+              title: "Tricky"
+              ---
+
+              Here is some text with dashes:
+
+              ---
+
+              This is NOT frontmatter. It's a horizontal rule.
+
+              ---
+              key: value
+              ---
+        operation: update
+        input:
+          path: "notes/n2.md"
+          fields:
+            title: "Updated"
+        expect:
+          body_contains_all:
+            - "Here is some text with dashes:"
+            - "This is NOT frontmatter."
+            - "key: value"

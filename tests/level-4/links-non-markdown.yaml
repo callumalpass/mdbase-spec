@@ -1,0 +1,564 @@
+name: "link resolution — non-markdown targets and edge cases"
+level: 4
+category: links
+spec_ref: "§2.9, §8.4, §8.5"
+
+groups:
+  # =============================================================================
+  # Group 1: Non-markdown file link resolution (§2.9)
+  # =============================================================================
+
+  - name: "links to non-markdown files resolve by path"
+    spec_ref: "§2.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            attachment:
+              type: link
+            diagram:
+              type: link
+          ---
+      files:
+        notes/meeting.md: |
+          ---
+          type: note
+          title: "Meeting Notes"
+          attachment: "[[images/diagram.png]]"
+          diagram: "./chart.pdf"
+          ---
+
+          See [[images/diagram.png]] for the architecture.
+
+          ![[images/screenshot.jpg]]
+        images/diagram.png: "binary content"
+        images/screenshot.jpg: "binary content"
+        notes/chart.pdf: "binary content"
+
+    tests:
+      - name: "wikilink to non-markdown file resolves by path"
+        operation: resolve_link
+        input:
+          path: "notes/meeting.md"
+          field: "attachment"
+        expect:
+          resolved_path: "images/diagram.png"
+
+      - name: "bare path to non-markdown file resolves relative"
+        operation: resolve_link
+        input:
+          path: "notes/meeting.md"
+          field: "diagram"
+        expect:
+          resolved_path: "notes/chart.pdf"
+
+      - name: "non-markdown file appears in file.links from body wikilink"
+        operation: evaluate
+        input:
+          path: "notes/meeting.md"
+          expression: "file.links.length"
+        expect:
+          result: 2
+
+      - name: "non-markdown file appears in file.embeds from body embed"
+        operation: evaluate
+        input:
+          path: "notes/meeting.md"
+          expression: "file.embeds.length"
+        expect:
+          result: 1
+
+      - name: "non-markdown link does not use id_field resolution"
+        spec_ref: "§2.9"
+        setup:
+          files:
+            notes/ref.md: |
+              ---
+              type: note
+              title: "Reference"
+              attachment: "[[diagram]]"
+              ---
+            images/diagram.png: "binary content"
+        operation: resolve_link
+        input:
+          path: "notes/ref.md"
+          field: "attachment"
+        expect:
+          # Simple name "diagram" looks for id_field match first, then filename match.
+          # diagram.png won't match because it's not a markdown file for id_field lookup,
+          # and filename match looks for markdown files by default.
+          # If no markdown file named "diagram" exists, this resolves to null.
+          resolved_path: null
+
+  # =============================================================================
+  # Group 2: Root-relative link resolution (§8.4)
+  # =============================================================================
+
+  - name: "root-relative links with leading slash"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        notes/meeting.md: |
+          ---
+          type: note
+          title: "Meeting"
+          ref: "[[/docs/spec]]"
+          ---
+        docs/spec.md: |
+          ---
+          type: note
+          title: "Spec"
+          ---
+        deep/nested/sub/file.md: |
+          ---
+          type: note
+          title: "Deep file"
+          ref: "[Spec](/docs/spec.md)"
+          ---
+
+    tests:
+      - name: "wikilink with leading slash resolves from collection root"
+        operation: resolve_link
+        input:
+          path: "notes/meeting.md"
+          field: "ref"
+        expect:
+          resolved_path: "docs/spec.md"
+
+      - name: "markdown link with leading slash resolves from collection root"
+        operation: resolve_link
+        input:
+          path: "deep/nested/sub/file.md"
+          field: "ref"
+        expect:
+          resolved_path: "docs/spec.md"
+
+  # =============================================================================
+  # Group 3: Wikilink with path containing slash (§8.4)
+  # =============================================================================
+
+  - name: "wikilink with path slash resolves from root"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          title: "Source"
+          ref: "[[docs/api]]"
+          ---
+        docs/api.md: |
+          ---
+          type: note
+          title: "API Docs"
+          ---
+
+    tests:
+      - name: "wikilink with slash (no ./ prefix) resolves from root"
+        operation: resolve_link
+        input:
+          path: "notes/source.md"
+          field: "ref"
+        expect:
+          resolved_path: "docs/api.md"
+
+  # =============================================================================
+  # Group 4: Extension fallback ordering (§8.4 step 5)
+  # =============================================================================
+
+  - name: "extension fallback tries configured extensions in order"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          extensions: ["mdx"]
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+
+    tests:
+      - name: "wikilink without extension tries .md first"
+        setup:
+          files:
+            notes/source.md: |
+              ---
+              type: note
+              title: "Source"
+              ref: "[[notes/target]]"
+              ---
+            notes/target.md: |
+              ---
+              type: note
+              title: "Target MD"
+              ---
+            notes/target.mdx: |
+              ---
+              type: note
+              title: "Target MDX"
+              ---
+        operation: resolve_link
+        input:
+          path: "notes/source.md"
+          field: "ref"
+        expect:
+          resolved_path: "notes/target.md"
+
+      - name: "wikilink falls back to secondary extension if primary missing"
+        setup:
+          files:
+            notes/source.md: |
+              ---
+              type: note
+              title: "Source"
+              ref: "[[notes/only-mdx]]"
+              ---
+            notes/only-mdx.mdx: |
+              ---
+              type: note
+              title: "Only MDX"
+              ---
+        operation: resolve_link
+        input:
+          path: "notes/source.md"
+          field: "ref"
+        expect:
+          resolved_path: "notes/only-mdx.mdx"
+
+  # =============================================================================
+  # Group 5: Link target constraint scoping (§8.5)
+  # =============================================================================
+
+  - name: "target constraint scopes resolution to specific type"
+    spec_ref: "§8.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            assignee:
+              type: link
+              target: person
+              validate_exists: true
+          ---
+        person.md: |
+          ---
+          name: person
+          fields:
+            id:
+              type: string
+            name:
+              type: string
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          id: "t1"
+          title: "Fix bug"
+          assignee: "[[alice]]"
+          ---
+        people/alice.md: |
+          ---
+          type: person
+          id: "alice"
+          name: "Alice"
+          ---
+        notes/alice.md: |
+          ---
+          type: task
+          id: "alice-note"
+          title: "Alice's notes"
+          ---
+
+    tests:
+      - name: "target constraint scopes to person type only"
+        operation: resolve_link
+        input:
+          path: "tasks/t1.md"
+          field: "assignee"
+        expect:
+          resolved_path: "people/alice.md"
+
+      - name: "target constraint causes link_wrong_type when target is wrong type"
+        setup:
+          files:
+            tasks/t2.md: |
+              ---
+              type: task
+              id: "t2"
+              title: "Another"
+              assignee: "[[t1]]"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t2.md"
+        expect:
+          valid: false
+          issues:
+            - code: link_wrong_type
+              field: "assignee"
+
+  # =============================================================================
+  # Group 6: Tiebreaker resolution order (§8.4)
+  # =============================================================================
+
+  - name: "simple name link tiebreaker resolution"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+
+    tests:
+      - name: "tiebreaker prefers same directory"
+        setup:
+          files:
+            tasks/source.md: |
+              ---
+              type: note
+              title: "Source"
+              ref: "[[readme]]"
+              ---
+            tasks/readme.md: |
+              ---
+              type: note
+              title: "Same dir readme"
+              ---
+            docs/readme.md: |
+              ---
+              type: note
+              title: "Other dir readme"
+              ---
+        operation: resolve_link
+        input:
+          path: "tasks/source.md"
+          field: "ref"
+        expect:
+          resolved_path: "tasks/readme.md"
+
+      - name: "tiebreaker prefers shortest path when no same-dir match"
+        setup:
+          files:
+            tasks/source.md: |
+              ---
+              type: note
+              title: "Source"
+              ref: "[[readme]]"
+              ---
+            docs/readme.md: |
+              ---
+              type: note
+              title: "Shorter path"
+              ---
+            docs/sub/deep/readme.md: |
+              ---
+              type: note
+              title: "Longer path"
+              ---
+        operation: resolve_link
+        input:
+          path: "tasks/source.md"
+          field: "ref"
+        expect:
+          resolved_path: "docs/readme.md"
+
+      - name: "tiebreaker uses alphabetical as final fallback"
+        setup:
+          files:
+            root-source.md: |
+              ---
+              type: note
+              title: "Source"
+              ref: "[[target]]"
+              ---
+            bbb/target.md: |
+              ---
+              type: note
+              title: "B target"
+              ---
+            aaa/target.md: |
+              ---
+              type: note
+              title: "A target"
+              ---
+        operation: resolve_link
+        input:
+          path: "root-source.md"
+          field: "ref"
+        expect:
+          resolved_path: "aaa/target.md"
+
+  # =============================================================================
+  # Group 7: Markdown link resolution — relative to containing file (§8.2.2)
+  # =============================================================================
+
+  - name: "markdown link resolves relative to containing file directory"
+    spec_ref: "§8.2.2, §8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        tasks/subtasks/child.md: |
+          ---
+          type: note
+          title: "Child"
+          ref: "[Parent](../parent.md)"
+          ---
+        tasks/parent.md: |
+          ---
+          type: note
+          title: "Parent"
+          ---
+        notes/doc.md: |
+          ---
+          type: note
+          title: "Doc"
+          ref: "[Sibling](./other.md)"
+          ---
+        notes/other.md: |
+          ---
+          type: note
+          title: "Other"
+          ---
+
+    tests:
+      - name: "markdown link with ../ resolves relative to containing file"
+        operation: resolve_link
+        input:
+          path: "tasks/subtasks/child.md"
+          field: "ref"
+        expect:
+          resolved_path: "tasks/parent.md"
+
+      - name: "markdown link with ./ resolves to same directory"
+        operation: resolve_link
+        input:
+          path: "notes/doc.md"
+          field: "ref"
+        expect:
+          resolved_path: "notes/other.md"
+
+  # =============================================================================
+  # Group 8: ID match pass has priority over filename match (§8.4)
+  # =============================================================================
+
+  - name: "id field match takes priority over filename match"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          id: "source"
+          title: "Source"
+          ref: "[[target-id]]"
+          ---
+        notes/target-id.md: |
+          ---
+          type: note
+          id: "filename-match"
+          title: "Filename match"
+          ---
+        docs/different-name.md: |
+          ---
+          type: note
+          id: "target-id"
+          title: "ID match"
+          ---
+
+    tests:
+      - name: "simple name resolves via id_field before filename"
+        operation: resolve_link
+        input:
+          path: "notes/source.md"
+          field: "ref"
+        expect:
+          resolved_path: "docs/different-name.md"

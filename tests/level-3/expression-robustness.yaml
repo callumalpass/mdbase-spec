@@ -1,0 +1,631 @@
+name: "expression robustness — graceful errors, timezone comparison, query continuation"
+level: 3
+category: expressions
+spec_ref: "§11.18, §7.8, §10.3"
+
+groups:
+  # =============================================================================
+  # Group 1: Expression errors MUST NOT abort query (§11.18)
+  # =============================================================================
+
+  - name: "expression errors do not abort query — other results still returned"
+    spec_ref: "§11.18"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            value:
+              type: integer
+            label:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Item A"
+          value: 10
+          label: "good"
+          ---
+        items/b.md: |
+          ---
+          type: item
+          title: "Item B"
+          value: 0
+          label: "zero"
+          ---
+        items/c.md: |
+          ---
+          type: item
+          title: "Item C"
+          value: 5
+          label: "also good"
+          ---
+
+    tests:
+      - name: "division by field value does not abort query for non-zero files"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "100 / value > 5"
+            order_by:
+              - field: title
+                direction: asc
+        expect:
+          results:
+            - frontmatter:
+                title: "Item A"
+            - frontmatter:
+                title: "Item C"
+
+      - name: "null property access in filter does not abort query"
+        setup:
+          files:
+            items/d.md: |
+              ---
+              type: item
+              title: "No Value"
+              ---
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "value > 3"
+            order_by:
+              - field: title
+                direction: asc
+        expect:
+          results:
+            - frontmatter:
+                title: "Item A"
+            - frontmatter:
+                title: "Item C"
+
+      - name: "method on null in filter skips file gracefully"
+        setup:
+          files:
+            items/e.md: |
+              ---
+              type: item
+              title: "Missing Label"
+              value: 7
+              ---
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'label.contains("good")'
+            order_by:
+              - field: title
+                direction: asc
+        expect:
+          results:
+            - frontmatter:
+                title: "Item A"
+            - frontmatter:
+                title: "Item C"
+
+  # =============================================================================
+  # Group 2: Datetime timezone comparison — absolute time (§7.8, §11.7)
+  # =============================================================================
+
+  - name: "datetime timezone comparison uses absolute time"
+    spec_ref: "§7.8, §11.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        event.md: |
+          ---
+          name: event
+          fields:
+            title:
+              type: string
+            starts_at:
+              type: datetime
+          ---
+      files:
+        events/utc.md: |
+          ---
+          type: event
+          title: "UTC Event"
+          starts_at: "2024-06-15T12:00:00Z"
+          ---
+        events/east.md: |
+          ---
+          type: event
+          title: "East Event"
+          starts_at: "2024-06-15T17:00:00+05:00"
+          ---
+        events/west.md: |
+          ---
+          type: event
+          title: "West Event"
+          starts_at: "2024-06-15T07:00:00-05:00"
+          ---
+        events/later.md: |
+          ---
+          type: event
+          title: "Later Event"
+          starts_at: "2024-06-15T13:00:00Z"
+          ---
+
+    tests:
+      - name: "same absolute instant in different offsets are equal"
+        operation: evaluate
+        input:
+          expression: 'datetime("2024-06-15T12:00:00Z") == datetime("2024-06-15T17:00:00+05:00")'
+        expect:
+          result: true
+
+      - name: "same absolute instant in negative offset also equal"
+        operation: evaluate
+        input:
+          expression: 'datetime("2024-06-15T12:00:00Z") == datetime("2024-06-15T07:00:00-05:00")'
+        expect:
+          result: true
+
+      - name: "earlier absolute time is less than later"
+        operation: evaluate
+        input:
+          expression: 'datetime("2024-06-15T12:00:00Z") < datetime("2024-06-15T13:00:00Z")'
+        expect:
+          result: true
+
+      - name: "query filters events by absolute time comparison"
+        operation: query
+        input:
+          query:
+            types: [event]
+            where: 'starts_at > datetime("2024-06-15T12:00:00Z")'
+        expect:
+          meta:
+            total_count: 1
+          results:
+            - frontmatter:
+                title: "Later Event"
+
+      - name: "query with offset-aware comparison across timezones"
+        operation: query
+        input:
+          query:
+            types: [event]
+            where: 'starts_at == datetime("2024-06-15T12:00:00Z")'
+        expect:
+          meta:
+            total_count: 3
+
+  # =============================================================================
+  # Group 3: Date arithmetic preserves offset (§7.8)
+  # =============================================================================
+
+  - name: "date arithmetic preserves timezone offset"
+    spec_ref: "§7.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        event.md: |
+          ---
+          name: event
+          fields:
+            title:
+              type: string
+            starts_at:
+              type: datetime
+          ---
+
+    tests:
+      - name: "adding duration to offset-aware datetime preserves offset"
+        operation: evaluate
+        input:
+          expression: '(datetime("2024-06-15T10:00:00+05:30") + "1d").format("YYYY-MM-DDTHH:mm:ss")'
+        expect:
+          result: "2024-06-16T10:00:00"
+
+      - name: "subtracting two datetimes returns milliseconds"
+        operation: evaluate
+        input:
+          expression: 'datetime("2024-06-15T13:00:00Z") - datetime("2024-06-15T12:00:00Z")'
+        expect:
+          result: 3600000
+
+      - name: "subtracting datetimes across timezones uses absolute time"
+        operation: evaluate
+        input:
+          expression: 'datetime("2024-06-15T17:00:00+05:00") - datetime("2024-06-15T12:00:00Z")'
+        expect:
+          result: 0
+
+  # =============================================================================
+  # Group 4: Null sort handling (§10.3)
+  # =============================================================================
+
+  - name: "null values sort last ascending, first descending"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+            due_date:
+              type: date
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "With priority"
+          priority: 3
+          due_date: "2024-06-01"
+          ---
+        tasks/t2.md: |
+          ---
+          type: task
+          title: "No priority"
+          due_date: "2024-06-15"
+          ---
+        tasks/t3.md: |
+          ---
+          type: task
+          title: "High priority"
+          priority: 1
+          ---
+
+    tests:
+      - name: "null priority sorts last in ascending order"
+        operation: query
+        input:
+          query:
+            types: [task]
+            order_by:
+              - field: priority
+                direction: asc
+        expect:
+          results:
+            - frontmatter:
+                title: "High priority"
+            - frontmatter:
+                title: "With priority"
+            - frontmatter:
+                title: "No priority"
+
+      - name: "null priority sorts first in descending order"
+        operation: query
+        input:
+          query:
+            types: [task]
+            order_by:
+              - field: priority
+                direction: desc
+        expect:
+          results:
+            - frontmatter:
+                title: "No priority"
+            - frontmatter:
+                title: "With priority"
+            - frontmatter:
+                title: "High priority"
+
+      - name: "null date sorts last in ascending order"
+        operation: query
+        input:
+          query:
+            types: [task]
+            order_by:
+              - field: due_date
+                direction: asc
+        expect:
+          results:
+            - frontmatter:
+                title: "With priority"
+            - frontmatter:
+                title: "No priority"
+            - frontmatter:
+                title: "High priority"
+
+  # =============================================================================
+  # Group 5: Stable tie-breaker by file.path (§10.3)
+  # =============================================================================
+
+  - name: "tie-breaker by ascending file.path ensures deterministic output"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+          ---
+      files:
+        tasks/charlie.md: |
+          ---
+          type: task
+          title: "Charlie"
+          priority: 3
+          ---
+        tasks/alice.md: |
+          ---
+          type: task
+          title: "Alice"
+          priority: 3
+          ---
+        tasks/bob.md: |
+          ---
+          type: task
+          title: "Bob"
+          priority: 3
+          ---
+
+    tests:
+      - name: "same priority uses file.path ascending as tie-breaker"
+        operation: query
+        input:
+          query:
+            types: [task]
+            order_by:
+              - field: priority
+                direction: asc
+        expect:
+          results:
+            - frontmatter:
+                title: "Alice"
+            - frontmatter:
+                title: "Bob"
+            - frontmatter:
+                title: "Charlie"
+
+  # =============================================================================
+  # Group 6: total_count accuracy with limit/offset (§10.6)
+  # =============================================================================
+
+  - name: "total_count is accurate regardless of limit/offset"
+    spec_ref: "§10.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, done]
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Task 1"
+          status: "open"
+          ---
+        tasks/t2.md: |
+          ---
+          type: task
+          title: "Task 2"
+          status: "open"
+          ---
+        tasks/t3.md: |
+          ---
+          type: task
+          title: "Task 3"
+          status: "done"
+          ---
+        tasks/t4.md: |
+          ---
+          type: task
+          title: "Task 4"
+          status: "open"
+          ---
+        tasks/t5.md: |
+          ---
+          type: task
+          title: "Task 5"
+          status: "open"
+          ---
+
+    tests:
+      - name: "total_count reflects all matches, not just returned results"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'status == "open"'
+            limit: 2
+        expect:
+          meta:
+            total_count: 4
+            has_more: true
+
+      - name: "total_count with offset still reflects total matches"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'status == "open"'
+            limit: 2
+            offset: 2
+        expect:
+          meta:
+            total_count: 4
+            has_more: false
+
+      - name: "no limit returns total_count equal to result count"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'status == "open"'
+        expect:
+          meta:
+            total_count: 4
+            has_more: false
+
+  # =============================================================================
+  # Group 7: String collation — case-sensitive, Unicode code point (§10.3)
+  # =============================================================================
+
+  - name: "string sort uses Unicode code point order"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            name:
+              type: string
+          ---
+      files:
+        items/upper.md: |
+          ---
+          type: item
+          name: "Banana"
+          ---
+        items/lower.md: |
+          ---
+          type: item
+          name: "apple"
+          ---
+        items/caps.md: |
+          ---
+          type: item
+          name: "Cherry"
+          ---
+
+    tests:
+      - name: "uppercase sorts before lowercase in ascending Unicode order"
+        operation: query
+        input:
+          query:
+            types: [item]
+            order_by:
+              - field: name
+                direction: asc
+        expect:
+          results:
+            - frontmatter:
+                name: "Banana"
+            - frontmatter:
+                name: "Cherry"
+            - frontmatter:
+                name: "apple"
+
+  # =============================================================================
+  # Group 8: Expression evaluation — edge cases with type checking
+  # =============================================================================
+
+  - name: "expression type checking edge cases"
+    spec_ref: "§11.11, §11.18"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+
+    tests:
+      - name: "isType for null returns false for all types"
+        operation: evaluate
+        input:
+          expression: 'null.isType("string")'
+        expect:
+          result: null
+
+      - name: "number conversion of boolean true returns 1"
+        operation: evaluate
+        input:
+          expression: "number(true)"
+        expect:
+          result: 1
+
+      - name: "number conversion of boolean false returns 0"
+        operation: evaluate
+        input:
+          expression: "number(false)"
+        expect:
+          result: 0
+
+      - name: "toString on number produces string"
+        operation: evaluate
+        input:
+          expression: '(42).toString()'
+        expect:
+          result: "42"
+
+      - name: "list() wraps non-list value in list"
+        operation: evaluate
+        input:
+          expression: 'list("hello").length'
+        expect:
+          result: 1
+
+      - name: "list() on existing list returns same list"
+        operation: evaluate
+        input:
+          expression: 'list(["a", "b"]).length'
+        expect:
+          result: 2
+
+  # =============================================================================
+  # Group 9: Calendar arithmetic — month clamping (§11.8)
+  # =============================================================================
+
+  - name: "calendar arithmetic clamps to end of month"
+    spec_ref: "§11.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+
+    tests:
+      - name: "adding 1 month to Jan 31 clamps to Feb 29 in leap year"
+        operation: evaluate
+        input:
+          expression: '(date("2024-01-31") + "1M").format("YYYY-MM-DD")'
+        expect:
+          result: "2024-02-29"
+
+      - name: "adding 1 month to Jan 31 clamps to Feb 28 in non-leap year"
+        operation: evaluate
+        input:
+          expression: '(date("2023-01-31") + "1M").format("YYYY-MM-DD")'
+        expect:
+          result: "2023-02-28"
+
+      - name: "adding 1 month to Mar 31 clamps to Apr 30"
+        operation: evaluate
+        input:
+          expression: '(date("2024-03-31") + "1M").format("YYYY-MM-DD")'
+        expect:
+          result: "2024-04-30"
