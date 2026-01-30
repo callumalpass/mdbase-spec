@@ -1,0 +1,276 @@
+name: "formula error code hardening"
+level: 3
+category: queries
+spec_ref: "§10.7, Appendix C.5"
+profile: "query+"
+
+# =============================================================================
+# Strengthens coverage for the three C.5 formula error codes, which previously
+# had only 1 test each. Also adds edge cases for formula interactions.
+# =============================================================================
+
+groups:
+  # =============================================================================
+  # Group 1: circular_formula — additional scenarios
+  # =============================================================================
+
+  - name: "circular formula detection"
+    spec_ref: "§10.7, Appendix C.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            value:
+              type: integer
+            priority:
+              type: integer
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          value: 1
+          priority: 3
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          value: 2
+          priority: 5
+          ---
+
+    tests:
+      - name: "self-referencing formula is circular"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              loop: "formula.loop + 1"
+        expect:
+          error:
+            code: circular_formula
+
+      - name: "three-formula circular chain detected"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              x: "formula.y + 1"
+              y: "formula.z + 1"
+              z: "formula.x + 1"
+        expect:
+          error:
+            code: circular_formula
+
+      - name: "non-circular formula chain succeeds"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              base: "value * 2"
+              derived: "formula.base + priority"
+            order_by:
+              - field: formula.derived
+                direction: desc
+        expect:
+          results:
+            - path: "tasks/b.md"
+            - path: "tasks/a.md"
+
+  # =============================================================================
+  # Group 2: invalid_formula — additional scenarios
+  # =============================================================================
+
+  - name: "invalid formula expressions"
+    spec_ref: "§10.7, Appendix C.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            value:
+              type: integer
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          value: 1
+          ---
+
+    tests:
+      - name: "formula with unclosed string literal"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              bad: '"unclosed string'
+        expect:
+          error:
+            code: invalid_formula
+
+      - name: "formula with unmatched parenthesis"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              bad: "((value + 1)"
+        expect:
+          error:
+            code: invalid_formula
+
+      - name: "empty formula expression"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              bad: ""
+        expect:
+          error:
+            code: invalid_formula
+
+  # =============================================================================
+  # Group 3: formula_evaluation_error — additional scenarios
+  # =============================================================================
+
+  - name: "formula evaluation errors"
+    spec_ref: "§10.7, Appendix C.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            value:
+              type: integer
+            label:
+              type: string
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          value: 0
+          label: "alpha"
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          value: 5
+          label: "beta"
+          ---
+
+    tests:
+      - name: "formula with type mismatch (string + integer)"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              bad: "label + value"
+        expect:
+          error:
+            code: formula_evaluation_error
+
+      - name: "formula with method on wrong type"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              bad: "value.contains(1)"
+        expect:
+          error:
+            code: formula_evaluation_error
+
+  # =============================================================================
+  # Group 4: Formula with null fields
+  # =============================================================================
+
+  - name: "formula behavior with null fields"
+    spec_ref: "§10.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            value:
+              type: integer
+            optional_score:
+              type: integer
+          ---
+      files:
+        tasks/with-score.md: |
+          ---
+          type: task
+          value: 10
+          optional_score: 5
+          ---
+        tasks/no-score.md: |
+          ---
+          type: task
+          value: 20
+          ---
+
+    tests:
+      - name: "formula with null coalescing handles missing fields"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              safe_score: "optional_score ?? 0"
+            order_by:
+              - field: formula.safe_score
+                direction: desc
+        expect:
+          results:
+            - path: "tasks/with-score.md"
+              formulas:
+                safe_score: 5
+            - path: "tasks/no-score.md"
+              formulas:
+                safe_score: 0
+
+      - name: "formula referencing missing field without null handling"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              risky: "optional_score * 2"
+            order_by:
+              - field: formula.risky
+                direction: desc
+        expect:
+          # optional_score is null for one file; null * 2 produces null
+          # null sorts last in desc (i.e., after non-null values)
+          results:
+            - path: "tasks/with-score.md"
+              formulas:
+                risky: 10
+            - path: "tasks/no-score.md"
+              formulas:
+                risky: null
