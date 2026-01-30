@@ -1,0 +1,1029 @@
+name: "error code hardening — iteration 12"
+level: 1
+category: validation
+spec_ref: "§7, §9, §12, §4"
+
+groups:
+  # =============================================================================
+  # Group 1: Additional datetime/time validation errors
+  #
+  # Strengthens coverage for invalid_datetime (previously 1 test) and
+  # invalid_time (previously 1 test) error codes.
+  # =============================================================================
+
+  - name: "datetime and time validation edge cases"
+    spec_ref: "§7.8, §7.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        event.md: |
+          ---
+          name: event
+          fields:
+            starts_at:
+              type: datetime
+            ends_at:
+              type: datetime
+            alarm:
+              type: time
+            reminder:
+              type: time
+            event_date:
+              type: date
+          ---
+      files:
+        events/valid.md: |
+          ---
+          type: event
+          starts_at: "2024-03-15T10:30:00"
+          ends_at: "2024-03-15T14:00:00Z"
+          alarm: "09:00"
+          reminder: "14:30:00"
+          event_date: "2024-03-15"
+          ---
+
+    tests:
+      - name: "valid datetime and time fields pass validation"
+        operation: validate
+        input:
+          path: "events/valid.md"
+        expect:
+          valid: true
+
+      - name: "date-only value in datetime field is invalid_datetime"
+        setup:
+          files:
+            events/date-only.md: |
+              ---
+              type: event
+              starts_at: "2024-03-15"
+              ---
+        operation: validate
+        input:
+          path: "events/date-only.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_datetime
+              field: starts_at
+
+      - name: "time-only value in datetime field is invalid_datetime"
+        setup:
+          files:
+            events/time-only.md: |
+              ---
+              type: event
+              starts_at: "10:30:00"
+              ---
+        operation: validate
+        input:
+          path: "events/time-only.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_datetime
+              field: starts_at
+
+      - name: "malformed datetime string is invalid_datetime"
+        setup:
+          files:
+            events/bad-dt.md: |
+              ---
+              type: event
+              starts_at: "March 15, 2024 at noon"
+              ---
+        operation: validate
+        input:
+          path: "events/bad-dt.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_datetime
+              field: starts_at
+
+      - name: "datetime with invalid month is invalid_datetime"
+        setup:
+          files:
+            events/bad-month.md: |
+              ---
+              type: event
+              starts_at: "2024-13-15T10:30:00"
+              ---
+        operation: validate
+        input:
+          path: "events/bad-month.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_datetime
+              field: starts_at
+
+      - name: "24:00 time value is invalid_time"
+        setup:
+          files:
+            events/bad-time-24.md: |
+              ---
+              type: event
+              alarm: "24:00"
+              ---
+        operation: validate
+        input:
+          path: "events/bad-time-24.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_time
+              field: alarm
+
+      - name: "time with AM/PM suffix is invalid_time"
+        setup:
+          files:
+            events/ampm.md: |
+              ---
+              type: event
+              alarm: "2:30 PM"
+              ---
+        operation: validate
+        input:
+          path: "events/ampm.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_time
+              field: alarm
+
+      - name: "time with single-digit hour is invalid_time"
+        setup:
+          files:
+            events/short-time.md: |
+              ---
+              type: event
+              alarm: "9:30"
+              ---
+        operation: validate
+        input:
+          path: "events/short-time.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_time
+              field: alarm
+
+      - name: "invalid date with impossible day is invalid_date"
+        setup:
+          files:
+            events/bad-day.md: |
+              ---
+              type: event
+              event_date: "2024-02-30"
+              ---
+        operation: validate
+        input:
+          path: "events/bad-day.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_date
+              field: event_date
+
+      - name: "date with time suffix is invalid_date"
+        setup:
+          files:
+            events/date-with-time.md: |
+              ---
+              type: event
+              event_date: "2024-03-15T10:30:00"
+              ---
+        operation: validate
+        input:
+          path: "events/date-with-time.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_date
+              field: event_date
+
+  # =============================================================================
+  # Group 2: Additional path operation errors
+  #
+  # Strengthens path_required (1 test), invalid_path (1 test) coverage.
+  # =============================================================================
+
+  - name: "path operation error edge cases"
+    spec_ref: "§12.1, §12.3, §12.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/existing.md: |
+          ---
+          type: note
+          title: "Existing"
+          ---
+
+    tests:
+      - name: "create with empty string path is path_required"
+        operation: create
+        input:
+          path: ""
+          frontmatter:
+            type: note
+            title: "No path"
+        expect:
+          error:
+            code: path_required
+
+      - name: "rename with no new_path is path_required"
+        operation: rename
+        input:
+          path: "notes/existing.md"
+        expect:
+          error:
+            code: path_required
+
+      - name: "create with path containing null bytes is invalid_path"
+        operation: create
+        input:
+          path: "notes/bad\x00name.md"
+          frontmatter:
+            type: note
+            title: "Bad path"
+        expect:
+          error:
+            code: invalid_path
+
+      - name: "rename to path with invalid characters is invalid_path"
+        operation: rename
+        input:
+          path: "notes/existing.md"
+          new_path: "notes/inv\x00lid.md"
+        expect:
+          error:
+            code: invalid_path
+
+      - name: "create at path that already exists is path_conflict"
+        operation: create
+        input:
+          path: "notes/existing.md"
+          frontmatter:
+            type: note
+            title: "Duplicate"
+        expect:
+          error:
+            code: path_conflict
+
+      - name: "rename to path that already exists is path_conflict"
+        setup:
+          files:
+            notes/other.md: |
+              ---
+              type: note
+              title: "Other"
+              ---
+        operation: rename
+        input:
+          path: "notes/existing.md"
+          new_path: "notes/other.md"
+        expect:
+          error:
+            code: path_conflict
+
+  # =============================================================================
+  # Group 3: Multi-type create validation (§12.1 + §9.2.5)
+  #
+  # Verifies that creating a file with multiple types validates against ALL
+  # matched types, and aborts if any type's constraints are not met.
+  # =============================================================================
+
+  - name: "multi-type validation on create"
+    spec_ref: "§12.1, §9.2.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            priority:
+              type: integer
+              min: 1
+              max: 5
+          ---
+        urgent.md: |
+          ---
+          name: urgent
+          fields:
+            deadline:
+              type: date
+              required: true
+            escalation:
+              type: string
+          ---
+
+    tests:
+      - name: "create with multiple types satisfying all constraints succeeds"
+        operation: create
+        input:
+          path: "tasks/multi.md"
+          frontmatter:
+            types:
+              - task
+              - urgent
+            title: "Critical fix"
+            priority: 1
+            deadline: "2024-12-31"
+        expect:
+          created: true
+
+      - name: "create with multiple types missing second type's required field fails"
+        operation: create
+        input:
+          path: "tasks/multi-fail.md"
+          frontmatter:
+            types:
+              - task
+              - urgent
+            title: "Missing deadline"
+            priority: 3
+        expect:
+          error:
+            code: validation_failed
+
+      - name: "create with multiple types violating first type's constraint fails"
+        operation: create
+        input:
+          path: "tasks/multi-fail2.md"
+          frontmatter:
+            types:
+              - task
+              - urgent
+            title: "Bad priority"
+            priority: 10
+            deadline: "2024-12-31"
+        expect:
+          error:
+            code: validation_failed
+
+  # =============================================================================
+  # Group 4: Batch pre-validation all-or-nothing (§12.7)
+  #
+  # Verifies that when batch update has a mix of valid and invalid changes,
+  # the entire batch is aborted — valid files are NOT written.
+  # =============================================================================
+
+  - name: "batch pre-validation prevents partial writes"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            name:
+              type: string
+              required: true
+            count:
+              type: integer
+              min: 0
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          name: "Item A"
+          count: 5
+          ---
+        items/b.md: |
+          ---
+          type: item
+          name: "Item B"
+          count: 3
+          ---
+
+    tests:
+      - name: "batch update with one invalid file aborts all changes"
+        operation: batch_update
+        input:
+          updates:
+            - path: "items/a.md"
+              fields:
+                count: 10
+            - path: "items/b.md"
+              fields:
+                count: -1
+        expect:
+          error:
+            code: validation_failed
+        verify_after:
+          - operation: read
+            input:
+              path: "items/a.md"
+            expect:
+              frontmatter:
+                count: 5
+
+      - name: "batch update where all files are valid succeeds"
+        operation: batch_update
+        input:
+          updates:
+            - path: "items/a.md"
+              fields:
+                count: 10
+            - path: "items/b.md"
+              fields:
+                count: 7
+        expect:
+          batch_result:
+            total: 2
+            succeeded: 2
+            failed: 0
+
+  # =============================================================================
+  # Group 5: write_nulls interaction with required and exists() (§3.3, §7.2)
+  #
+  # Tests the subtle interaction between write_nulls: "explicit", required
+  # fields, and the exists() / isEmpty() semantics.
+  # =============================================================================
+
+  - name: "write_nulls explicit interaction with required fields"
+    spec_ref: "§3.3, §3.4, §7.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+          write_nulls: "explicit"
+      types:
+        article.md: |
+          ---
+          name: article
+          fields:
+            title:
+              type: string
+              required: true
+            subtitle:
+              type: string
+            category:
+              type: string
+              default: "general"
+              required: true
+          ---
+
+    tests:
+      - name: "update field to null with write_nulls explicit persists null on disk"
+        setup:
+          files:
+            articles/test.md: |
+              ---
+              type: article
+              title: "My Article"
+              subtitle: "A subtitle"
+              category: "tech"
+              ---
+        operation: update
+        input:
+          path: "articles/test.md"
+          fields:
+            subtitle: null
+        expect:
+          frontmatter_written:
+            subtitle: null
+
+      - name: "update required field to null with write_nulls explicit fails validation"
+        setup:
+          files:
+            articles/test2.md: |
+              ---
+              type: article
+              title: "My Article"
+              category: "tech"
+              ---
+        operation: update
+        input:
+          path: "articles/test2.md"
+          fields:
+            title: null
+        expect:
+          error:
+            code: validation_failed
+
+      - name: "required field with default set to null fails validation (null present overrides default)"
+        setup:
+          files:
+            articles/test3.md: |
+              ---
+              type: article
+              title: "My Article"
+              category: null
+              ---
+        operation: validate
+        input:
+          path: "articles/test3.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: category
+
+  # =============================================================================
+  # Group 6: Config and type definition file encoding (§4.0)
+  #
+  # §4.0: "The mdbase.yaml configuration file and all type definition files
+  # MUST be encoded in UTF-8."
+  # =============================================================================
+
+  - name: "config and type file UTF-8 encoding requirement"
+    spec_ref: "§4.0"
+
+    tests:
+      - name: "config file with valid UTF-8 loads successfully"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            # Comment with Unicode: café, naïve, 日本語
+          types: {}
+        operation: validate
+        input:
+          path: "notes/test.md"
+          collection_only: true
+        expect:
+          valid: true
+
+      - name: "type definition file with UTF-8 field descriptions loads"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            note.md: |
+              ---
+              name: note
+              fields:
+                título:
+                  type: string
+                日付:
+                  type: date
+              ---
+          files:
+            notes/test.md: |
+              ---
+              type: note
+              título: "Hola"
+              日付: "2024-03-15"
+              ---
+        operation: validate
+        input:
+          path: "notes/test.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 7: Type loading with inheritance (dependency order) (§5.4, §5.7)
+  #
+  # Verifies that parent types are loaded before children and that child types
+  # correctly inherit fields from parents regardless of file ordering.
+  # =============================================================================
+
+  - name: "type inheritance dependency order"
+    spec_ref: "§5.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        # Child defined alphabetically before parent to test dependency ordering
+        child.md: |
+          ---
+          name: child
+          extends: parent
+          fields:
+            extra:
+              type: string
+          ---
+        parent.md: |
+          ---
+          name: parent
+          fields:
+            base_field:
+              type: string
+              required: true
+          ---
+
+    tests:
+      - name: "child type inherits parent required field regardless of file order"
+        setup:
+          files:
+            items/test.md: |
+              ---
+              type: child
+              extra: "yes"
+              ---
+        operation: validate
+        input:
+          path: "items/test.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: base_field
+
+      - name: "child type accepts both parent and own fields"
+        setup:
+          files:
+            items/valid.md: |
+              ---
+              type: child
+              base_field: "inherited"
+              extra: "own"
+              ---
+        operation: validate
+        input:
+          path: "items/valid.md"
+        expect:
+          valid: true
+
+      - name: "multi-level inheritance with alphabetically-last grandparent"
+        setup:
+          types:
+            grandchild.md: |
+              ---
+              name: grandchild
+              extends: child
+              fields:
+                leaf:
+                  type: integer
+              ---
+          files:
+            items/gc.md: |
+              ---
+              type: grandchild
+              leaf: 42
+              extra: "middle"
+              ---
+        operation: validate
+        input:
+          path: "items/gc.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: base_field
+
+  # =============================================================================
+  # Group 8: Additional expression error codes
+  #
+  # Strengthens invalid_expression (1 test), wrong_argument_count (1 test),
+  # and type_error (1 test).
+  # =============================================================================
+
+  - name: "expression error codes — additional coverage"
+    spec_ref: "§11.18"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        record.md: |
+          ---
+          name: record
+          fields:
+            value:
+              type: integer
+            label:
+              type: string
+          ---
+      files:
+        records/r1.md: |
+          ---
+          type: record
+          value: 10
+          label: "hello"
+          ---
+
+    tests:
+      - name: "unclosed parenthesis is invalid_expression"
+        operation: evaluate
+        input:
+          expression: "(1 + 2"
+        expect:
+          error:
+            code: invalid_expression
+
+      - name: "unexpected operator is invalid_expression"
+        operation: evaluate
+        input:
+          expression: "1 + + 2"
+        expect:
+          error:
+            code: invalid_expression
+
+      - name: "empty expression is invalid_expression"
+        operation: evaluate
+        input:
+          expression: ""
+        expect:
+          error:
+            code: invalid_expression
+
+      - name: "if() with 2 arguments is wrong_argument_count"
+        operation: evaluate
+        input:
+          expression: "if(true, 1)"
+        expect:
+          error:
+            code: wrong_argument_count
+
+      - name: "contains() with 0 arguments is wrong_argument_count"
+        operation: evaluate
+        input:
+          expression: '"hello".contains()'
+        expect:
+          error:
+            code: wrong_argument_count
+
+      - name: "string subtraction is type_error"
+        operation: evaluate
+        input:
+          expression: '"hello" - "world"'
+        expect:
+          error:
+            code: type_error
+
+      - name: "boolean arithmetic is type_error"
+        operation: evaluate
+        input:
+          expression: "true * 5"
+        expect:
+          error:
+            code: type_error
+
+  # =============================================================================
+  # Group 9: Regex optional features (§4.8)
+  #
+  # §4.8: "Implementations that do not support optional features MUST reject
+  # patterns using those features with a clear error rather than silently
+  # ignoring them."
+  #
+  # These tests verify that lookbehind and named groups either work correctly
+  # OR are rejected with an error. Silent incorrect behavior is a failure.
+  # =============================================================================
+
+  - name: "regex optional features — lookbehind and named groups"
+    spec_ref: "§4.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+
+    tests:
+      - name: "positive lookbehind either works or is rejected"
+        setup:
+          types:
+            lb.md: |
+              ---
+              name: lb
+              fields:
+                code:
+                  type: string
+                  pattern: "(?<=USD)\\d+"
+              ---
+          files:
+            items/test.md: |
+              ---
+              type: lb
+              code: "USD100"
+              ---
+        operation: validate
+        input:
+          path: "items/test.md"
+        expect:
+          one_of:
+            - valid: true
+            - error:
+                code: invalid_type_definition
+
+      - name: "negative lookbehind either works or is rejected"
+        setup:
+          types:
+            nlb.md: |
+              ---
+              name: nlb
+              fields:
+                code:
+                  type: string
+                  pattern: "(?<!no-)\\w+"
+              ---
+          files:
+            items/test2.md: |
+              ---
+              type: nlb
+              code: "yes-value"
+              ---
+        operation: validate
+        input:
+          path: "items/test2.md"
+        expect:
+          one_of:
+            - valid: true
+            - error:
+                code: invalid_type_definition
+
+      - name: "named capture group either works or is rejected"
+        setup:
+          types:
+            ncg.md: |
+              ---
+              name: ncg
+              fields:
+                ref:
+                  type: string
+                  pattern: "(?<year>\\d{4})-(?<month>\\d{2})"
+              ---
+          files:
+            items/test3.md: |
+              ---
+              type: ncg
+              ref: "2024-03"
+              ---
+        operation: validate
+        input:
+          path: "items/test3.md"
+        expect:
+          one_of:
+            - valid: true
+            - error:
+                code: invalid_type_definition
+
+  # =============================================================================
+  # Group 10: Validation issue format completeness (§9.3)
+  #
+  # Strengthens validation issue format testing — every issue MUST include
+  # path, field, code, message, and severity.
+  # =============================================================================
+
+  - name: "validation issue format for different error types"
+    spec_ref: "§9.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        strict-doc.md: |
+          ---
+          name: strict-doc
+          strict: true
+          fields:
+            title:
+              type: string
+              required: true
+              min_length: 3
+            count:
+              type: integer
+              min: 0
+              max: 100
+            status:
+              type: enum
+              values: [draft, published]
+          ---
+
+    tests:
+      - name: "missing_required issue has all required fields"
+        setup:
+          files:
+            docs/no-title.md: |
+              ---
+              type: strict-doc
+              count: 5
+              ---
+        operation: validate
+        input:
+          path: "docs/no-title.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
+              severity: error
+              path: "docs/no-title.md"
+
+      - name: "number_too_large issue has all required fields"
+        setup:
+          files:
+            docs/big-count.md: |
+              ---
+              type: strict-doc
+              title: "Test"
+              count: 200
+              ---
+        operation: validate
+        input:
+          path: "docs/big-count.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_large
+              field: count
+              severity: error
+              path: "docs/big-count.md"
+
+      - name: "invalid_enum issue has all required fields"
+        setup:
+          files:
+            docs/bad-status.md: |
+              ---
+              type: strict-doc
+              title: "Test"
+              status: "archived"
+              ---
+        operation: validate
+        input:
+          path: "docs/bad-status.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_enum
+              field: status
+              severity: error
+              path: "docs/bad-status.md"
+
+      - name: "unknown_field issue has all required fields"
+        setup:
+          files:
+            docs/extra.md: |
+              ---
+              type: strict-doc
+              title: "Test"
+              mystery: "unknown"
+              ---
+        operation: validate
+        input:
+          path: "docs/extra.md"
+        expect:
+          valid: false
+          issues:
+            - code: unknown_field
+              field: mystery
+              severity: error
+              path: "docs/extra.md"
+
+      - name: "multiple issues all have complete format"
+        setup:
+          files:
+            docs/multi-error.md: |
+              ---
+              type: strict-doc
+              count: -5
+              status: "invalid"
+              bonus: "extra"
+              ---
+        operation: validate
+        input:
+          path: "docs/multi-error.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
+              severity: error
+            - code: number_too_small
+              field: count
+              severity: error
+            - code: invalid_enum
+              field: status
+              severity: error
+            - code: unknown_field
+              field: bonus
+              severity: error

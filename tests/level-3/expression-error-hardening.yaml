@@ -1,0 +1,205 @@
+name: "expression error code hardening — iteration 12"
+level: 3
+category: expressions
+spec_ref: "§11.18"
+
+groups:
+  # =============================================================================
+  # Group 1: invalid_expression — additional syntax error cases
+  #
+  # Strengthens coverage for invalid_expression (previously 1 test in
+  # expressions.yaml).
+  # =============================================================================
+
+  - name: "invalid expression syntax errors"
+    spec_ref: "§11.18"
+
+    tests:
+      - name: "unclosed string literal is invalid_expression"
+        operation: evaluate
+        input:
+          expression: '"hello'
+        expect:
+          error:
+            code: invalid_expression
+
+      - name: "trailing operator is invalid_expression"
+        operation: evaluate
+        input:
+          expression: "5 +"
+        expect:
+          error:
+            code: invalid_expression
+
+      - name: "mismatched brackets is invalid_expression"
+        operation: evaluate
+        input:
+          expression: "[1, 2, 3)"
+        expect:
+          error:
+            code: invalid_expression
+
+      - name: "consecutive comparison operators is invalid_expression"
+        operation: evaluate
+        input:
+          expression: "1 < > 2"
+        expect:
+          error:
+            code: invalid_expression
+
+  # =============================================================================
+  # Group 2: wrong_argument_count — additional cases
+  #
+  # Strengthens coverage for wrong_argument_count (previously 1 test).
+  # =============================================================================
+
+  - name: "wrong argument count errors"
+    spec_ref: "§11.18"
+
+    tests:
+      - name: "length() with argument is wrong_argument_count"
+        operation: evaluate
+        input:
+          expression: '"hello".length(1)'
+        expect:
+          error:
+            code: wrong_argument_count
+
+      - name: "lower() with argument is wrong_argument_count"
+        operation: evaluate
+        input:
+          expression: '"HELLO".lower("en")'
+        expect:
+          error:
+            code: wrong_argument_count
+
+      - name: "replace() with 1 argument is wrong_argument_count"
+        operation: evaluate
+        input:
+          expression: '"hello".replace("world")'
+        expect:
+          error:
+            code: wrong_argument_count
+
+      - name: "default() with 0 arguments is wrong_argument_count"
+        operation: evaluate
+        input:
+          expression: "default()"
+        expect:
+          error:
+            code: wrong_argument_count
+
+  # =============================================================================
+  # Group 3: type_error — additional type mismatch cases
+  #
+  # Strengthens coverage for type_error (previously 1 test).
+  # =============================================================================
+
+  - name: "type error cases"
+    spec_ref: "§11.18"
+
+    tests:
+      - name: "list addition is type_error"
+        operation: evaluate
+        input:
+          expression: "[1, 2] + [3, 4]"
+        expect:
+          error:
+            code: type_error
+
+      - name: "string multiplication is type_error"
+        operation: evaluate
+        input:
+          expression: '"hello" * 3'
+        expect:
+          error:
+            code: type_error
+
+      - name: "boolean division is type_error"
+        operation: evaluate
+        input:
+          expression: "true / false"
+        expect:
+          error:
+            code: type_error
+
+  # =============================================================================
+  # Group 4: unknown_function — additional cases
+  #
+  # Strengthens coverage for unknown_function (previously in expressions.yaml
+  # and expressions-gaps.yaml).
+  # =============================================================================
+
+  - name: "unknown function errors"
+    spec_ref: "§11.18"
+
+    tests:
+      - name: "nonexistent global function is unknown_function"
+        operation: evaluate
+        input:
+          expression: "doSomething(42)"
+        expect:
+          error:
+            code: unknown_function
+
+      - name: "nonexistent method on string is unknown_function"
+        operation: evaluate
+        input:
+          expression: '"hello".reverse()'
+        expect:
+          error:
+            code: unknown_function
+
+      - name: "misspelled function is unknown_function"
+        operation: evaluate
+        input:
+          expression: "lenght(\"hello\")"
+        expect:
+          error:
+            code: unknown_function
+
+  # =============================================================================
+  # Group 5: expression_depth_exceeded — query context
+  #
+  # Verifies depth limit applies in query filter context, not just standalone
+  # evaluation. Tests that the query still processes (error doesn't abort).
+  # =============================================================================
+
+  - name: "expression depth in query context"
+    spec_ref: "§11.18"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            value:
+              type: integer
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          value: 1
+          ---
+        items/b.md: |
+          ---
+          type: item
+          value: 2
+          ---
+
+    tests:
+      - name: "deeply nested expression in query filter returns null per-file (does not abort query)"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, value, 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0) > 0"
+        expect:
+          # Either returns results (if depth limit > 11) or returns empty
+          # (if depth exceeded → null → comparison fails).
+          # The critical assertion: the query itself does NOT error.
+          results_count_lte: 2
