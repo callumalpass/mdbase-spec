@@ -186,6 +186,7 @@ due_date:
 **Validation:**
 - Must be a valid date (no February 30th)
 - String format must match ISO 8601
+- YAML date scalars MAY be accepted and MUST be normalized to ISO 8601 on write
 
 ---
 
@@ -211,6 +212,7 @@ created_at:
 **Validation:**
 - Must be valid datetime
 - Implementations MUST preserve timezone information if present
+- YAML timestamp scalars MAY be accepted and MUST be normalized to ISO 8601 on write
 
 ---
 

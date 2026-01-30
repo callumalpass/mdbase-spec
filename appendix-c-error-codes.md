@@ -16,6 +16,7 @@ This appendix defines standard error codes for validation issues and operation e
 | `invalid_enum` | Value not in enum options | "pending" not in [open, done] |
 | `unknown_field` | Field not in schema (strict mode) | Unknown field "custom" |
 | `deprecated_field` | Field is marked deprecated | Field "old_name" is deprecated |
+| `duplicate_id` | `id_field` value is not unique in collection | `id: task-001` appears in multiple files |
 
 ### List Errors
 

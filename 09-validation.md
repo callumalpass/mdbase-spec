@@ -161,6 +161,12 @@ filename_pattern: "{id}.md"
 
 Filename pattern validation is RECOMMENDED but not strictly required.
 
+### 9.2.8 Unique ID Field
+
+If `settings.id_field` is configured (default: `id`), values of that field MUST be
+unique across the collection. If duplicates exist, validation MUST emit a
+`duplicate_id` issue for each file that shares the duplicated value.
+
 ---
 
 ## 9.3 Validation Issue Format

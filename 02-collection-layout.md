@@ -120,7 +120,7 @@ minimal/
 
 **mdbase.yaml:**
 ```yaml
-spec_version: "0.1"
+spec_version: "0.1.0"
 ```
 
 **hello.md:**

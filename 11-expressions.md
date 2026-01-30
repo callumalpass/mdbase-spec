@@ -202,6 +202,11 @@ In `filter()`, `map()`, and `reduce()`, the implicit variables `value` and `inde
 | `now()` | datetime | Current date and time |
 | `today()` | date | Current date (no time) |
 
+**Timezone semantics:**
+- `now()` and `today()` use the implementation's local timezone unless otherwise configured.
+- Date-only values (`date` type) are interpreted in the local timezone for comparisons.
+- Datetime values with explicit offsets MUST be compared in absolute time.
+
 ### Parsing
 
 | Function | Description | Example |
@@ -448,7 +453,6 @@ From highest to lowest:
 8. `&&` - Logical AND
 9. `||` - Logical OR
 10. `??` - Null coalescing
-11. `=>` - Lambda
 
 Use parentheses to clarify complex expressions.
 
@@ -474,6 +478,10 @@ Implementations MAY also support arrow function syntax as an extension:
 tags.map(t => t.lower())
 tasks.filter(t => t.status != "done")
 ```
+
+If arrow functions are supported, implementations SHOULD parse them only within
+function argument positions and treat `=>` as part of the lambda expression itself
+(not as a general-purpose operator).
 
 ---
 

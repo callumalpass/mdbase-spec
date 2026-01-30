@@ -168,6 +168,11 @@ Names MUST:
 - Start with a letter
 - Not exceed 64 characters
 
+Type names are canonicalized to lowercase. Implementations SHOULD treat
+type names case-insensitively when reading frontmatter (`type`/`types`)
+and SHOULD normalize them to lowercase for matching and output while
+emitting a warning for non-canonical casing.
+
 **Reserved names** (MUST NOT be used):
 - Names starting with `_` (reserved for internal use)
 - `file`, `formula`, `this`, `note` (reserved keywords in expressions)

@@ -318,11 +318,16 @@ Renames or moves a file, optionally updating references across the collection.
    - By resolved path (most reliable)
    - By name when unambiguous
 
-3. **Handle ambiguity**:
+3. **ID-based links**:
+   - If a simple-name link (`[[name]]`) resolves via `id_field` and the target file's
+     `id_field` value did not change, implementations SHOULD NOT rewrite the link
+     during rename (to avoid unnecessary churn).
+
+4. **Handle ambiguity**:
    - If a link could refer to multiple files, don't update
    - Emit warning for manual review
 
-4. **Scope**: Update references in ALL collection files, not just same folder
+5. **Scope**: Update references in ALL collection files, not just same folder
 
 ### Output
 

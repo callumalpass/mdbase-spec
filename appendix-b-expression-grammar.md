@@ -64,17 +64,10 @@ primary_expression = literal
                    | identifier
                    | "(" expression ")"
                    | if_expression
-                   | lambda_expression
                    | list_literal ;
 
 (* If expression *)
 if_expression = "if" "(" expression "," expression "," expression ")" ;
-
-(* Lambda expressions *)
-lambda_expression = identifier "=>" expression
-                  | "(" [ parameter_list ] ")" "=>" expression ;
-
-parameter_list = identifier { "," identifier } ;
 
 (* Literals *)
 literal = string_literal
@@ -131,7 +124,6 @@ From highest to lowest precedence:
 | 8 | `&&` | Left-to-right | Logical AND |
 | 9 | `||` | Left-to-right | Logical OR |
 | 10 | `??` | Left-to-right | Null coalescing |
-| 11 | `=>` | Right-to-left | Lambda |
 
 ---
 
@@ -242,13 +234,13 @@ and_expression
     └── string_literal: "done"
 ```
 
-### Method Chain
+### Method Chain (Arrow Extension Only)
 
 ```
 tags.filter(t => t.startsWith("bug")).length > 0
 ```
 
-Parse tree:
+Parse tree (only valid if the optional arrow-function extension is enabled):
 ```
 comparison_expression
 ├── postfix_expression
@@ -302,6 +294,7 @@ BOOLEAN       : 'true' | 'false'
 NULL          : 'null'
 IF            : 'if'
 OPERATOR      : '==' | '!=' | '<=' | '>=' | '<' | '>' | '&&' | '||' | '!' | '+' | '-' | '*' | '/' | '%' | '??' | '=>'
+               (* include '=>' only if the optional arrow-function extension is enabled *)
 PUNCTUATION   : '(' | ')' | '[' | ']' | '.' | ','
 ```
 
@@ -322,4 +315,18 @@ Expression parse error at position 15:
   Found: end of input
   
   Hint: Expression is incomplete after '&&'
+```
+
+---
+
+## B.10 Optional Arrow-Function Extension
+
+Implementations MAY support arrow-function syntax in list methods. If supported,
+the following grammar is added for lambda expressions used within argument lists:
+
+```ebnf
+lambda_expression = identifier "=>" expression
+                 | "(" [ parameter_list ] ")" "=>" expression ;
+
+parameter_list = identifier { "," identifier } ;
 ```

@@ -28,7 +28,7 @@ The file MUST be valid YAML and MUST parse as a mapping at the top level.
 The simplest valid configuration declares only the specification version:
 
 ```yaml
-spec_version: "0.1"
+spec_version: "0.1.0"
 ```
 
 This creates a collection with all default settings and no types (all files are untyped).
@@ -44,7 +44,7 @@ This creates a collection with all default settings and no types (all files are 
 
 # Specification version this configuration conforms to
 # Implementations MUST reject versions they do not support
-spec_version: "0.1"
+spec_version: "0.1.0"
 
 # =============================================================================
 # OPTIONAL: Collection Metadata
@@ -68,6 +68,7 @@ settings:
   # Additional file extensions to treat as markdown (beyond .md which is always included)
   # Default: []
   # Common additions: ["mdx", "markdown"]
+  # Entries MAY include a leading dot; implementations MUST normalize to no-dot.
   extensions: ["mdx"]
   
   # Paths to exclude from scanning (relative to collection root)
@@ -166,7 +167,10 @@ settings:
 
 The version of this specification the configuration conforms to. Implementations MUST check this value and MUST reject configuration files with versions they do not support.
 
-**Valid values:** `"0.1"`
+**Valid values:** `"0.1.0"`
+
+**Compatibility:** Implementations MAY accept `"0.1"` as an alias for `"0.1.0"`, but
+SHOULD emit a warning and normalize to `"0.1.0"` when writing.
 
 ### `name` and `description`
 
@@ -177,6 +181,11 @@ Human-readable metadata about the collection. These have no semantic effect but 
 File extensions to scan. The extension `.md` is always implicitly included. This setting specifies **additional** extensions beyond `.md`:
 
 **Default:** `[]`
+
+**Normalization:**
+- Implementations MUST treat entries with or without a leading dot as equivalent.
+- The `.md` extension is always implicitly included and MUST NOT be required in this list.
+- If `md` or `.md` appears in `extensions`, it SHOULD be ignored with a warning.
 
 **Example:** To include MDX files:
 ```yaml
@@ -259,6 +268,10 @@ Default strictness mode for types that don't declare their own.
 
 The field name used as a unique identifier for link resolution. When a link is a simple name (not a path), implementations search for files where this field matches.
 
+**Uniqueness requirement:** Values of the `id_field` MUST be unique across the collection.
+Implementations MUST validate uniqueness and report `duplicate_id` issues when multiple
+files share the same `id_field` value.
+
 **Default:** `"id"`
 
 **Example:** With `id_field: "id"`, the link `[[task-001]]` would resolve to a file with `id: task-001` in its frontmatter.
@@ -307,13 +320,13 @@ If validation fails, implementations MUST NOT process the collection and MUST re
 ### Minimal
 
 ```yaml
-spec_version: "0.1"
+spec_version: "0.1.0"
 ```
 
 ### Standard Project
 
 ```yaml
-spec_version: "0.1"
+spec_version: "0.1.0"
 name: "Project Documentation"
 description: "Specs, decisions, and meeting notes"
 
@@ -328,12 +341,12 @@ settings:
 ### Knowledge Base with Custom Types Folder
 
 ```yaml
-spec_version: "0.1"
+spec_version: "0.1.0"
 name: "Personal Knowledge Base"
 
 settings:
   types_folder: "schemas"
-  extensions: ["md", "mdx"]
+  extensions: ["mdx"]
   default_strict: "warn"
   id_field: "uid"
 ```
@@ -341,7 +354,7 @@ settings:
 ### Strict Validation
 
 ```yaml
-spec_version: "0.1"
+spec_version: "0.1.0"
 name: "Production Data"
 
 settings:

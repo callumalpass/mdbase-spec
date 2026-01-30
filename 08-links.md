@@ -143,13 +143,15 @@ Given a link value and the path of the file containing it:
 
 4. **If simple name** (no `/`, no `./` or `../`):
    - If the link field has `target` constraint specifying a type, search files of that type by `id_field`
-   - Otherwise, search the entire collection for a file with matching filename (sans extension)
+   - Otherwise, search the entire collection for a file where `id_field` matches the name
+     (if no `id_field` match exists, fall back to filename matching)
    - If multiple candidates match, apply tiebreakers in order:
      a. **Same directory**: Prefer a file in the same directory as the referring file
      b. **Shortest path**: Prefer the file with the shortest path (closest to collection root)
      c. **Alphabetical**: Sort candidate paths lexicographically and take the first
    - If multiple candidates remain after all tiebreakers, resolve to `null` and emit an `ambiguous_link` warning
-   - Example: `[[task-001]]` might find `tasks/task-001.md` or a file with `id: task-001`
+   - If multiple files share the same `id_field` value, resolution MUST fail with `ambiguous_link`
+    - Example: `[[task-001]]` might find `tasks/task-001.md` or a file with `id: task-001`
 
 5. **Extension handling**:
    - If target lacks extension, try configured extensions in order (default: `.md`)
@@ -241,7 +243,41 @@ Default is `false` (links can point to non-existent files).
 
 ---
 
-## 8.6 Link Traversal
+## 8.6 Link and Tag Extraction (for `file.*` properties)
+
+To support `file.links`, `file.backlinks`, `file.embeds`, and `file.tags`, implementations
+MUST extract links and tags from both frontmatter and body content using these rules:
+
+### Link Extraction
+
+**Included:**
+- Frontmatter fields of type `link` and `list` of `link`
+- Body links in wikilink form (`[[target]]`, `[[target|alias]]`, `[[target#anchor]]`)
+- Body links in markdown form (`[text](path.md)`), including `#anchor`
+- Embeds in wikilink form (`![[target]]`) and markdown form (`![alt](path.md)`)
+
+**Excluded:**
+- Links inside fenced code blocks
+- Links inside inline code spans
+
+`file.links` returns all non-embed links; `file.embeds` returns only embeds.
+
+### Tag Extraction
+
+`file.tags` includes:
+- Frontmatter `tags` field if present (string or list of strings)
+- Inline tags in body content of the form `#tag`
+
+Inline tags MUST:
+- Start at a word boundary
+- Match the pattern `[A-Za-z0-9_-]+` after `#`
+- Be outside fenced code blocks and inline code spans
+
+Implementations SHOULD ignore tags embedded in URLs (e.g., `https://...#anchor`).
+
+---
+
+## 8.7 Link Traversal
 
 Links can be traversed to access properties of the linked file. This is **single-hop traversal only**—not a full relational join.
 
@@ -289,7 +325,7 @@ Link traversal requires loading and parsing the target file. Implementations SHO
 
 ---
 
-## 8.7 Link Functions
+## 8.8 Link Functions
 
 The following functions operate on links and files in expressions:
 

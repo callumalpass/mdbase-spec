@@ -23,6 +23,8 @@ A file's types are determined by:
 ## 6.2 Explicit Type Declaration
 
 Files can explicitly declare their type(s) using frontmatter keys defined in `settings.explicit_type_keys` (default: `type` and `types`).
+Type names SHOULD be treated case-insensitively when read from frontmatter and
+normalized to lowercase for matching; non-canonical casing SHOULD emit a warning.
 
 ### Single Type
 
@@ -237,6 +239,17 @@ When two types define the same field differently:
 # Type B: priority as integer 1-3
 # Effective: priority as integer 1-3 (most restrictive)
 ```
+
+**Composite and advanced constraints:**
+
+| Constraint | Merge Rule |
+|-----------|------------|
+| `list.items` | Item schemas MUST be compatible and are merged recursively using these same rules |
+| `object.fields` | Fields are merged by name; overlapping fields are merged recursively |
+| `generated` | If both define `generated`, the values MUST be identical; otherwise error |
+| `deprecated` | `true` if EITHER type marks the field deprecated |
+| `link.target` | If both define `target`, they MUST be identical; otherwise error |
+| `link.validate_exists` | `true` if EITHER type sets it to true |
 
 **Incompatible definitions** occur when:
 - The base types differ (e.g., `string` vs `integer`)

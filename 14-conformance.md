@@ -116,7 +116,7 @@ category: validation
 
 setup:
   config: |
-    spec_version: "0.1"
+    spec_version: "0.1.0"
   types:
     task.md: |
       ---

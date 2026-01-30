@@ -118,6 +118,12 @@ where:
         - "draft == true"
 ```
 
+**Shape rules (Obsidian Bases-compatible):**
+- A `where` value MAY be a string expression.
+- A `where` value MAY be a logical object with one of the keys `and`, `or`, `not`.
+- `and`/`or` values are lists of conditions (each condition is either a string expression or another logical object).
+- `not` value is a single condition (string expression or logical object).
+
 See [Expressions](./11-expressions.md) for the full expression language.
 
 ### `order_by`
@@ -137,6 +143,8 @@ order_by:
 - `desc`: Descending (Z-A, 9-1, newest-oldest)
 
 **Null handling:** Null values sort last by default.
+**Tie-breakers:** If all `order_by` fields compare equal, implementations MUST
+apply a stable tie-breaker by ascending `file.path` to ensure deterministic output.
 
 **Formula sorting:**
 ```yaml
