@@ -1,0 +1,883 @@
+name: "regex feature baseline"
+level: 1
+category: validation
+spec_ref: "§4.8"
+
+groups:
+  # =============================================================================
+  # Group 1: Character classes (MUST support)
+  # =============================================================================
+
+  - name: "regex character classes"
+    spec_ref: "§4.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            code:
+              type: string
+              pattern: "^[A-Z]{3}-\\d{3}$"
+          ---
+
+    tests:
+      - name: "character class [A-Z] and \\d match valid input"
+        operation: validate
+        input:
+          path: "items/a.md"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              type: item
+              code: "ABC-123"
+              ---
+        expect:
+          valid: true
+
+      - name: "character class [A-Z] rejects lowercase"
+        operation: validate
+        input:
+          path: "items/b.md"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              type: item
+              code: "abc-123"
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: code
+
+      - name: "\\d rejects non-digit"
+        operation: validate
+        input:
+          path: "items/c.md"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              type: item
+              code: "ABC-XYZ"
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: code
+
+  # =============================================================================
+  # Group 2: Negated character classes
+  # =============================================================================
+
+  - name: "negated character class"
+    spec_ref: "§4.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            label:
+              type: string
+              pattern: "^[^0-9]+$"
+          ---
+
+    tests:
+      - name: "[^0-9] matches non-digit string"
+        operation: validate
+        input:
+          path: "items/a.md"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              type: item
+              label: "hello world"
+              ---
+        expect:
+          valid: true
+
+      - name: "[^0-9] rejects string with digits"
+        operation: validate
+        input:
+          path: "items/b.md"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              type: item
+              label: "hello 42"
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: label
+
+  # =============================================================================
+  # Group 3: Quantifiers (MUST support)
+  # =============================================================================
+
+  - name: "regex quantifiers"
+    spec_ref: "§4.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            star:
+              type: string
+              pattern: "^a*$"
+            plus:
+              type: string
+              pattern: "^b+$"
+            optional:
+              type: string
+              pattern: "^colou?r$"
+            exact:
+              type: string
+              pattern: "^\\d{4}$"
+            range:
+              type: string
+              pattern: "^x{2,4}$"
+          ---
+
+    tests:
+      - name: "star quantifier matches zero occurrences"
+        operation: validate
+        input:
+          path: "items/a.md"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              type: item
+              star: ""
+              ---
+        expect:
+          valid: true
+
+      - name: "star quantifier matches multiple occurrences"
+        operation: validate
+        input:
+          path: "items/b.md"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              type: item
+              star: "aaa"
+              ---
+        expect:
+          valid: true
+
+      - name: "plus quantifier rejects zero occurrences"
+        operation: validate
+        input:
+          path: "items/c.md"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              type: item
+              plus: ""
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: plus
+
+      - name: "plus quantifier matches one or more"
+        operation: validate
+        input:
+          path: "items/d.md"
+        setup:
+          files:
+            items/d.md: |
+              ---
+              type: item
+              plus: "bbb"
+              ---
+        expect:
+          valid: true
+
+      - name: "optional quantifier matches with and without"
+        operation: validate
+        input:
+          path: "items/e.md"
+        setup:
+          files:
+            items/e.md: |
+              ---
+              type: item
+              optional: "color"
+              ---
+        expect:
+          valid: true
+
+      - name: "optional quantifier matches variant spelling"
+        operation: validate
+        input:
+          path: "items/f.md"
+        setup:
+          files:
+            items/f.md: |
+              ---
+              type: item
+              optional: "colour"
+              ---
+        expect:
+          valid: true
+
+      - name: "exact quantifier {4} matches exactly four digits"
+        operation: validate
+        input:
+          path: "items/g.md"
+        setup:
+          files:
+            items/g.md: |
+              ---
+              type: item
+              exact: "2024"
+              ---
+        expect:
+          valid: true
+
+      - name: "exact quantifier {4} rejects three digits"
+        operation: validate
+        input:
+          path: "items/h.md"
+        setup:
+          files:
+            items/h.md: |
+              ---
+              type: item
+              exact: "202"
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: exact
+
+      - name: "range quantifier {2,4} matches within range"
+        operation: validate
+        input:
+          path: "items/i.md"
+        setup:
+          files:
+            items/i.md: |
+              ---
+              type: item
+              range: "xxx"
+              ---
+        expect:
+          valid: true
+
+      - name: "range quantifier {2,4} rejects below range"
+        operation: validate
+        input:
+          path: "items/j.md"
+        setup:
+          files:
+            items/j.md: |
+              ---
+              type: item
+              range: "x"
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: range
+
+  # =============================================================================
+  # Group 4: Alternation (MUST support)
+  # =============================================================================
+
+  - name: "regex alternation"
+    spec_ref: "§4.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            animal:
+              type: string
+              pattern: "^(cat|dog|bird)$"
+          ---
+
+    tests:
+      - name: "alternation matches first alternative"
+        operation: validate
+        input:
+          path: "items/a.md"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              type: item
+              animal: "cat"
+              ---
+        expect:
+          valid: true
+
+      - name: "alternation matches last alternative"
+        operation: validate
+        input:
+          path: "items/b.md"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              type: item
+              animal: "bird"
+              ---
+        expect:
+          valid: true
+
+      - name: "alternation rejects non-matching value"
+        operation: validate
+        input:
+          path: "items/c.md"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              type: item
+              animal: "fish"
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: animal
+
+  # =============================================================================
+  # Group 5: Anchors (MUST support)
+  # =============================================================================
+
+  - name: "regex anchors"
+    spec_ref: "§4.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            code:
+              type: string
+              pattern: "^TASK-"
+            suffix:
+              type: string
+              pattern: "-END$"
+          ---
+
+    tests:
+      - name: "start anchor ^ matches at beginning"
+        operation: validate
+        input:
+          path: "items/a.md"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              type: item
+              code: "TASK-001"
+              ---
+        expect:
+          valid: true
+
+      - name: "start anchor ^ rejects non-matching prefix"
+        operation: validate
+        input:
+          path: "items/b.md"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              type: item
+              code: "BUG-001"
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: code
+
+      - name: "end anchor $ matches at end"
+        operation: validate
+        input:
+          path: "items/c.md"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              type: item
+              suffix: "data-END"
+              ---
+        expect:
+          valid: true
+
+      - name: "end anchor $ rejects non-matching suffix"
+        operation: validate
+        input:
+          path: "items/d.md"
+        setup:
+          files:
+            items/d.md: |
+              ---
+              type: item
+              suffix: "data-START"
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: suffix
+
+  # =============================================================================
+  # Group 6: Groups — capturing and non-capturing (MUST support)
+  # =============================================================================
+
+  - name: "regex groups"
+    spec_ref: "§4.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            date_code:
+              type: string
+              pattern: "^(\\d{4})-(\\d{2})-(\\d{2})$"
+            prefix:
+              type: string
+              pattern: "^(?:foo|bar)-\\w+$"
+          ---
+
+    tests:
+      - name: "capturing group matches structured input"
+        operation: validate
+        input:
+          path: "items/a.md"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              type: item
+              date_code: "2024-03-15"
+              ---
+        expect:
+          valid: true
+
+      - name: "capturing group rejects malformed input"
+        operation: validate
+        input:
+          path: "items/b.md"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              type: item
+              date_code: "24-3-15"
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: date_code
+
+      - name: "non-capturing group (?:...) matches correctly"
+        operation: validate
+        input:
+          path: "items/c.md"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              type: item
+              prefix: "foo-widget"
+              ---
+        expect:
+          valid: true
+
+      - name: "non-capturing group alternative matches"
+        operation: validate
+        input:
+          path: "items/d.md"
+        setup:
+          files:
+            items/d.md: |
+              ---
+              type: item
+              prefix: "bar-gadget"
+              ---
+        expect:
+          valid: true
+
+      - name: "non-capturing group rejects non-matching prefix"
+        operation: validate
+        input:
+          path: "items/e.md"
+        setup:
+          files:
+            items/e.md: |
+              ---
+              type: item
+              prefix: "baz-thing"
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: prefix
+
+  # =============================================================================
+  # Group 7: Lookahead (MUST support)
+  # =============================================================================
+
+  - name: "regex lookahead"
+    spec_ref: "§4.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            positive_look:
+              type: string
+              pattern: "\\d+(?= items)"
+            negative_look:
+              type: string
+              pattern: "^\\d+(?!px)$"
+          ---
+
+    tests:
+      - name: "positive lookahead (?=...) matches when followed by pattern"
+        operation: validate
+        input:
+          path: "items/a.md"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              type: item
+              positive_look: "42 items"
+              ---
+        expect:
+          valid: true
+
+      - name: "positive lookahead fails when not followed by pattern"
+        operation: validate
+        input:
+          path: "items/b.md"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              type: item
+              positive_look: "42 things"
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: positive_look
+
+      - name: "negative lookahead (?!...) matches when not followed by pattern"
+        operation: validate
+        input:
+          path: "items/c.md"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              type: item
+              negative_look: "100"
+              ---
+        expect:
+          valid: true
+
+      - name: "negative lookahead rejects when followed by pattern"
+        operation: validate
+        input:
+          path: "items/d.md"
+        setup:
+          files:
+            items/d.md: |
+              ---
+              type: item
+              negative_look: "100px"
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: negative_look
+
+  # =============================================================================
+  # Group 8: Shorthand character classes (MUST support)
+  # =============================================================================
+
+  - name: "shorthand character classes"
+    spec_ref: "§4.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            word_chars:
+              type: string
+              pattern: "^\\w+$"
+            whitespace:
+              type: string
+              pattern: "\\s"
+          ---
+
+    tests:
+      - name: "\\w matches word characters (letters, digits, underscore)"
+        operation: validate
+        input:
+          path: "items/a.md"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              type: item
+              word_chars: "hello_world_42"
+              ---
+        expect:
+          valid: true
+
+      - name: "\\w rejects non-word characters"
+        operation: validate
+        input:
+          path: "items/b.md"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              type: item
+              word_chars: "hello world"
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: word_chars
+
+      - name: "\\s matches whitespace"
+        operation: validate
+        input:
+          path: "items/c.md"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              type: item
+              whitespace: "hello world"
+              ---
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 9: Expression-level regex (matches method)
+  # =============================================================================
+
+  - name: "regex in expression matches() method"
+    spec_ref: "§4.8, §11.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "TASK-0001 Fix login bug"
+          ---
+        items/b.md: |
+          ---
+          type: item
+          title: "Update README"
+          ---
+        items/c.md: |
+          ---
+          type: item
+          title: "BUG-1234 Crash on startup"
+          ---
+
+    tests:
+      - name: "matches() with character class and quantifier"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.matches("^[A-Z]+-\\d+ ")'
+        expect:
+          results:
+            - path: "items/a.md"
+            - path: "items/c.md"
+          meta:
+            total_count: 2
+
+      - name: "matches() with alternation"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.matches("^(TASK|BUG)-")'
+        expect:
+          results:
+            - path: "items/a.md"
+            - path: "items/c.md"
+          meta:
+            total_count: 2
+
+      - name: "matches() with non-capturing group"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.matches("(?:Fix|Update)")'
+        expect:
+          results:
+            - path: "items/a.md"
+            - path: "items/b.md"
+          meta:
+            total_count: 2
+
+      - name: "matches() with word boundary \\b"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.matches("\\bFix\\b")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 10: Invalid regex handling
+  # =============================================================================
+
+  - name: "invalid regex patterns"
+    spec_ref: "§4.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+
+    tests:
+      - name: "unclosed bracket in field pattern rejects type definition"
+        operation: load_types
+        setup:
+          types:
+            item.md: |
+              ---
+              name: item
+              fields:
+                code:
+                  type: string
+                  pattern: "[unclosed"
+              ---
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition
+
+      - name: "unclosed parenthesis in field pattern rejects type definition"
+        operation: load_types
+        setup:
+          types:
+            item.md: |
+              ---
+              name: item
+              fields:
+                code:
+                  type: string
+                  pattern: "(unclosed"
+              ---
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition
+
+      - name: "invalid quantifier in field pattern rejects type definition"
+        operation: load_types
+        setup:
+          types:
+            item.md: |
+              ---
+              name: item
+              fields:
+                code:
+                  type: string
+                  pattern: "*invalid"
+              ---
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition

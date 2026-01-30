@@ -1,0 +1,339 @@
+name: "type creation via tooling"
+level: 1
+category: types
+spec_ref: "§5.9"
+
+groups:
+  # =============================================================================
+  # Group 1: Basic type creation
+  # =============================================================================
+
+  - name: "create type definition file"
+    spec_ref: "§5.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+      files: {}
+
+    tests:
+      - name: "create a minimal type definition"
+        operation: create_type
+        input:
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+        expect:
+          path: "_types/task.md"
+          type_loaded: true
+
+      - name: "create type with all field constraint types"
+        operation: create_type
+        input:
+          name: project
+          fields:
+            title:
+              type: string
+              required: true
+              min_length: 1
+              max_length: 200
+            priority:
+              type: integer
+              min: 1
+              max: 5
+              default: 3
+            status:
+              type: enum
+              values: [active, paused, done]
+            tags:
+              type: list
+              items:
+                type: string
+        expect:
+          path: "_types/project.md"
+          type_loaded: true
+
+      - name: "created type is usable for file validation"
+        operation: create_type
+        input:
+          name: note
+          fields:
+            title:
+              type: string
+              required: true
+        expect:
+          type_loaded: true
+        verify_after:
+          - operation: create
+            input:
+              type: note
+              path: "notes/n1.md"
+              frontmatter:
+                title: "Test note"
+            expect:
+              path: "notes/n1.md"
+              frontmatter:
+                title: "Test note"
+
+  # =============================================================================
+  # Group 2: Type definition validation during creation
+  # =============================================================================
+
+  - name: "type definition schema validation"
+    spec_ref: "§5.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+
+    tests:
+      - name: "reject type with invalid field type"
+        operation: create_type
+        input:
+          name: bad
+          fields:
+            title:
+              type: nonexistent_type
+        expect:
+          error:
+            code: invalid_type_definition
+
+      - name: "reject type with reserved name (underscore prefix)"
+        operation: create_type
+        input:
+          name: _internal
+          fields:
+            title:
+              type: string
+        expect:
+          error:
+            code: invalid_type_definition
+
+      - name: "reject type with reserved name 'file'"
+        operation: create_type
+        input:
+          name: file
+          fields:
+            title:
+              type: string
+        expect:
+          error:
+            code: invalid_type_definition
+
+      - name: "reject type with reserved name 'formula'"
+        operation: create_type
+        input:
+          name: formula
+          fields:
+            title:
+              type: string
+        expect:
+          error:
+            code: invalid_type_definition
+
+      - name: "reject type with reserved name 'this'"
+        operation: create_type
+        input:
+          name: this
+          fields:
+            title:
+              type: string
+        expect:
+          error:
+            code: invalid_type_definition
+
+  # =============================================================================
+  # Group 3: Name conflict detection
+  # =============================================================================
+
+  - name: "type name conflict detection"
+    spec_ref: "§5.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "reject creation when type name already exists"
+        operation: create_type
+        input:
+          name: task
+          fields:
+            title:
+              type: string
+        expect:
+          error:
+            code: path_conflict
+
+      - name: "reject creation when name conflicts case-insensitively"
+        operation: create_type
+        input:
+          name: Task
+          fields:
+            title:
+              type: string
+        expect:
+          error:
+            code: path_conflict
+
+  # =============================================================================
+  # Group 4: Type creation with inheritance
+  # =============================================================================
+
+  - name: "create type with parent"
+    spec_ref: "§5.9, §5.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        base.md: |
+          ---
+          name: base
+          fields:
+            title:
+              type: string
+              required: true
+            created_at:
+              type: datetime
+              generated: now
+          ---
+
+    tests:
+      - name: "create type that extends existing parent"
+        operation: create_type
+        input:
+          name: task
+          parent: base
+          fields:
+            status:
+              type: enum
+              values: [open, done]
+        expect:
+          path: "_types/task.md"
+          type_loaded: true
+        verify_after:
+          - operation: create
+            input:
+              type: task
+              path: "tasks/t1.md"
+              frontmatter:
+                title: "Inherited"
+                status: "open"
+            expect:
+              frontmatter:
+                title: "Inherited"
+                status: "open"
+
+      - name: "reject type with nonexistent parent"
+        operation: create_type
+        input:
+          name: orphan
+          parent: nonexistent
+          fields:
+            title:
+              type: string
+        expect:
+          error:
+            code: missing_parent_type
+
+  # =============================================================================
+  # Group 5: Custom types folder
+  # =============================================================================
+
+  - name: "type creation respects custom types folder"
+    spec_ref: "§5.9, §4.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          types_folder: "schemas"
+      types: {}
+
+    tests:
+      - name: "type file created in custom types folder"
+        operation: create_type
+        input:
+          name: task
+          fields:
+            title:
+              type: string
+        expect:
+          path: "schemas/task.md"
+          type_loaded: true
+
+  # =============================================================================
+  # Group 6: Registry reload after creation
+  # =============================================================================
+
+  - name: "types registry reloaded after creation"
+    spec_ref: "§5.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+
+    tests:
+      - name: "newly created type immediately available for queries"
+        operation: create_type
+        input:
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+        expect:
+          type_loaded: true
+        verify_after:
+          - operation: create
+            input:
+              type: task
+              path: "tasks/t1.md"
+              frontmatter:
+                title: "Query test"
+            expect:
+              path: "tasks/t1.md"
+          - operation: query
+            input:
+              query:
+                types: [task]
+            expect:
+              meta:
+                total_count: 1
+
+      - name: "newly created type available for validation"
+        operation: create_type
+        input:
+          name: strict_note
+          strict: true
+          fields:
+            title:
+              type: string
+              required: true
+        expect:
+          type_loaded: true
+        verify_after:
+          - operation: create
+            input:
+              type: strict_note
+              path: "notes/n1.md"
+              frontmatter:
+                title: "Valid"
+                extra: "rejected"
+            expect:
+              error:
+                code: validation_failed
