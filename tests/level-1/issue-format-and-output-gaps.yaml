@@ -1,0 +1,495 @@
+name: "validation issue format and operation output completeness"
+level: 1
+category: validation
+spec_ref: "§9.3, §12.1, §12.2, §12.3"
+
+groups:
+  # =============================================================================
+  # Group 1: Validation issue message field (§9.3)
+  #
+  # §9.3 says each validation issue MUST include: path, field, code, message,
+  # severity. Existing tests verify path, field, code, and severity but never
+  # check that the message field is present and non-empty.
+  # =============================================================================
+
+  - name: "validation issue must include message field"
+    spec_ref: "§9.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        article.md: |
+          ---
+          name: article
+          strict: true
+          fields:
+            title:
+              type: string
+              required: true
+              min_length: 1
+            priority:
+              type: integer
+              min: 1
+              max: 10
+            status:
+              type: enum
+              values: [draft, review, published]
+            tags:
+              type: list
+              items:
+                type: string
+              min_items: 1
+          ---
+
+    tests:
+      - name: "missing_required issue includes non-empty message"
+        setup:
+          files:
+            articles/no-title.md: |
+              ---
+              type: article
+              priority: 5
+              tags: ["test"]
+              ---
+        operation: validate
+        input:
+          path: "articles/no-title.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
+              path: "articles/no-title.md"
+              severity: error
+              message_present: true
+
+      - name: "number_too_large issue includes non-empty message"
+        setup:
+          files:
+            articles/big-priority.md: |
+              ---
+              type: article
+              title: "Test"
+              priority: 99
+              tags: ["test"]
+              ---
+        operation: validate
+        input:
+          path: "articles/big-priority.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_large
+              field: priority
+              path: "articles/big-priority.md"
+              severity: error
+              message_present: true
+
+      - name: "invalid_enum issue includes non-empty message"
+        setup:
+          files:
+            articles/bad-status.md: |
+              ---
+              type: article
+              title: "Test"
+              status: "archived"
+              tags: ["test"]
+              ---
+        operation: validate
+        input:
+          path: "articles/bad-status.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_enum
+              field: status
+              path: "articles/bad-status.md"
+              severity: error
+              message_present: true
+
+      - name: "string_too_short issue includes non-empty message"
+        setup:
+          files:
+            articles/empty-title.md: |
+              ---
+              type: article
+              title: ""
+              tags: ["test"]
+              ---
+        operation: validate
+        input:
+          path: "articles/empty-title.md"
+        expect:
+          valid: false
+          issues:
+            - code: string_too_short
+              field: title
+              path: "articles/empty-title.md"
+              severity: error
+              message_present: true
+
+      - name: "unknown_field issue includes non-empty message"
+        setup:
+          files:
+            articles/extra.md: |
+              ---
+              type: article
+              title: "Test"
+              tags: ["test"]
+              mystery: "unexpected"
+              ---
+        operation: validate
+        input:
+          path: "articles/extra.md"
+        expect:
+          valid: false
+          issues:
+            - code: unknown_field
+              field: mystery
+              path: "articles/extra.md"
+              severity: error
+              message_present: true
+
+      - name: "list_too_short issue includes non-empty message"
+        setup:
+          files:
+            articles/no-tags.md: |
+              ---
+              type: article
+              title: "Test"
+              tags: []
+              ---
+        operation: validate
+        input:
+          path: "articles/no-tags.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_too_short
+              field: tags
+              path: "articles/no-tags.md"
+              severity: error
+              message_present: true
+
+      - name: "type_mismatch issue includes non-empty message"
+        setup:
+          files:
+            articles/wrong-type.md: |
+              ---
+              type: article
+              title: "Test"
+              priority: "high"
+              tags: ["test"]
+              ---
+        operation: validate
+        input:
+          path: "articles/wrong-type.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_mismatch
+              field: priority
+              path: "articles/wrong-type.md"
+              severity: error
+              message_present: true
+
+      - name: "multiple issues all include non-empty message"
+        setup:
+          files:
+            articles/multi-error.md: |
+              ---
+              type: article
+              priority: -1
+              status: "invalid"
+              tags: []
+              ---
+        operation: validate
+        input:
+          path: "articles/multi-error.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
+              message_present: true
+            - code: number_too_small
+              field: priority
+              message_present: true
+            - code: invalid_enum
+              field: status
+              message_present: true
+            - code: list_too_short
+              field: tags
+              message_present: true
+
+  # =============================================================================
+  # Group 2: Failed create does not leave a file (§12.1, §12.6)
+  #
+  # §12.1 says create should write atomically. If validation fails, no file
+  # should exist at the target path. The existing atomicity test only covers
+  # update (failed update doesn't corrupt existing file). This tests that a
+  # failed create leaves no partial file.
+  # =============================================================================
+
+  - name: "failed create does not leave partial file"
+    spec_ref: "§12.1, §12.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            priority:
+              type: integer
+              min: 1
+              max: 5
+          ---
+      files: {}
+
+    tests:
+      - name: "failed create validation leaves no file at target path"
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            priority: 99
+          path: "tasks/should-not-exist.md"
+        expect:
+          error:
+            code: validation_failed
+        verify_after:
+          operation: read
+          input:
+            path: "tasks/should-not-exist.md"
+          expect:
+            error:
+              code: file_not_found
+
+      - name: "failed create with missing required field leaves no file"
+        operation: create
+        input:
+          type: task
+          frontmatter: {}
+          path: "tasks/also-missing.md"
+        expect:
+          error:
+            code: validation_failed
+        verify_after:
+          operation: read
+          input:
+            path: "tasks/also-missing.md"
+          expect:
+            error:
+              code: file_not_found
+
+  # =============================================================================
+  # Group 3: Read output file metadata (§12.2)
+  #
+  # §12.2 defines the read output structure including file metadata fields:
+  # name, folder, mtime, and size. Existing tests check name and folder but
+  # not mtime and size.
+  # =============================================================================
+
+  - name: "read output includes full file metadata"
+    spec_ref: "§12.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/example.md: |
+          ---
+          type: note
+          title: "Example note"
+          ---
+          Some body content.
+
+    tests:
+      - name: "read returns file.name"
+        operation: read
+        input:
+          path: "notes/example.md"
+        expect:
+          file:
+            name: "example.md"
+
+      - name: "read returns file.folder"
+        operation: read
+        input:
+          path: "notes/example.md"
+        expect:
+          file:
+            folder: "notes"
+
+      - name: "read returns file.mtime as valid datetime"
+        operation: read
+        input:
+          path: "notes/example.md"
+        expect:
+          file:
+            mtime_present: true
+
+      - name: "read returns file.size as positive integer"
+        operation: read
+        input:
+          path: "notes/example.md"
+        expect:
+          file:
+            size_positive: true
+
+      - name: "read returns types array"
+        operation: read
+        input:
+          path: "notes/example.md"
+        expect:
+          types: [note]
+
+  # =============================================================================
+  # Group 4: Update output previous/updated fields (§12.3)
+  #
+  # §12.3 defines the update output including previous and updated field values.
+  # These help callers understand what changed. No existing test verifies these
+  # output fields.
+  # =============================================================================
+
+  - name: "update output includes changed field tracking"
+    spec_ref: "§12.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, in_progress, done]
+            priority:
+              type: integer
+              min: 1
+              max: 5
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Original title"
+          status: open
+          priority: 3
+          ---
+
+    tests:
+      - name: "update single field reports previous and updated values"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            status: done
+        expect:
+          frontmatter:
+            title: "Original title"
+            status: done
+            priority: 3
+          previous:
+            status: open
+          updated:
+            status: done
+
+      - name: "update multiple fields reports all changes"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            status: in_progress
+            priority: 5
+        expect:
+          frontmatter:
+            title: "Original title"
+            status: in_progress
+            priority: 5
+          previous:
+            status: open
+            priority: 3
+          updated:
+            status: in_progress
+            priority: 5
+
+      - name: "update with no actual change reports empty changes"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            status: open
+        expect:
+          frontmatter:
+            title: "Original title"
+            status: open
+            priority: 3
+
+  # =============================================================================
+  # Group 5: Deprecated field message content (§9.3, §7.2)
+  #
+  # deprecated_field issues are warnings. The message should mention the field
+  # is deprecated.
+  # =============================================================================
+
+  - name: "deprecated field issue includes descriptive message"
+    spec_ref: "§9.3, §7.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        doc.md: |
+          ---
+          name: doc
+          fields:
+            title:
+              type: string
+            old_name:
+              type: string
+              deprecated: true
+          ---
+      files:
+        docs/with-deprecated.md: |
+          ---
+          type: doc
+          title: "Test"
+          old_name: "legacy value"
+          ---
+
+    tests:
+      - name: "deprecated_field issue includes message_present"
+        operation: validate
+        input:
+          path: "docs/with-deprecated.md"
+        expect:
+          valid: true
+          issues:
+            - code: deprecated_field
+              field: old_name
+              severity: warning
+              message_present: true
