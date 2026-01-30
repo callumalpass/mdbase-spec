@@ -95,6 +95,8 @@ config: "./config.md"
 parent: "../parent-project/overview.md"
 ```
 
+Bare paths follow the same resolution rules as markdown links: they are relative to the containing file's directory unless they start with `/` (root-relative).
+
 ---
 
 ## 8.3 Link Parsing
@@ -133,15 +135,18 @@ Given a link value and the path of the file containing it:
 
 1. **Parse the link** into components (target, format, is_relative)
 
-2. **If relative** (starts with `./` or `../`):
-   - Resolve relative to the containing file's directory
-   - Example: Link `[[./sibling]]` in `tasks/main.md` resolves to `tasks/sibling`
+2. **If format is `markdown` or `path`**:
+   - If target starts with `/`, resolve from collection root (strip the leading `/`)
+   - Otherwise, resolve relative to the containing file's directory (markdown-standard behavior)
+   - Example: Link `[Docs](docs/api.md)` in `notes/meeting.md` resolves to `notes/docs/api.md`
 
-3. **If looks like a path** (contains `/`, no `./` or `../`):
-   - Resolve from collection root
+3. **If format is `wikilink`**:
+   - If target starts with `./` or `../`, resolve relative to the containing file's directory
+   - If target starts with `/`, resolve from collection root (strip the leading `/`)
+   - If target contains `/` (and is not relative), resolve from collection root
    - Example: `[[docs/api]]` resolves to `docs/api`
 
-4. **If simple name** (no `/`, no `./` or `../`):
+4. **If simple name** (no `/`, no `./` or `../`, and format is `wikilink`):
    - Define the search scope:
      - If the link field has `target` constraint specifying a type, scope to files matching that type
      - Otherwise, scope to the entire collection
@@ -159,7 +164,10 @@ Given a link value and the path of the file containing it:
    - If target lacks extension, try configured extensions in order (default: `.md`)
    - Example: `[[readme]]` tries `readme.md`, `readme.mdx`, etc.
 
-6. **Return**:
+6. **Path traversal check**:
+   - After resolution and normalization, if the resolved path would escape the collection root, abort with `path_traversal`
+
+7. **Return**:
    - The absolute path (relative to collection root) if found
    - `null` if no matching file exists
 
@@ -267,7 +275,7 @@ MUST extract links and tags from both frontmatter and body content using these r
 ### Tag Extraction
 
 `file.tags` includes:
-- Frontmatter `tags` field if present (string or list of strings)
+- Raw persisted frontmatter `tags` field if present (string or list of strings)
 - Inline tags in body content of the form `#tag`
 
 Inline tags MUST:

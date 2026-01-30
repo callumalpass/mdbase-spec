@@ -144,7 +144,7 @@ this
 
 These cannot be used as bare field names without bracket notation (e.g., use `note["file"]` to access a frontmatter field named `file`).
 
-The keywords `note`, `file`, `formula`, and `this` serve as namespace prefixes for property access (see [Querying §10.5](./10-querying.md)). When a frontmatter field name collides with a namespace keyword, use the `note.` prefix with bracket notation: `note["file"]`, `note["formula"]`.
+The keywords `note`, `file`, `formula`, and `this` serve as namespace prefixes for property access (see [Querying §10.5](./10-querying.md)). `note.` accesses **raw persisted** frontmatter; bare field names access **effective** frontmatter. When a frontmatter field name collides with a namespace keyword, use the `note.` prefix with bracket notation: `note["file"]`, `note["formula"]`.
 
 ### `file` Namespace Properties
 

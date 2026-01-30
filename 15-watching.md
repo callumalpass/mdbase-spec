@@ -22,6 +22,8 @@ Watch mode enables implementations to monitor a collection for filesystem change
 | `config_changed` | `mdbase.yaml` modified | `previous_hash`, `new_hash` |
 | `validation_error` | File fails validation after change | `path`, `issues` |
 
+When present, `frontmatter` in events is the **effective** frontmatter (defaults applied, computed excluded).
+
 ---
 
 ## 15.3 Event Payload Structure
@@ -44,7 +46,7 @@ event: file_created
 timestamp: "2024-03-15T10:30:00Z"
 path: "tasks/task-042.md"
 types: [task]
-frontmatter:
+frontmatter:  # Effective frontmatter (defaults applied, computed excluded)
   title: "New task"
   status: open
 ```
@@ -55,10 +57,10 @@ event: file_modified
 timestamp: "2024-03-15T10:31:00Z"
 path: "tasks/task-042.md"
 types: [task]
-frontmatter:
+frontmatter:  # Effective frontmatter (defaults applied, computed excluded)
   title: "New task"
   status: in_progress
-changed_fields: [status]
+changed_fields: [status]  # Raw persisted frontmatter keys that changed
 ```
 
 **`file_deleted`:**

@@ -35,10 +35,10 @@ For each typed file, validation checks the following:
 ### 9.2.1 Required Fields
 
 Fields marked `required: true` MUST be:
-1. Present in frontmatter (key exists)
+1. Present in the **effective** frontmatter (defaults applied; computed fields excluded)
 2. Non-null (value is not `null`)
 
-**Note:** `exists(field)` in expressions returns `true` for a present key even if its value is `null`. Required fields must be present and non-null.
+**Note:** `exists(field)` checks for a present key in **raw persisted** frontmatter even if its value is `null`. Required fields must be present in the effective frontmatter and non-null.
 
 ```yaml
 # Type definition

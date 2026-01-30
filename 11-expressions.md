@@ -8,7 +8,8 @@ Expressions are strings that evaluate to values. They are used in query filters,
 
 Expressions are evaluated in a context that provides:
 
-- **Frontmatter fields**: Direct access via bare names
+- **Frontmatter fields**: Direct access via bare names (effective values: defaults applied, computed excluded)
+- **Raw frontmatter**: Via the `note.` namespace (equivalent to `file.properties`)
 - **File metadata**: Via `file.` prefix
 - **Formula values**: Via `formula.` prefix
 - **Context reference**: Via `this` (in embedded queries)
@@ -342,7 +343,7 @@ exists(field)    // true if field key is present (including null values)
 field.isEmpty()  // true if field is null, empty, or absent
 ```
 
-**Note:** `exists()` checks for key presence in frontmatter. A field with value `null` exists but is empty. Use `isEmpty()` to check if a field has a meaningful value.
+**Note:** `exists()` checks for key presence in **raw persisted** frontmatter. A field with value `null` exists but is empty. Use `isEmpty()` to check if a field has a meaningful value.
 
 ### Provide Default
 
@@ -397,7 +398,7 @@ list(value)                // Wrap in list if not already a list
 | `link(path)` | Construct link | `link("tasks/task-001")` |
 | `file.hasLink(target)` | File links to target | `file.hasLink(link("api-docs"))` |
 | `file.hasTag(...tags)` | File has any of the given tags; uses prefix matching for nested tags (see [§8](./08-links.md)) | `file.hasTag("important")` |
-| `file.hasProperty(name)` | File has frontmatter property | `file.hasProperty("status")` |
+| `file.hasProperty(name)` | Raw persisted frontmatter has the key | `file.hasProperty("status")` |
 | `file.inFolder(path)` | File is in folder (or subfolder) | `file.inFolder("archive")` |
 | `file.asLink(display?)` | Convert file to link | `file.asLink("display text")` |
 
@@ -573,15 +574,15 @@ blocks.map(b => b.asFile().status).contains("blocked")
 
 ## 11.18 Error Handling
 
-Expression evaluation errors should be handled gracefully:
+Expression evaluation errors MUST be handled gracefully and MUST NOT abort the overall query:
 
 | Error | Behavior |
 |-------|----------|
 | Property access on null | Returns null |
 | Method call on null | Returns null |
-| Division by zero | Returns null or Infinity (implementation-defined) |
+| Division by zero | Returns null and emits `type_error` |
 | Invalid regex | Evaluation error (see [§4.8](./04-configuration.md#48-security-considerations) for regex flavor) |
-| Type mismatch | Evaluation error or coercion attempt |
+| Type mismatch | Returns null and emits `type_error` |
 
 Implementations SHOULD log evaluation errors and continue processing where possible.
 

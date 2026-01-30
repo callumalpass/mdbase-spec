@@ -21,7 +21,7 @@ Creates a new file in the collection.
 
 1. **Determine type(s)**: Use provided type, or infer from frontmatter if `type`/`types` key present
 
-2. **Apply defaults**: For each missing field with a `default` value, apply the default
+2. **Apply defaults**: For each missing field with a `default` value, apply the default to the **effective** record used for validation and output
 
 3. **Generate values**: For fields with `generated` strategy:
    - `ulid`: Generate ULID
@@ -40,8 +40,10 @@ Creates a new file in the collection.
 
 6. **Check existence**: If file already exists at path, abort with error
 
-7. **Write file**: 
+7. **Write file**:
    - Serialize frontmatter to YAML
+   - MUST include all explicitly provided fields and all generated fields
+   - SHOULD omit fields that were filled solely by defaults, unless the caller explicitly requests default materialization
    - Combine with body
    - Write atomically (temp file + rename)
 
@@ -95,7 +97,7 @@ Reads a file and returns its parsed content.
 
 2. **Parse frontmatter**: Extract YAML frontmatter and body
 
-3. **Determine types**: 
+3. **Determine types**:
    - Check for explicit `type`/`types` field
    - Evaluate match rules for all types
    - Collect matched types
@@ -105,6 +107,8 @@ Reads a file and returns its parsed content.
    - Collect validation issues
 
 5. **Return record**: Structured representation
+   - `frontmatter` is the **effective** frontmatter (defaults applied, computed fields excluded)
+   - `file.properties` (see [Querying §10.5](./10-querying.md)) provides raw persisted frontmatter when needed
 
 ### Output
 
@@ -159,9 +163,11 @@ Modifies an existing file's frontmatter and/or body.
 
 3. **Update generated fields**: For fields with `generated: now_on_write`, update to current time
 
-4. **Validate**: If enabled, validate merged frontmatter
+4. **Apply defaults**: For each missing field with a `default`, apply the default to the **effective** record used for validation and output
 
-5. **Write file**:
+5. **Validate**: If enabled, validate merged frontmatter (using effective values for required checks)
+
+6. **Write file**:
    - Preserve field order where possible
    - Preserve body if not provided
    - Write atomically
@@ -181,7 +187,7 @@ When updating a field to null:
 
 ```yaml
 path: "tasks/task-001.md"
-frontmatter:
+frontmatter:  # Effective frontmatter (defaults applied, computed excluded)
   # ... updated frontmatter
 previous:
   status: open

@@ -226,8 +226,8 @@ In query expressions, properties are accessed through namespaces:
 
 | Namespace | Description | Example |
 |-----------|-------------|---------|
-| (bare) | Frontmatter property | `status`, `priority` |
-| `note.` | Explicit frontmatter (for reserved names) | `note.type`, `note["my-field"]` |
+| (bare) | **Effective** frontmatter property (defaults applied, computed excluded) | `status`, `priority` |
+| `note.` | **Raw persisted** frontmatter (for reserved names) | `note.type`, `note["my-field"]` |
 | `file.` | File metadata | `file.name`, `file.mtime` |
 | `formula.` | Computed fields | `formula.overdue` |
 | `this` | Context file (for embedded queries) | `this.file.name` |
@@ -245,9 +245,9 @@ In query expressions, properties are accessed through namespaces:
 | `file.ctime` | datetime | Created time |
 | `file.mtime` | datetime | Modified time |
 | `file.links` | list | Outgoing links (including links to non-markdown files) |
-| `file.backlinks` | list | Incoming links (requires index) |
-| `file.tags` | list | All tags (frontmatter `tags` + inline `#tags`, including nested) |
-| `file.properties` | object | Raw persisted frontmatter properties only (no computed fields, no applied defaults) |
+| `file.backlinks` | list | Incoming links (requires index); MAY be null/empty if backlinks are unsupported |
+| `file.tags` | list | All tags (raw frontmatter `tags` + inline `#tags`, including nested) |
+| `file.properties` | object | Raw persisted frontmatter properties only (no computed fields, no applied defaults). This is equivalent to `note.` |
 | `file.embeds` | list | All embed links in the file body |
 
 ### Body Content Properties
@@ -293,12 +293,12 @@ where: "assignee == this.author"
 
 ## 10.6 Result Structure
 
-Query results return file objects with this structure:
+Query results return file objects with this structure. The `frontmatter` field is the **effective** frontmatter (defaults applied, computed fields excluded). Raw persisted values are available via `file.properties`/`note.`.
 
 ```yaml
 - path: "tasks/fix-bug.md"
   types: [task, urgent]
-  frontmatter:
+  frontmatter:  # Effective frontmatter (defaults applied, computed excluded)
     id: "task-001"
     title: "Fix the login bug"
     status: open

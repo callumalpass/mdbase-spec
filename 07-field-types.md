@@ -53,7 +53,7 @@ Whether the field must be present and non-null.
 
 ### `default`
 
-A default value applied when the field is missing. The default is NOT applied when the field is present but null.
+A default value applied to the **effective** value when the field is missing. The default is NOT applied when the field is present but null. Defaults are not required to be persisted unless the caller explicitly requests materialization (see [§5.11](./05-types.md#511-schema-evolution)).
 
 ```yaml
 status:

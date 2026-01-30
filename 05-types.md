@@ -357,7 +357,7 @@ Implementations MAY render this documentation in tooling (e.g., showing field he
 
 When a type definition changes, existing files are NOT automatically migrated â€” files are the source of truth. The following rules define what happens for each kind of schema change:
 
-**Field added (optional):** Existing files without the field remain valid. The field is `undefined` (not `null`) until explicitly set. If a `default` is specified in the type definition, it applies at read time.
+**Field added (optional):** Existing files without the field remain valid. The field is `undefined` (not `null`) until explicitly set. If a `default` is specified in the type definition, it applies to the **effective** value at read/query/validation time.
 
 **Field added (required):** Existing files without the field fail validation. Implementations MUST report `missing_required` errors. Users must add the field to affected files manually or via batch update.
 
@@ -370,6 +370,8 @@ When a type definition changes, existing files are NOT automatically migrated â€
 **Type renamed:** Existing files with `type: old_name` fail type matching. Implementations MUST provide a batch update command to update type declarations across files.
 
 **Inheritance changed:** The effective schema is recomputed. Fields gained from a new parent apply the same rules as "field added." Fields lost apply the same rules as "field removed."
+
+**Materializing defaults:** Defaults are **not required** to be persisted to disk. Implementations MAY provide a flag to write default values on create/update; if a default is written, it MUST equal the declared default at the time of the write.
 
 **Migration strategy:** Validation is the migration mechanism. Run validation on the collection after schema changes, review reported errors, and fix affected files.
 

@@ -145,8 +145,8 @@ This distinction matters for:
 
 ### Summary Table
 
-| YAML | Parsed Value | `exists(field)` | Satisfies `required`? |
-|------|--------------|-----------------|----------------------|
+| YAML | Parsed Value | `exists(field)` | Satisfies `required`? (before defaults) |
+|------|--------------|-----------------|----------------------------------------|
 | `field: null` | null | true | No |
 | `field: ~` | null | true | No |
 | `field:` | null | true | No |
@@ -155,9 +155,9 @@ This distinction matters for:
 
 ### Presence vs Meaningful Value
 
-- `exists(field)` is **true** when the key is present, even if the value is `null`.
+- `exists(field)` is **true** when the key is present in **raw persisted** frontmatter, even if the value is `null`.
 - `field.isEmpty()` is **true** when the value is `null`, empty, or missing.
-- `required: true` requires the key to be present **and** the value to be non-null.
+- `required: true` requires the key to be present in the **effective** frontmatter and the value to be non-null (see [§9.2.1](./09-validation.md#921-required-fields)).
 
 Implementations MUST preserve these distinctions in validation and query evaluation.
 
