@@ -1,0 +1,856 @@
+name: "link parsing and validation"
+level: 4
+category: links
+spec_ref: "§8.2, §8.3, §8.5"
+
+# =============================================================================
+# Group 1: Wikilink format parsing
+# =============================================================================
+
+groups:
+  - name: "wikilink parsing"
+    spec_ref: "§8.2.1, §8.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            parent:
+              type: link
+            related:
+              type: list
+              items:
+                type: link
+          ---
+      files:
+        tasks/task-001.md: |
+          ---
+          type: task
+          title: "Test task"
+          parent: "[[task-002]]"
+          ---
+        tasks/task-002.md: |
+          ---
+          type: task
+          title: "Parent task"
+          parent: "[[task-001|My Parent]]"
+          ---
+        tasks/task-003.md: |
+          ---
+          type: task
+          title: "Anchored link"
+          parent: "[[task-001#details]]"
+          ---
+        tasks/task-004.md: |
+          ---
+          type: task
+          title: "Full wikilink"
+          parent: "[[task-001#details|Detail Section]]"
+          ---
+        tasks/task-005.md: |
+          ---
+          type: task
+          title: "Path wikilink"
+          parent: "[[tasks/task-001]]"
+          ---
+        tasks/task-006.md: |
+          ---
+          type: task
+          title: "Relative wikilink"
+          parent: "[[./task-001]]"
+          ---
+        tasks/task-007.md: |
+          ---
+          type: task
+          title: "Parent relative wikilink"
+          parent: "[[../tasks/task-001]]"
+          ---
+
+    tests:
+      - name: "simple wikilink parsed correctly"
+        operation: parse_link
+        input:
+          value: "[[task-002]]"
+        expect:
+          link:
+            raw: "[[task-002]]"
+            target: "task-002"
+            alias: null
+            anchor: null
+            format: wikilink
+            is_relative: false
+
+      - name: "wikilink with alias parsed correctly"
+        operation: parse_link
+        input:
+          value: "[[task-001|My Parent]]"
+        expect:
+          link:
+            raw: "[[task-001|My Parent]]"
+            target: "task-001"
+            alias: "My Parent"
+            anchor: null
+            format: wikilink
+            is_relative: false
+
+      - name: "wikilink with anchor parsed correctly"
+        operation: parse_link
+        input:
+          value: "[[task-001#details]]"
+        expect:
+          link:
+            raw: "[[task-001#details]]"
+            target: "task-001"
+            alias: null
+            anchor: "details"
+            format: wikilink
+            is_relative: false
+
+      - name: "wikilink with anchor and alias parsed correctly"
+        operation: parse_link
+        input:
+          value: "[[task-001#details|Detail Section]]"
+        expect:
+          link:
+            raw: "[[task-001#details|Detail Section]]"
+            target: "task-001"
+            alias: "Detail Section"
+            anchor: "details"
+            format: wikilink
+            is_relative: false
+
+      - name: "wikilink with path parsed correctly"
+        operation: parse_link
+        input:
+          value: "[[tasks/task-001]]"
+        expect:
+          link:
+            raw: "[[tasks/task-001]]"
+            target: "tasks/task-001"
+            alias: null
+            anchor: null
+            format: wikilink
+            is_relative: false
+
+      - name: "wikilink with ./ is relative"
+        operation: parse_link
+        input:
+          value: "[[./task-001]]"
+        expect:
+          link:
+            raw: "[[./task-001]]"
+            target: "./task-001"
+            alias: null
+            anchor: null
+            format: wikilink
+            is_relative: true
+
+      - name: "wikilink with ../ is relative"
+        operation: parse_link
+        input:
+          value: "[[../tasks/task-001]]"
+        expect:
+          link:
+            raw: "[[../tasks/task-001]]"
+            target: "../tasks/task-001"
+            alias: null
+            anchor: null
+            format: wikilink
+            is_relative: true
+
+      - name: "link field validates and reads as parsed link"
+        operation: read
+        input:
+          path: "tasks/task-001.md"
+        expect:
+          frontmatter:
+            parent: "[[task-002]]"
+          valid: true
+
+  # =============================================================================
+  # Group 2: Markdown link format parsing
+  # =============================================================================
+
+  - name: "markdown link parsing"
+    spec_ref: "§8.2.2, §8.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            ref:
+              type: link
+          ---
+      files:
+        notes/note-1.md: |
+          ---
+          type: note
+          ref: "[Link Text](file.md)"
+          ---
+        notes/note-2.md: |
+          ---
+          type: note
+          ref: "[Docs](./relative.md)"
+          ---
+        notes/note-3.md: |
+          ---
+          type: note
+          ref: "[Parent](../other/file.md)"
+          ---
+        notes/note-4.md: |
+          ---
+          type: note
+          ref: "[API Docs](docs/api.md#auth)"
+          ---
+
+    tests:
+      - name: "markdown link parsed correctly"
+        operation: parse_link
+        input:
+          value: "[Link Text](file.md)"
+        expect:
+          link:
+            raw: "[Link Text](file.md)"
+            target: "file.md"
+            alias: "Link Text"
+            anchor: null
+            format: markdown
+            is_relative: false
+
+      - name: "markdown link with relative path"
+        operation: parse_link
+        input:
+          value: "[Docs](./relative.md)"
+        expect:
+          link:
+            raw: "[Docs](./relative.md)"
+            target: "./relative.md"
+            alias: "Docs"
+            anchor: null
+            format: markdown
+            is_relative: true
+
+      - name: "markdown link with parent path"
+        operation: parse_link
+        input:
+          value: "[Parent](../other/file.md)"
+        expect:
+          link:
+            raw: "[Parent](../other/file.md)"
+            target: "../other/file.md"
+            alias: "Parent"
+            anchor: null
+            format: markdown
+            is_relative: true
+
+      - name: "markdown link with anchor"
+        operation: parse_link
+        input:
+          value: "[API Docs](docs/api.md#auth)"
+        expect:
+          link:
+            raw: "[API Docs](docs/api.md#auth)"
+            target: "docs/api.md"
+            alias: "API Docs"
+            anchor: "auth"
+            format: markdown
+            is_relative: false
+
+  # =============================================================================
+  # Group 3: Bare path format parsing
+  # =============================================================================
+
+  - name: "bare path parsing"
+    spec_ref: "§8.2.3, §8.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            ref:
+              type: link
+          ---
+      files:
+        notes/note-1.md: |
+          ---
+          type: note
+          ref: "./sibling.md"
+          ---
+        notes/note-2.md: |
+          ---
+          type: note
+          ref: "../other/file.md"
+          ---
+        notes/note-3.md: |
+          ---
+          type: note
+          ref: "folder/file.md"
+          ---
+
+    tests:
+      - name: "bare path with ./ is relative"
+        operation: parse_link
+        input:
+          value: "./sibling.md"
+        expect:
+          link:
+            raw: "./sibling.md"
+            target: "./sibling.md"
+            alias: null
+            anchor: null
+            format: path
+            is_relative: true
+
+      - name: "bare path with ../ is relative"
+        operation: parse_link
+        input:
+          value: "../other/file.md"
+        expect:
+          link:
+            raw: "../other/file.md"
+            target: "../other/file.md"
+            alias: null
+            anchor: null
+            format: path
+            is_relative: true
+
+      - name: "bare path without prefix"
+        operation: parse_link
+        input:
+          value: "folder/file.md"
+        expect:
+          link:
+            raw: "folder/file.md"
+            target: "folder/file.md"
+            alias: null
+            anchor: null
+            format: path
+            is_relative: false
+
+  # =============================================================================
+  # Group 4: Link schema options
+  # =============================================================================
+
+  - name: "link schema - target constraint"
+    spec_ref: "§8.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        person.md: |
+          ---
+          name: person
+          fields:
+            name:
+              type: string
+              required: true
+          ---
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            assignee:
+              type: link
+              target: person
+              validate_exists: true
+          ---
+      files:
+        people/alice.md: |
+          ---
+          type: person
+          name: "Alice"
+          ---
+        people/bob.md: |
+          ---
+          type: person
+          name: "Bob"
+          ---
+        tasks/valid.md: |
+          ---
+          type: task
+          title: "Valid"
+          assignee: "[[alice]]"
+          ---
+        tasks/wrong-type.md: |
+          ---
+          type: task
+          title: "Wrong type target"
+          assignee: "[[task-001]]"
+          ---
+        tasks/task-001.md: |
+          ---
+          type: task
+          title: "Not a person"
+          ---
+
+    tests:
+      - name: "link with target constraint resolves to correct type"
+        operation: validate
+        input:
+          path: "tasks/valid.md"
+        expect:
+          valid: true
+
+      - name: "link target constraint restricts resolution scope"
+        spec_ref: "§8.5"
+        operation: validate
+        input:
+          path: "tasks/wrong-type.md"
+        expect:
+          valid: false
+          issues:
+            - code: link_wrong_type
+              field: assignee
+
+  # =============================================================================
+  # Group 5: validate_exists constraint
+  # =============================================================================
+
+  - name: "link schema - validate_exists"
+    spec_ref: "§8.5, §8.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            parent:
+              type: link
+              validate_exists: true
+            related:
+              type: link
+              validate_exists: false
+          ---
+      files:
+        tasks/task-001.md: |
+          ---
+          type: task
+          title: "Has valid parent"
+          parent: "[[task-002]]"
+          ---
+        tasks/task-002.md: |
+          ---
+          type: task
+          title: "Parent"
+          ---
+        tasks/broken-parent.md: |
+          ---
+          type: task
+          title: "Broken required link"
+          parent: "[[nonexistent]]"
+          ---
+        tasks/broken-optional.md: |
+          ---
+          type: task
+          title: "Broken optional link"
+          related: "[[nonexistent]]"
+          ---
+        tasks/null-parent.md: |
+          ---
+          type: task
+          title: "Null link is fine"
+          ---
+
+    tests:
+      - name: "validate_exists true with existing target passes"
+        operation: validate
+        input:
+          path: "tasks/task-001.md"
+        expect:
+          valid: true
+
+      - name: "validate_exists true with missing target fails"
+        operation: validate
+        input:
+          path: "tasks/broken-parent.md"
+        expect:
+          valid: false
+          issues:
+            - code: link_not_found
+              field: parent
+
+      - name: "validate_exists false with missing target passes"
+        operation: validate
+        input:
+          path: "tasks/broken-optional.md"
+        expect:
+          valid: true
+
+      - name: "absent link field with validate_exists does not fail"
+        operation: validate
+        input:
+          path: "tasks/null-parent.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 6: List of links
+  # =============================================================================
+
+  - name: "list of links"
+    spec_ref: "§8.5, §8.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            subtasks:
+              type: list
+              items:
+                type: link
+            validated_refs:
+              type: list
+              items:
+                type: link
+                validate_exists: true
+          ---
+      files:
+        tasks/parent.md: |
+          ---
+          type: task
+          title: "Parent"
+          subtasks:
+            - "[[child-1]]"
+            - "[[child-2]]"
+            - "[[nonexistent]]"
+          ---
+        tasks/child-1.md: |
+          ---
+          type: task
+          title: "Child 1"
+          ---
+        tasks/child-2.md: |
+          ---
+          type: task
+          title: "Child 2"
+          ---
+        tasks/validated.md: |
+          ---
+          type: task
+          title: "With validated refs"
+          validated_refs:
+            - "[[child-1]]"
+            - "[[missing]]"
+          ---
+
+    tests:
+      - name: "list of links parses correctly"
+        operation: read
+        input:
+          path: "tasks/parent.md"
+        expect:
+          valid: true
+          frontmatter:
+            subtasks:
+              - "[[child-1]]"
+              - "[[child-2]]"
+              - "[[nonexistent]]"
+
+      - name: "list of links with validate_exists fails on missing target"
+        operation: validate
+        input:
+          path: "tasks/validated.md"
+        expect:
+          valid: false
+          issues:
+            - code: link_not_found
+              field: validated_refs
+
+  # =============================================================================
+  # Group 7: Invalid link values
+  # =============================================================================
+
+  - name: "invalid link parsing"
+    spec_ref: "§8.3, Appendix C.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            ref:
+              type: link
+          ---
+      files:
+        notes/malformed-wikilink.md: |
+          ---
+          type: note
+          ref: "[[]]"
+          ---
+        notes/unclosed-wikilink.md: |
+          ---
+          type: note
+          ref: "[[unclosed"
+          ---
+        notes/number-link.md: |
+          ---
+          type: note
+          ref: 42
+          ---
+        notes/bool-link.md: |
+          ---
+          type: note
+          ref: true
+          ---
+        notes/list-link.md: |
+          ---
+          type: note
+          ref:
+            - one
+            - two
+          ---
+
+    tests:
+      - name: "empty wikilink is invalid"
+        operation: validate
+        input:
+          path: "notes/malformed-wikilink.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_link
+              field: ref
+
+      - name: "unclosed wikilink is invalid"
+        operation: validate
+        input:
+          path: "notes/unclosed-wikilink.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_link
+              field: ref
+
+      - name: "number value for link field is invalid"
+        operation: validate
+        input:
+          path: "notes/number-link.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_mismatch
+              field: ref
+
+      - name: "boolean value for link field is invalid"
+        operation: validate
+        input:
+          path: "notes/bool-link.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_mismatch
+              field: ref
+
+      - name: "list value for single link field is invalid"
+        operation: validate
+        input:
+          path: "notes/list-link.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_mismatch
+              field: ref
+
+  # =============================================================================
+  # Group 8: Edge cases in link parsing
+  # =============================================================================
+
+  - name: "link parsing edge cases"
+    spec_ref: "§8.2, §8.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            ref:
+              type: link
+          ---
+      files: {}
+
+    tests:
+      - name: "wikilink with spaces in target"
+        operation: parse_link
+        input:
+          value: "[[my document]]"
+        expect:
+          link:
+            raw: "[[my document]]"
+            target: "my document"
+            alias: null
+            anchor: null
+            format: wikilink
+            is_relative: false
+
+      - name: "wikilink with unicode target"
+        operation: parse_link
+        input:
+          value: "[[日本語ノート]]"
+        expect:
+          link:
+            raw: "[[日本語ノート]]"
+            target: "日本語ノート"
+            alias: null
+            anchor: null
+            format: wikilink
+            is_relative: false
+
+      - name: "wikilink with multiple anchors uses first hash"
+        operation: parse_link
+        input:
+          value: "[[target#section#subsection]]"
+        expect:
+          link:
+            raw: "[[target#section#subsection]]"
+            target: "target"
+            anchor: "section#subsection"
+            format: wikilink
+            is_relative: false
+
+      - name: "markdown link with empty text"
+        operation: parse_link
+        input:
+          value: "[](file.md)"
+        expect:
+          link:
+            raw: "[](file.md)"
+            target: "file.md"
+            alias: ""
+            anchor: null
+            format: markdown
+            is_relative: false
+
+      - name: "wikilink with root path"
+        operation: parse_link
+        input:
+          value: "[[/absolute/path]]"
+        expect:
+          link:
+            raw: "[[/absolute/path]]"
+            target: "/absolute/path"
+            format: wikilink
+            is_relative: false
+
+      - name: "markdown link with root path"
+        operation: parse_link
+        input:
+          value: "[Root](/absolute/path.md)"
+        expect:
+          link:
+            raw: "[Root](/absolute/path.md)"
+            target: "/absolute/path.md"
+            alias: "Root"
+            format: markdown
+            is_relative: false
+
+      - name: "bare path with root prefix"
+        operation: parse_link
+        input:
+          value: "/absolute/path.md"
+        expect:
+          link:
+            raw: "/absolute/path.md"
+            target: "/absolute/path.md"
+            format: path
+            is_relative: false
+
+  # =============================================================================
+  # Group 9: Link round-tripping
+  # =============================================================================
+
+  - name: "link storage and round-tripping"
+    spec_ref: "§8.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            parent:
+              type: link
+          ---
+      files:
+        tasks/task-001.md: |
+          ---
+          type: task
+          title: "Target"
+          ---
+
+    tests:
+      - name: "wikilink format preserved on write"
+        operation: create
+        input:
+          path: "tasks/new-wikilink.md"
+          frontmatter:
+            type: task
+            title: "Wikilink test"
+            parent: "[[task-001]]"
+        expect:
+          success: true
+          frontmatter_written:
+            parent: "[[task-001]]"
+
+      - name: "markdown link format preserved on write"
+        operation: create
+        input:
+          path: "tasks/new-mdlink.md"
+          frontmatter:
+            type: task
+            title: "Markdown link test"
+            parent: "[Task 1](./task-001.md)"
+        expect:
+          success: true
+          frontmatter_written:
+            parent: "[Task 1](./task-001.md)"
+
+      - name: "wikilink with alias preserved on write"
+        operation: create
+        input:
+          path: "tasks/new-alias.md"
+          frontmatter:
+            type: task
+            title: "Alias test"
+            parent: "[[task-001|Main Task]]"
+        expect:
+          success: true
+          frontmatter_written:
+            parent: "[[task-001|Main Task]]"

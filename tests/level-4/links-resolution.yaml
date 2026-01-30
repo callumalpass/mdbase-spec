@@ -1,0 +1,854 @@
+name: "link resolution"
+level: 4
+category: links
+spec_ref: "§8.4, §8.13"
+
+# =============================================================================
+# Group 1: Relative resolution for markdown links and bare paths
+# =============================================================================
+
+groups:
+  - name: "relative resolution for markdown and path formats"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            ref:
+              type: link
+              validate_exists: true
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          ref: "[Sibling](sibling.md)"
+          ---
+        notes/sibling.md: |
+          ---
+          type: note
+          ---
+        notes/relative-dot.md: |
+          ---
+          type: note
+          ref: "[Sib](./sibling.md)"
+          ---
+        notes/relative-parent.md: |
+          ---
+          type: note
+          ref: "[Doc](../docs/readme.md)"
+          ---
+        docs/readme.md: |
+          ---
+          type: note
+          ---
+        deep/nested/file.md: |
+          ---
+          type: note
+          ref: "[Top](../../notes/sibling.md)"
+          ---
+
+    tests:
+      - name: "markdown link resolves relative to containing file directory"
+        operation: resolve_link
+        input:
+          path: "notes/source.md"
+          field: ref
+        expect:
+          resolved_path: "notes/sibling.md"
+
+      - name: "markdown link with ./ resolves relative to containing file"
+        operation: resolve_link
+        input:
+          path: "notes/relative-dot.md"
+          field: ref
+        expect:
+          resolved_path: "notes/sibling.md"
+
+      - name: "markdown link with ../ resolves relative to containing file"
+        operation: resolve_link
+        input:
+          path: "notes/relative-parent.md"
+          field: ref
+        expect:
+          resolved_path: "docs/readme.md"
+
+      - name: "deep nested relative path resolves correctly"
+        operation: resolve_link
+        input:
+          path: "deep/nested/file.md"
+          field: ref
+        expect:
+          resolved_path: "notes/sibling.md"
+
+  # =============================================================================
+  # Group 2: Bare path resolution
+  # =============================================================================
+
+  - name: "bare path resolution"
+    spec_ref: "§8.2.3, §8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            ref:
+              type: link
+              validate_exists: true
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          ref: "./sibling.md"
+          ---
+        notes/sibling.md: |
+          ---
+          type: note
+          ---
+        tasks/task.md: |
+          ---
+          type: note
+          ref: "../notes/sibling.md"
+          ---
+
+    tests:
+      - name: "bare path with ./ resolves relative to containing file"
+        operation: resolve_link
+        input:
+          path: "notes/source.md"
+          field: ref
+        expect:
+          resolved_path: "notes/sibling.md"
+
+      - name: "bare path with ../ resolves relative to containing file"
+        operation: resolve_link
+        input:
+          path: "tasks/task.md"
+          field: ref
+        expect:
+          resolved_path: "notes/sibling.md"
+
+  # =============================================================================
+  # Group 3: Wikilink resolution with paths
+  # =============================================================================
+
+  - name: "wikilink path resolution"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+              validate_exists: true
+          ---
+      files:
+        tasks/task-001.md: |
+          ---
+          type: task
+          title: "Task 1"
+          ---
+        tasks/subtasks/task-002.md: |
+          ---
+          type: task
+          title: "Subtask"
+          ref: "[[./task-003]]"
+          ---
+        tasks/subtasks/task-003.md: |
+          ---
+          type: task
+          title: "Sibling subtask"
+          ref: "[[../task-001]]"
+          ---
+        notes/meeting.md: |
+          ---
+          type: task
+          title: "Meeting"
+          ref: "[[tasks/task-001]]"
+          ---
+        tasks/root-ref.md: |
+          ---
+          type: task
+          title: "Root ref"
+          ref: "[[/tasks/task-001]]"
+          ---
+
+    tests:
+      - name: "wikilink with ./ resolves relative to containing file"
+        operation: resolve_link
+        input:
+          path: "tasks/subtasks/task-002.md"
+          field: ref
+        expect:
+          resolved_path: "tasks/subtasks/task-003.md"
+
+      - name: "wikilink with ../ resolves relative to containing file"
+        operation: resolve_link
+        input:
+          path: "tasks/subtasks/task-003.md"
+          field: ref
+        expect:
+          resolved_path: "tasks/task-001.md"
+
+      - name: "wikilink with slash resolves from collection root"
+        operation: resolve_link
+        input:
+          path: "notes/meeting.md"
+          field: ref
+        expect:
+          resolved_path: "tasks/task-001.md"
+
+      - name: "wikilink with leading slash resolves from collection root"
+        operation: resolve_link
+        input:
+          path: "tasks/root-ref.md"
+          field: ref
+        expect:
+          resolved_path: "tasks/task-001.md"
+
+  # =============================================================================
+  # Group 4: Wikilink simple name resolution (search by name)
+  # =============================================================================
+
+  - name: "wikilink simple name resolution"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            ref:
+              type: link
+              validate_exists: true
+          ---
+        person.md: |
+          ---
+          name: person
+          fields:
+            id:
+              type: string
+            name:
+              type: string
+          ---
+      files:
+        tasks/task-001.md: |
+          ---
+          type: task
+          id: "task-001"
+          title: "First task"
+          ref: "[[alice]]"
+          ---
+        people/alice.md: |
+          ---
+          type: person
+          id: "alice"
+          name: "Alice Smith"
+          ---
+        notes/meeting.md: |
+          ---
+          type: task
+          title: "Meeting"
+          ref: "[[task-001]]"
+          ---
+        notes/by-filename.md: |
+          ---
+          type: task
+          title: "By filename"
+          ref: "[[alice]]"
+          ---
+
+    tests:
+      - name: "simple name resolves by id_field match"
+        operation: resolve_link
+        input:
+          path: "notes/meeting.md"
+          field: ref
+        expect:
+          resolved_path: "tasks/task-001.md"
+
+      - name: "simple name resolves by filename when no id match"
+        operation: resolve_link
+        input:
+          path: "notes/by-filename.md"
+          field: ref
+        expect:
+          resolved_path: "people/alice.md"
+
+  # =============================================================================
+  # Group 5: Simple name resolution with target constraint
+  # =============================================================================
+
+  - name: "simple name resolution scoped by target type"
+    spec_ref: "§8.4, §8.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        person.md: |
+          ---
+          name: person
+          fields:
+            id:
+              type: string
+            name:
+              type: string
+          ---
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            assignee:
+              type: link
+              target: person
+              validate_exists: true
+          ---
+      files:
+        people/alice.md: |
+          ---
+          type: person
+          id: "alice"
+          name: "Alice"
+          ---
+        tasks/alice.md: |
+          ---
+          type: task
+          id: "alice-task"
+          title: "Alice's task"
+          ---
+        tasks/assign.md: |
+          ---
+          type: task
+          title: "Assignment"
+          assignee: "[[alice]]"
+          ---
+
+    tests:
+      - name: "target constraint scopes resolution to specified type"
+        operation: resolve_link
+        input:
+          path: "tasks/assign.md"
+          field: assignee
+        expect:
+          resolved_path: "people/alice.md"
+
+  # =============================================================================
+  # Group 6: Tiebreaker rules for simple name resolution
+  # =============================================================================
+
+  - name: "simple name tiebreakers"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            ref:
+              type: link
+              validate_exists: true
+          ---
+      files:
+        tasks/source.md: |
+          ---
+          type: note
+          ref: "[[target]]"
+          ---
+        tasks/target.md: |
+          ---
+          type: note
+          ---
+        archive/target.md: |
+          ---
+          type: note
+          ---
+
+    tests:
+      - name: "tiebreaker prefers same directory"
+        operation: resolve_link
+        input:
+          path: "tasks/source.md"
+          field: ref
+        expect:
+          resolved_path: "tasks/target.md"
+
+  - name: "simple name tiebreaker - shortest path"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            ref:
+              type: link
+              validate_exists: true
+          ---
+      files:
+        source.md: |
+          ---
+          type: note
+          ref: "[[target]]"
+          ---
+        a/target.md: |
+          ---
+          type: note
+          ---
+        a/b/c/target.md: |
+          ---
+          type: note
+          ---
+
+    tests:
+      - name: "tiebreaker prefers shortest path when not in same directory"
+        operation: resolve_link
+        input:
+          path: "source.md"
+          field: ref
+        expect:
+          resolved_path: "a/target.md"
+
+  - name: "simple name tiebreaker - alphabetical"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            ref:
+              type: link
+              validate_exists: true
+          ---
+      files:
+        source.md: |
+          ---
+          type: note
+          ref: "[[target]]"
+          ---
+        beta/target.md: |
+          ---
+          type: note
+          ---
+        alpha/target.md: |
+          ---
+          type: note
+          ---
+
+    tests:
+      - name: "tiebreaker uses alphabetical order for equal-length paths"
+        operation: resolve_link
+        input:
+          path: "source.md"
+          field: ref
+        expect:
+          resolved_path: "alpha/target.md"
+
+  # =============================================================================
+  # Group 7: Ambiguous link detection
+  # =============================================================================
+
+  - name: "ambiguous link detection"
+    spec_ref: "§8.4, Appendix C.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            ref:
+              type: link
+              validate_exists: true
+          ---
+      files:
+        source.md: |
+          ---
+          type: note
+          ref: "[[target]]"
+          ---
+        a/target.md: |
+          ---
+          type: note
+          id: "target"
+          ---
+        b/target.md: |
+          ---
+          type: note
+          id: "target"
+          ---
+
+    tests:
+      - name: "multiple id_field matches produce ambiguous_link error"
+        operation: validate
+        input:
+          path: "source.md"
+        expect:
+          valid: false
+          issues:
+            - code: ambiguous_link
+              field: ref
+
+  # =============================================================================
+  # Group 8: Extension handling
+  # =============================================================================
+
+  - name: "extension handling in resolution"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          extensions: ["mdx"]
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            ref:
+              type: link
+              validate_exists: true
+          ---
+        note.mdx: |
+          ---
+          name: note
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          ref: "[[readme]]"
+          ---
+        notes/readme.md: |
+          ---
+          type: note
+          ---
+        notes/source-mdx.md: |
+          ---
+          type: note
+          ref: "[[component]]"
+          ---
+        notes/component.mdx: |
+          ---
+          type: note
+          ---
+
+    tests:
+      - name: "wikilink without extension tries .md first"
+        operation: resolve_link
+        input:
+          path: "notes/source.md"
+          field: ref
+        expect:
+          resolved_path: "notes/readme.md"
+
+      - name: "wikilink without extension falls back to configured extensions"
+        operation: resolve_link
+        input:
+          path: "notes/source-mdx.md"
+          field: ref
+        expect:
+          resolved_path: "notes/component.mdx"
+
+  # =============================================================================
+  # Group 9: Path traversal protection
+  # =============================================================================
+
+  - name: "path traversal protection"
+    spec_ref: "§8.13, Appendix C.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            ref:
+              type: link
+              validate_exists: true
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          ref: "[[../../../etc/passwd]]"
+          ---
+        deep/nested/file.md: |
+          ---
+          type: note
+          ref: "[[../../secrets/key]]"
+          ---
+        tasks/safe.md: |
+          ---
+          type: note
+          ref: "[[../notes/source]]"
+          ---
+        notes/safe-source.md: |
+          ---
+          type: note
+          ---
+
+    tests:
+      - name: "path traversal escaping root produces path_traversal error"
+        operation: validate
+        input:
+          path: "notes/source.md"
+        expect:
+          valid: false
+          issues:
+            - code: path_traversal
+              field: ref
+
+      - name: "deep relative path escaping root produces path_traversal error"
+        operation: validate
+        input:
+          path: "deep/nested/file.md"
+        expect:
+          valid: false
+          issues:
+            - code: path_traversal
+              field: ref
+
+      - name: "relative path staying within root resolves normally"
+        operation: resolve_link
+        input:
+          path: "tasks/safe.md"
+          field: ref
+        expect:
+          resolved_path: "notes/source.md"
+
+  # =============================================================================
+  # Group 10: Link not found (target doesn't exist)
+  # =============================================================================
+
+  - name: "link not found"
+    spec_ref: "§8.4, §8.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            ref:
+              type: link
+              validate_exists: true
+            optional_ref:
+              type: link
+          ---
+      files:
+        tasks/broken.md: |
+          ---
+          type: task
+          ref: "[[does-not-exist]]"
+          ---
+        tasks/optional-broken.md: |
+          ---
+          type: task
+          optional_ref: "[[does-not-exist]]"
+          ---
+
+    tests:
+      - name: "validate_exists link to missing file emits link_not_found"
+        operation: validate
+        input:
+          path: "tasks/broken.md"
+        expect:
+          valid: false
+          issues:
+            - code: link_not_found
+              field: ref
+
+      - name: "link without validate_exists to missing file is valid"
+        operation: validate
+        input:
+          path: "tasks/optional-broken.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 11: ID match priority over filename match
+  # =============================================================================
+
+  - name: "id match takes priority over filename match"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            ref:
+              type: link
+              validate_exists: true
+          ---
+      files:
+        source.md: |
+          ---
+          type: note
+          ref: "[[meeting]]"
+          ---
+        journal/meeting.md: |
+          ---
+          type: note
+          ---
+        notes/agenda.md: |
+          ---
+          type: note
+          id: "meeting"
+          ---
+
+    tests:
+      - name: "id_field match wins over filename match"
+        operation: resolve_link
+        input:
+          path: "source.md"
+          field: ref
+        expect:
+          resolved_path: "notes/agenda.md"
+
+  # =============================================================================
+  # Group 12: Resolution returns null for unresolvable links
+  # =============================================================================
+
+  - name: "unresolvable links resolve to null"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            ref:
+              type: link
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          ref: "[[nonexistent]]"
+          ---
+
+    tests:
+      - name: "unresolvable link resolves to null"
+        operation: resolve_link
+        input:
+          path: "notes/source.md"
+          field: ref
+        expect:
+          resolved_path: null
+
+  # =============================================================================
+  # Group 13: Root-relative paths (leading /)
+  # =============================================================================
+
+  - name: "root-relative path resolution"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            ref:
+              type: link
+              validate_exists: true
+          ---
+      files:
+        deep/nested/source.md: |
+          ---
+          type: note
+          ref: "[Top](/docs/readme.md)"
+          ---
+        docs/readme.md: |
+          ---
+          type: note
+          ---
+        deep/nested/bare-root.md: |
+          ---
+          type: note
+          ref: "/docs/readme.md"
+          ---
+
+    tests:
+      - name: "markdown link with / resolves from collection root"
+        operation: resolve_link
+        input:
+          path: "deep/nested/source.md"
+          field: ref
+        expect:
+          resolved_path: "docs/readme.md"
+
+      - name: "bare path with / resolves from collection root"
+        operation: resolve_link
+        input:
+          path: "deep/nested/bare-root.md"
+          field: ref
+        expect:
+          resolved_path: "docs/readme.md"

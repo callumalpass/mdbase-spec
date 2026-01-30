@@ -1,0 +1,1266 @@
+name: "link traversal, file.links, file.tags, and link functions"
+level: 4
+category: links
+spec_ref: "§8.6, §8.7, §8.8"
+
+# =============================================================================
+# Group 1: asFile() basic traversal
+# =============================================================================
+
+groups:
+  - name: "asFile() basic traversal"
+    spec_ref: "§8.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        person.md: |
+          ---
+          name: person
+          fields:
+            id:
+              type: string
+            name:
+              type: string
+            team:
+              type: string
+          ---
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            status:
+              type: string
+            assignee:
+              type: link
+              target: person
+          ---
+      files:
+        people/alice.md: |
+          ---
+          type: person
+          id: "alice"
+          name: "Alice Smith"
+          team: "engineering"
+          ---
+        people/bob.md: |
+          ---
+          type: person
+          id: "bob"
+          name: "Bob Jones"
+          team: "design"
+          ---
+        tasks/task-001.md: |
+          ---
+          type: task
+          id: "task-001"
+          title: "Implement feature"
+          status: "open"
+          assignee: "[[alice]]"
+          ---
+        tasks/task-002.md: |
+          ---
+          type: task
+          id: "task-002"
+          title: "Design mockups"
+          status: "done"
+          assignee: "[[bob]]"
+          ---
+        tasks/task-003.md: |
+          ---
+          type: task
+          id: "task-003"
+          title: "Unassigned task"
+          status: "open"
+          ---
+
+    tests:
+      - name: "asFile() resolves link and accesses frontmatter field"
+        operation: query
+        input:
+          types: [task]
+          where: 'assignee.asFile().team == "engineering"'
+        expect:
+          results:
+            - path: "tasks/task-001.md"
+
+      - name: "asFile() accesses file metadata"
+        operation: query
+        input:
+          types: [task]
+          where: 'assignee.asFile().file.path == "people/alice.md"'
+        expect:
+          results:
+            - path: "tasks/task-001.md"
+
+      - name: "asFile() on null link returns null"
+        operation: evaluate
+        input:
+          expression: 'assignee.asFile()'
+          context_path: "tasks/task-003.md"
+        expect:
+          result: null
+
+      - name: "property access on null asFile() returns null"
+        operation: evaluate
+        input:
+          expression: 'assignee.asFile().name'
+          context_path: "tasks/task-003.md"
+        expect:
+          result: null
+
+  # =============================================================================
+  # Group 2: Multi-hop traversal
+  # =============================================================================
+
+  - name: "multi-hop traversal"
+    spec_ref: "§8.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        person.md: |
+          ---
+          name: person
+          fields:
+            id:
+              type: string
+            name:
+              type: string
+            manager:
+              type: link
+              target: person
+          ---
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            assignee:
+              type: link
+              target: person
+          ---
+        project.md: |
+          ---
+          name: project
+          fields:
+            id:
+              type: string
+            name:
+              type: string
+            lead:
+              type: link
+              target: person
+          ---
+      files:
+        people/alice.md: |
+          ---
+          type: person
+          id: "alice"
+          name: "Alice"
+          manager: "[[carol]]"
+          ---
+        people/bob.md: |
+          ---
+          type: person
+          id: "bob"
+          name: "Bob"
+          manager: "[[alice]]"
+          ---
+        people/carol.md: |
+          ---
+          type: person
+          id: "carol"
+          name: "Carol"
+          ---
+        tasks/task-001.md: |
+          ---
+          type: task
+          id: "task-001"
+          title: "Feature work"
+          assignee: "[[bob]]"
+          ---
+
+    tests:
+      - name: "two-hop traversal accesses nested link property"
+        operation: evaluate
+        input:
+          expression: 'assignee.asFile().manager.asFile().name'
+          context_path: "tasks/task-001.md"
+        expect:
+          result: "Alice"
+
+      - name: "three-hop traversal"
+        operation: evaluate
+        input:
+          expression: 'assignee.asFile().manager.asFile().manager.asFile().name'
+          context_path: "tasks/task-001.md"
+        expect:
+          result: "Carol"
+
+      - name: "null propagation through chain when middle hop is null"
+        operation: evaluate
+        input:
+          expression: 'assignee.asFile().manager.asFile().manager.asFile().manager.asFile().name'
+          context_path: "tasks/task-001.md"
+        expect:
+          result: null
+
+  # =============================================================================
+  # Group 3: Traversal depth limit
+  # =============================================================================
+
+  - name: "traversal depth limit"
+    spec_ref: "§8.7, Appendix C.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        node.md: |
+          ---
+          name: node
+          fields:
+            id:
+              type: string
+            next:
+              type: link
+          ---
+      files:
+        nodes/n01.md: |
+          ---
+          type: node
+          id: "n01"
+          next: "[[n02]]"
+          ---
+        nodes/n02.md: |
+          ---
+          type: node
+          id: "n02"
+          next: "[[n03]]"
+          ---
+        nodes/n03.md: |
+          ---
+          type: node
+          id: "n03"
+          next: "[[n04]]"
+          ---
+        nodes/n04.md: |
+          ---
+          type: node
+          id: "n04"
+          next: "[[n05]]"
+          ---
+        nodes/n05.md: |
+          ---
+          type: node
+          id: "n05"
+          next: "[[n06]]"
+          ---
+        nodes/n06.md: |
+          ---
+          type: node
+          id: "n06"
+          next: "[[n07]]"
+          ---
+        nodes/n07.md: |
+          ---
+          type: node
+          id: "n07"
+          next: "[[n08]]"
+          ---
+        nodes/n08.md: |
+          ---
+          type: node
+          id: "n08"
+          next: "[[n09]]"
+          ---
+        nodes/n09.md: |
+          ---
+          type: node
+          id: "n09"
+          next: "[[n10]]"
+          ---
+        nodes/n10.md: |
+          ---
+          type: node
+          id: "n10"
+          next: "[[n11]]"
+          ---
+        nodes/n11.md: |
+          ---
+          type: node
+          id: "n11"
+          next: "[[n12]]"
+          ---
+        nodes/n12.md: |
+          ---
+          type: node
+          id: "n12"
+          ---
+
+    tests:
+      - name: "traversal within depth limit succeeds"
+        operation: evaluate
+        input:
+          expression: 'next.asFile().next.asFile().next.asFile().id'
+          context_path: "nodes/n01.md"
+        expect:
+          result: "n04"
+
+      - name: "traversal exceeding 10-hop limit produces expression_depth_exceeded"
+        operation: evaluate
+        input:
+          expression: 'next.asFile().next.asFile().next.asFile().next.asFile().next.asFile().next.asFile().next.asFile().next.asFile().next.asFile().next.asFile().next.asFile().id'
+          context_path: "nodes/n01.md"
+        expect:
+          error:
+            code: expression_depth_exceeded
+
+      - name: "circular traversal hits depth limit rather than infinite loop"
+        setup:
+          files:
+            nodes/cycle-a.md: |
+              ---
+              type: node
+              id: "cycle-a"
+              next: "[[cycle-b]]"
+              ---
+            nodes/cycle-b.md: |
+              ---
+              type: node
+              id: "cycle-b"
+              next: "[[cycle-a]]"
+              ---
+        operation: evaluate
+        input:
+          expression: 'next.asFile().next.asFile().next.asFile().next.asFile().next.asFile().next.asFile().next.asFile().next.asFile().next.asFile().next.asFile().next.asFile().id'
+          context_path: "nodes/cycle-a.md"
+        expect:
+          error:
+            code: expression_depth_exceeded
+
+  # =============================================================================
+  # Group 4: file.hasLink()
+  # =============================================================================
+
+  - name: "file.hasLink()"
+    spec_ref: "§8.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+            refs:
+              type: list
+              items:
+                type: link
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          title: "Source"
+          ref: "[[target]]"
+          refs:
+            - "[[other]]"
+          ---
+          Check out [[body-link]] for details.
+        notes/target.md: |
+          ---
+          type: note
+          title: "Target"
+          ---
+        notes/other.md: |
+          ---
+          type: note
+          title: "Other"
+          ---
+        notes/body-link.md: |
+          ---
+          type: note
+          title: "Body Link"
+          ---
+        notes/no-links.md: |
+          ---
+          type: note
+          title: "No links"
+          ---
+
+    tests:
+      - name: "file.hasLink() detects frontmatter link"
+        operation: evaluate
+        input:
+          expression: 'file.hasLink(link("notes/target"))'
+          context_path: "notes/source.md"
+        expect:
+          result: true
+
+      - name: "file.hasLink() detects frontmatter list link"
+        operation: evaluate
+        input:
+          expression: 'file.hasLink(link("notes/other"))'
+          context_path: "notes/source.md"
+        expect:
+          result: true
+
+      - name: "file.hasLink() detects body wikilink"
+        operation: evaluate
+        input:
+          expression: 'file.hasLink(link("notes/body-link"))'
+          context_path: "notes/source.md"
+        expect:
+          result: true
+
+      - name: "file.hasLink() returns false for non-linked file"
+        operation: evaluate
+        input:
+          expression: 'file.hasLink(link("notes/no-links"))'
+          context_path: "notes/source.md"
+        expect:
+          result: false
+
+      - name: "query using file.hasLink()"
+        operation: query
+        input:
+          types: [note]
+          where: 'file.hasLink(link("notes/target"))'
+        expect:
+          results:
+            - path: "notes/source.md"
+
+  # =============================================================================
+  # Group 5: file.links property
+  # =============================================================================
+
+  - name: "file.links property"
+    spec_ref: "§8.6, §8.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        notes/multi-links.md: |
+          ---
+          type: note
+          title: "Multi links"
+          ref: "[[target-a]]"
+          ---
+          See [[target-b]] and [Target C](./target-c.md) for more.
+        notes/target-a.md: |
+          ---
+          type: note
+          title: "A"
+          ---
+        notes/target-b.md: |
+          ---
+          type: note
+          title: "B"
+          ---
+        notes/target-c.md: |
+          ---
+          type: note
+          title: "C"
+          ---
+        notes/no-links.md: |
+          ---
+          type: note
+          title: "No links"
+          ---
+
+    tests:
+      - name: "file.links includes frontmatter and body links"
+        operation: evaluate
+        input:
+          expression: 'file.links.length'
+          context_path: "notes/multi-links.md"
+        expect:
+          result: 3
+
+      - name: "file.links is empty for file with no links"
+        operation: evaluate
+        input:
+          expression: 'file.links.length'
+          context_path: "notes/no-links.md"
+        expect:
+          result: 0
+
+      - name: "query filtering by link count"
+        operation: query
+        input:
+          types: [note]
+          where: 'file.links.length > 0'
+        expect:
+          results:
+            - path: "notes/multi-links.md"
+
+  # =============================================================================
+  # Group 6: Link extraction excludes code blocks
+  # =============================================================================
+
+  - name: "link extraction excludes code blocks"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/code-links.md: |
+          ---
+          type: note
+          title: "Code block links"
+          ---
+          Real link: [[real-target]]
+
+          ```markdown
+          This is a code block with [[code-target]] that should be excluded.
+          ```
+
+          Also `inline [[code-inline]]` should be excluded.
+        notes/real-target.md: |
+          ---
+          type: note
+          title: "Real"
+          ---
+
+    tests:
+      - name: "links inside fenced code blocks are excluded from file.links"
+        operation: evaluate
+        input:
+          expression: 'file.links.length'
+          context_path: "notes/code-links.md"
+        expect:
+          result: 1
+
+      - name: "file.hasLink returns false for link only in code block"
+        operation: evaluate
+        input:
+          expression: 'file.hasLink(link("notes/code-target"))'
+          context_path: "notes/code-links.md"
+        expect:
+          result: false
+
+  # =============================================================================
+  # Group 7: file.tags and tag extraction
+  # =============================================================================
+
+  - name: "file.tags extraction"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        notes/tagged.md: |
+          ---
+          type: note
+          title: "Tagged note"
+          tags:
+            - "frontmatter-tag"
+          ---
+          This note has #inline-tag in the body.
+
+          And another #second-tag here.
+        notes/frontmatter-only.md: |
+          ---
+          type: note
+          title: "Frontmatter tags only"
+          tags:
+            - "alpha"
+            - "beta"
+          ---
+          No inline tags here.
+        notes/body-only.md: |
+          ---
+          type: note
+          title: "Body tags only"
+          ---
+          This has #body-tag-1 and #body-tag-2 in body.
+        notes/no-tags.md: |
+          ---
+          type: note
+          title: "No tags"
+          ---
+          Plain content.
+        notes/code-tags.md: |
+          ---
+          type: note
+          title: "Tags in code"
+          ---
+          Real tag: #real-tag
+
+          ```python
+          # This is a comment with #code-tag
+          ```
+
+          Also `#inline-code-tag` should be excluded.
+
+    tests:
+      - name: "file.tags includes frontmatter and body tags"
+        operation: evaluate
+        input:
+          expression: 'file.tags.length'
+          context_path: "notes/tagged.md"
+        expect:
+          result: 3
+
+      - name: "file.tags from frontmatter only"
+        operation: evaluate
+        input:
+          expression: 'file.tags.length'
+          context_path: "notes/frontmatter-only.md"
+        expect:
+          result: 2
+
+      - name: "file.tags from body only"
+        operation: evaluate
+        input:
+          expression: 'file.tags.length'
+          context_path: "notes/body-only.md"
+        expect:
+          result: 2
+
+      - name: "file.tags empty when no tags"
+        operation: evaluate
+        input:
+          expression: 'file.tags.length'
+          context_path: "notes/no-tags.md"
+        expect:
+          result: 0
+
+      - name: "tags inside code blocks are excluded"
+        operation: evaluate
+        input:
+          expression: 'file.tags.length'
+          context_path: "notes/code-tags.md"
+        expect:
+          result: 1
+
+  # =============================================================================
+  # Group 8: file.hasTag() with prefix matching
+  # =============================================================================
+
+  - name: "file.hasTag() with nested tags"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        notes/nested.md: |
+          ---
+          type: note
+          title: "Nested tags"
+          tags:
+            - "project/alpha/urgent"
+            - "inbox/to-read"
+            - "simple"
+          ---
+        notes/simple.md: |
+          ---
+          type: note
+          title: "Simple tags"
+          tags:
+            - "todo"
+          ---
+          Also #status/active in body.
+        notes/no-match.md: |
+          ---
+          type: note
+          title: "No match"
+          tags:
+            - "other"
+          ---
+
+    tests:
+      - name: "hasTag matches exact tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("simple")'
+          context_path: "notes/nested.md"
+        expect:
+          result: true
+
+      - name: "hasTag matches prefix of nested tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("project")'
+          context_path: "notes/nested.md"
+        expect:
+          result: true
+
+      - name: "hasTag matches intermediate prefix"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("project/alpha")'
+          context_path: "notes/nested.md"
+        expect:
+          result: true
+
+      - name: "hasTag matches full nested tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("project/alpha/urgent")'
+          context_path: "notes/nested.md"
+        expect:
+          result: true
+
+      - name: "hasTag does not match partial segment"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("proj")'
+          context_path: "notes/nested.md"
+        expect:
+          result: false
+
+      - name: "hasTag matches inline body tags"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("status")'
+          context_path: "notes/simple.md"
+        expect:
+          result: true
+
+      - name: "hasTag returns false when no match"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("nonexistent")'
+          context_path: "notes/nested.md"
+        expect:
+          result: false
+
+      - name: "query using file.hasTag()"
+        operation: query
+        input:
+          types: [note]
+          where: 'file.hasTag("project")'
+        expect:
+          results:
+            - path: "notes/nested.md"
+
+  # =============================================================================
+  # Group 9: Embed extraction
+  # =============================================================================
+
+  - name: "file.embeds extraction"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/with-embeds.md: |
+          ---
+          type: note
+          title: "Embeds"
+          ---
+          Here is an embed: ![[diagram]]
+
+          And a markdown embed: ![Chart](./chart.png)
+
+          Regular link (not embed): [[other-note]]
+
+          Regular markdown link: [Click here](./page.md)
+        notes/other-note.md: |
+          ---
+          type: note
+          title: "Other"
+          ---
+
+    tests:
+      - name: "file.embeds includes wikilink embeds"
+        operation: evaluate
+        input:
+          expression: 'file.embeds.length'
+          context_path: "notes/with-embeds.md"
+        expect:
+          result: 2
+
+      - name: "file.links excludes embeds"
+        operation: evaluate
+        input:
+          expression: 'file.links.length'
+          context_path: "notes/with-embeds.md"
+        expect:
+          result: 2
+
+  # =============================================================================
+  # Group 10: link() constructor function
+  # =============================================================================
+
+  - name: "link() constructor"
+    spec_ref: "§8.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          title: "Source"
+          ---
+          Links to [[target-note]] in the body.
+        notes/target-note.md: |
+          ---
+          type: note
+          title: "Target"
+          ---
+        notes/no-link.md: |
+          ---
+          type: note
+          title: "No link to target"
+          ---
+
+    tests:
+      - name: "link() constructs a link for use in hasLink"
+        operation: evaluate
+        input:
+          expression: 'file.hasLink(link("notes/target-note"))'
+          context_path: "notes/source.md"
+        expect:
+          result: true
+
+      - name: "link() with non-matching path returns false from hasLink"
+        operation: evaluate
+        input:
+          expression: 'file.hasLink(link("notes/no-link"))'
+          context_path: "notes/source.md"
+        expect:
+          result: false
+
+      - name: "query with link() in filter"
+        operation: query
+        input:
+          types: [note]
+          where: 'file.hasLink(link("notes/target-note"))'
+        expect:
+          results:
+            - path: "notes/source.md"
+
+  # =============================================================================
+  # Group 11: Tag extraction edge cases
+  # =============================================================================
+
+  - name: "tag extraction edge cases"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        notes/url-fragment.md: |
+          ---
+          type: note
+          title: "URL fragments"
+          ---
+          Visit [docs](https://example.com/page#section) for info.
+
+          Real tag: #real-tag
+        notes/heading-hash.md: |
+          ---
+          type: note
+          title: "Headings"
+          ---
+          # Heading 1
+
+          ## Heading 2
+
+          Real tag: #real-tag
+        notes/mid-word.md: |
+          ---
+          type: note
+          title: "Mid-word hash"
+          ---
+          The color is #FF0000 which is red.
+          But #valid-tag is real.
+        notes/start-of-line.md: |
+          ---
+          type: note
+          title: "Start of line tag"
+          ---
+          #line-start-tag is at the beginning.
+          Some text #after-space is also valid.
+        notes/string-tag.md: |
+          ---
+          type: note
+          title: "String frontmatter tag"
+          tags: "single-tag"
+          ---
+
+    tests:
+      - name: "URL fragments are not extracted as tags"
+        operation: evaluate
+        input:
+          expression: 'file.tags.length'
+          context_path: "notes/url-fragment.md"
+        expect:
+          result: 1
+
+      - name: "tags after whitespace are extracted"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("real-tag")'
+          context_path: "notes/heading-hash.md"
+        expect:
+          result: true
+
+      - name: "hex color codes are not tags (preceded by non-whitespace)"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("FF0000")'
+          context_path: "notes/mid-word.md"
+        expect:
+          result: false
+
+      - name: "tag at start of line is extracted"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("line-start-tag")'
+          context_path: "notes/start-of-line.md"
+        expect:
+          result: true
+
+      - name: "string frontmatter tags field is included"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("single-tag")'
+          context_path: "notes/string-tag.md"
+        expect:
+          result: true
+
+  # =============================================================================
+  # Group 12: asFile() in query filters and sorting
+  # =============================================================================
+
+  - name: "asFile() in queries"
+    spec_ref: "§8.7, §10"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        person.md: |
+          ---
+          name: person
+          fields:
+            id:
+              type: string
+            name:
+              type: string
+            priority:
+              type: integer
+          ---
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            assignee:
+              type: link
+              target: person
+          ---
+      files:
+        people/alice.md: |
+          ---
+          type: person
+          id: "alice"
+          name: "Alice"
+          priority: 1
+          ---
+        people/bob.md: |
+          ---
+          type: person
+          id: "bob"
+          name: "Bob"
+          priority: 2
+          ---
+        people/carol.md: |
+          ---
+          type: person
+          id: "carol"
+          name: "Carol"
+          priority: 3
+          ---
+        tasks/task-a.md: |
+          ---
+          type: task
+          id: "task-a"
+          title: "Task A"
+          assignee: "[[carol]]"
+          ---
+        tasks/task-b.md: |
+          ---
+          type: task
+          id: "task-b"
+          title: "Task B"
+          assignee: "[[alice]]"
+          ---
+        tasks/task-c.md: |
+          ---
+          type: task
+          id: "task-c"
+          title: "Task C"
+          assignee: "[[bob]]"
+          ---
+        tasks/task-d.md: |
+          ---
+          type: task
+          id: "task-d"
+          title: "Task D"
+          ---
+
+    tests:
+      - name: "filter by traversed field value"
+        operation: query
+        input:
+          types: [task]
+          where: 'assignee.asFile().name == "Alice"'
+          order_by:
+            - field: id
+              direction: asc
+        expect:
+          results:
+            - path: "tasks/task-b.md"
+
+      - name: "filter excludes null traversals"
+        operation: query
+        input:
+          types: [task]
+          where: 'assignee.asFile().priority > 1'
+          order_by:
+            - field: id
+              direction: asc
+        expect:
+          results:
+            - path: "tasks/task-c.md"
+            - path: "tasks/task-a.md"
+
+      - name: "query returns all when traversal is null-safe"
+        operation: query
+        input:
+          types: [task]
+          where: 'assignee.asFile().name != null || assignee == null'
+          order_by:
+            - field: id
+              direction: asc
+        expect:
+          results:
+            - path: "tasks/task-a.md"
+            - path: "tasks/task-b.md"
+            - path: "tasks/task-c.md"
+            - path: "tasks/task-d.md"
+
+  # =============================================================================
+  # Group 13: asFile() on broken links
+  # =============================================================================
+
+  - name: "asFile() on broken links"
+    spec_ref: "§8.7, §8.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            parent:
+              type: link
+          ---
+      files:
+        tasks/orphan.md: |
+          ---
+          type: task
+          title: "Orphan"
+          parent: "[[nonexistent]]"
+          ---
+
+    tests:
+      - name: "asFile() on broken link returns null"
+        operation: evaluate
+        input:
+          expression: 'parent.asFile()'
+          context_path: "tasks/orphan.md"
+        expect:
+          result: null
+
+      - name: "property access on broken link traversal returns null"
+        operation: evaluate
+        input:
+          expression: 'parent.asFile().title'
+          context_path: "tasks/orphan.md"
+        expect:
+          result: null
+
+  # =============================================================================
+  # Group 14: Body link extraction formats
+  # =============================================================================
+
+  - name: "body link extraction formats"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/all-formats.md: |
+          ---
+          type: note
+          title: "All link formats"
+          ---
+          Wikilink: [[wiki-target]]
+          Wikilink with alias: [[wiki-alias|Display]]
+          Wikilink with anchor: [[wiki-anchor#heading]]
+          Markdown link: [Text](markdown-target.md)
+          Markdown with anchor: [Text](md-anchor.md#section)
+
+    tests:
+      - name: "body extracts wikilinks"
+        operation: evaluate
+        input:
+          expression: 'file.hasLink(link("notes/wiki-target"))'
+          context_path: "notes/all-formats.md"
+        expect:
+          result: true
+
+      - name: "body extracts wikilinks with alias"
+        operation: evaluate
+        input:
+          expression: 'file.hasLink(link("notes/wiki-alias"))'
+          context_path: "notes/all-formats.md"
+        expect:
+          result: true
+
+      - name: "body extracts wikilinks with anchor"
+        operation: evaluate
+        input:
+          expression: 'file.hasLink(link("notes/wiki-anchor"))'
+          context_path: "notes/all-formats.md"
+        expect:
+          result: true
+
+      - name: "body extracts markdown links"
+        operation: evaluate
+        input:
+          expression: 'file.hasLink(link("notes/markdown-target"))'
+          context_path: "notes/all-formats.md"
+        expect:
+          result: true
+
+      - name: "total link count from body"
+        operation: evaluate
+        input:
+          expression: 'file.links.length'
+          context_path: "notes/all-formats.md"
+        expect:
+          result: 5
