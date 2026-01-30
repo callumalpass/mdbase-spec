@@ -1,0 +1,2037 @@
+name: "expression language evaluation"
+level: 3
+category: expressions
+spec_ref: "§11"
+
+groups:
+  # =============================================================================
+  # Group 1: Literals
+  # =============================================================================
+
+  - name: "literal values"
+    spec_ref: "§11.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            count:
+              type: integer
+            active:
+              type: boolean
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Alpha"
+          count: 10
+          active: true
+          tags: [one, two]
+          ---
+        items/b.md: |
+          ---
+          type: item
+          title: "Beta"
+          count: 0
+          active: false
+          tags: []
+          ---
+
+    tests:
+      - name: "string literal comparison"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title == "Alpha"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "single-quoted string literal"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "title == 'Alpha'"
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "integer literal comparison"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "count == 10"
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "negative number literal"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "count > -1"
+        expect:
+          results:
+            - path: "items/a.md"
+            - path: "items/b.md"
+          meta:
+            total_count: 2
+
+      - name: "boolean literal true"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "active == true"
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "boolean literal false"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "active == false"
+        expect:
+          results:
+            - path: "items/b.md"
+          meta:
+            total_count: 1
+
+      - name: "null literal comparison - field is not null"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "title != null"
+        expect:
+          results:
+            - path: "items/a.md"
+            - path: "items/b.md"
+          meta:
+            total_count: 2
+
+  # =============================================================================
+  # Group 2: Comparison operators
+  # =============================================================================
+
+  - name: "comparison operators"
+    spec_ref: "§11.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            priority:
+              type: integer
+            label:
+              type: string
+          ---
+      files:
+        items/low.md: |
+          ---
+          type: item
+          priority: 1
+          label: "aaa"
+          ---
+        items/mid.md: |
+          ---
+          type: item
+          priority: 3
+          label: "mmm"
+          ---
+        items/high.md: |
+          ---
+          type: item
+          priority: 5
+          label: "zzz"
+          ---
+
+    tests:
+      - name: "equal operator"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "priority == 3"
+        expect:
+          results:
+            - path: "items/mid.md"
+          meta:
+            total_count: 1
+
+      - name: "not equal operator"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "priority != 3"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "greater than operator"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "priority > 3"
+        expect:
+          results:
+            - path: "items/high.md"
+          meta:
+            total_count: 1
+
+      - name: "less than operator"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "priority < 3"
+        expect:
+          results:
+            - path: "items/low.md"
+          meta:
+            total_count: 1
+
+      - name: "greater than or equal operator"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "priority >= 3"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "less than or equal operator"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "priority <= 3"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "string comparison is lexicographic"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'label > "bbb"'
+        expect:
+          meta:
+            total_count: 2
+
+  # =============================================================================
+  # Group 3: Arithmetic operators
+  # =============================================================================
+
+  - name: "arithmetic operators"
+    spec_ref: "§11.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            x:
+              type: integer
+            y:
+              type: integer
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          x: 10
+          y: 3
+          ---
+        items/b.md: |
+          ---
+          type: item
+          x: 4
+          y: 2
+          ---
+
+    tests:
+      - name: "addition in filter"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "x + y > 10"
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "subtraction in filter"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "x - y == 7"
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "multiplication in filter"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "x * y == 8"
+        expect:
+          results:
+            - path: "items/b.md"
+          meta:
+            total_count: 1
+
+      - name: "division in filter"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "x / y == 2"
+        expect:
+          results:
+            - path: "items/b.md"
+          meta:
+            total_count: 1
+
+      - name: "modulo in filter"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "x % y == 1"
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "grouping with parentheses"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "(x + y) * 2 == 26"
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 4: Boolean operators
+  # =============================================================================
+
+  - name: "boolean operators"
+    spec_ref: "§11.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            status:
+              type: string
+            priority:
+              type: integer
+            done:
+              type: boolean
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          status: "open"
+          priority: 5
+          done: false
+          ---
+        items/b.md: |
+          ---
+          type: item
+          status: "closed"
+          priority: 1
+          done: true
+          ---
+        items/c.md: |
+          ---
+          type: item
+          status: "open"
+          priority: 2
+          done: false
+          ---
+
+    tests:
+      - name: "logical AND"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'status == "open" && priority > 3'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "logical OR"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'status == "closed" || priority > 3'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "logical NOT"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "!done"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "combined AND OR with parentheses"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: '(status == "open" && priority > 3) || done == true'
+        expect:
+          meta:
+            total_count: 2
+
+  # =============================================================================
+  # Group 5: Null coalescing
+  # =============================================================================
+
+  - name: "null coalescing and null handling"
+    spec_ref: "§11.10, §11.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+            label:
+              type: string
+          ---
+      files:
+        items/full.md: |
+          ---
+          type: item
+          title: "Full item"
+          priority: 3
+          label: "custom"
+          ---
+        items/sparse.md: |
+          ---
+          type: item
+          title: "Sparse item"
+          ---
+        items/null-label.md: |
+          ---
+          type: item
+          title: "Null label"
+          label: null
+          priority: 1
+          ---
+
+    tests:
+      - name: "null coalescing provides default for missing field"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: '(priority ?? 0) > 0'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "null coalescing provides default for null field"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: '(label ?? "none") == "none"'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "null coalescing does not replace existing value"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: '(label ?? "none") == "custom"'
+        expect:
+          results:
+            - path: "items/full.md"
+          meta:
+            total_count: 1
+
+      - name: "exists returns true for present field including null"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "exists(label)"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "exists returns false for missing field"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "!exists(priority)"
+        expect:
+          results:
+            - path: "items/sparse.md"
+          meta:
+            total_count: 1
+
+      - name: "isEmpty returns true for null and missing"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "label.isEmpty()"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "default function provides fallback"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'default(label, "fallback") == "fallback"'
+        expect:
+          meta:
+            total_count: 2
+
+  # =============================================================================
+  # Group 6: String methods
+  # =============================================================================
+
+  - name: "string methods"
+    spec_ref: "§11.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            code:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "WIP: Fix Login Bug"
+          code: "TASK-0042"
+          ---
+        items/b.md: |
+          ---
+          type: item
+          title: "Deploy to production"
+          code: "DEPLOY-007"
+          ---
+        items/c.md: |
+          ---
+          type: item
+          title: "  Trim me  "
+          code: "task-0099"
+          ---
+
+    tests:
+      - name: "string.contains"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.contains("Bug")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "string.containsAll"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.containsAll("Fix", "Bug")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "string.containsAny"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.containsAny("Deploy", "Fix")'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "string.startsWith"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.startsWith("WIP:")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "string.endsWith"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.endsWith("production")'
+        expect:
+          results:
+            - path: "items/b.md"
+          meta:
+            total_count: 1
+
+      - name: "string.isEmpty on non-empty"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "!title.isEmpty()"
+        expect:
+          meta:
+            total_count: 3
+
+      - name: "string.lower"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.lower().contains("fix login")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "string.upper"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'code.upper() == "TASK-0042"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "string.trim"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.trim() == "Trim me"'
+        expect:
+          results:
+            - path: "items/c.md"
+          meta:
+            total_count: 1
+
+      - name: "string.length"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "code.length == 9"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "string.slice"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'code.slice(0, 4) == "TASK"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "string.split"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'code.split("-")[0] == "DEPLOY"'
+        expect:
+          results:
+            - path: "items/b.md"
+          meta:
+            total_count: 1
+
+      - name: "string.matches with regex"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'code.matches("^TASK-\\d{4}$")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "string.replace"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'code.replace("TASK", "T") == "T-0042"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "string.reverse"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'code.reverse() == "2400-KSAT"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "string.repeat"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: '"-".repeat(3) == "---"'
+        expect:
+          meta:
+            total_count: 3
+
+  # =============================================================================
+  # Group 7: List methods
+  # =============================================================================
+
+  - name: "list methods"
+    spec_ref: "§11.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            tags:
+              type: list
+              items:
+                type: string
+            scores:
+              type: list
+              items:
+                type: integer
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          tags: [alpha, beta, gamma]
+          scores: [5, 3, 8, 1]
+          ---
+        items/b.md: |
+          ---
+          type: item
+          tags: [delta]
+          scores: [10]
+          ---
+        items/c.md: |
+          ---
+          type: item
+          tags: []
+          scores: []
+          ---
+
+    tests:
+      - name: "list.length"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "tags.length == 3"
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "list.contains"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'tags.contains("beta")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "list.containsAll"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'tags.containsAll("alpha", "gamma")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "list.containsAny"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'tags.containsAny("delta", "gamma")'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "list.isEmpty on empty list"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "tags.isEmpty()"
+        expect:
+          results:
+            - path: "items/c.md"
+          meta:
+            total_count: 1
+
+      - name: "list.isEmpty on non-empty list"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "!tags.isEmpty()"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "list index access"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'tags[0] == "alpha"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "list.filter with implicit value"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "scores.filter(value > 4).length == 2"
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "list.map with implicit value"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'tags.map(value.upper()).contains("ALPHA")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "list.reduce with accumulator"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "scores.reduce(acc + value, 0) == 17"
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "list.sort"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'tags.sort()[0] == "alpha"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "list.reverse"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'tags.reverse()[0] == "gamma"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "list.unique"
+        spec_ref: "§11.6"
+        setup:
+          files:
+            items/dupes.md: |
+              ---
+              type: item
+              tags: [a, b, a, c, b]
+              scores: [1, 1, 2]
+              ---
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'file.name == "dupes.md" && tags.unique().length == 3'
+        expect:
+          results:
+            - path: "items/dupes.md"
+          meta:
+            total_count: 1
+
+      - name: "list.join"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'tags.join(", ") == "alpha, beta, gamma"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "list.slice"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "tags.slice(0, 2).length == 2"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "list.flat"
+        spec_ref: "§11.6"
+        setup:
+          types:
+            nested.md: |
+              ---
+              name: nested
+              fields:
+                matrix:
+                  type: list
+                  items:
+                    type: list
+                    items:
+                      type: integer
+              ---
+          files:
+            items/nested.md: |
+              ---
+              type: nested
+              matrix: [[1, 2], [3, 4]]
+              ---
+        operation: query
+        input:
+          query:
+            types: [nested]
+            where: "matrix.flat().length == 4"
+        expect:
+          results:
+            - path: "items/nested.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 8: Property access
+  # =============================================================================
+
+  - name: "property access"
+    spec_ref: "§11.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            metadata:
+              type: object
+              fields:
+                author:
+                  type: string
+                version:
+                  type: integer
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Test"
+          metadata:
+            author: "Alice"
+            version: 2
+          ---
+
+    tests:
+      - name: "direct field access"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title == "Test"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "nested object access with dot notation"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'metadata.author == "Alice"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "file.name metadata"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'file.name == "a.md"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "file.path metadata"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'file.path == "items/a.md"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "file.folder metadata"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'file.folder == "items"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "file.ext metadata"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'file.ext == "md"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "file.basename metadata"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'file.basename == "a"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 9: Date functions and arithmetic
+  # =============================================================================
+
+  - name: "date functions and arithmetic"
+    spec_ref: "§11.7, §11.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            due_date:
+              type: date
+            created_at:
+              type: datetime
+          ---
+      files:
+        tasks/past.md: |
+          ---
+          type: task
+          title: "Past task"
+          due_date: 2020-01-01
+          created_at: 2019-12-01T10:00:00Z
+          ---
+        tasks/future.md: |
+          ---
+          type: task
+          title: "Future task"
+          due_date: 2099-12-31
+          created_at: 2099-01-01T00:00:00Z
+          ---
+
+    tests:
+      - name: "date comparison with date() constructor"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'due_date == date("2020-01-01")'
+        expect:
+          results:
+            - path: "tasks/past.md"
+          meta:
+            total_count: 1
+
+      - name: "date comparison less than today"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: "due_date < today()"
+        expect:
+          results:
+            - path: "tasks/past.md"
+          meta:
+            total_count: 1
+
+      - name: "date comparison greater than today"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: "due_date > today()"
+        expect:
+          results:
+            - path: "tasks/future.md"
+          meta:
+            total_count: 1
+
+      - name: "date addition with duration string"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'due_date + "1d" > date("2020-01-01")'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "date subtraction with duration string"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'due_date - "1d" < date("2020-01-01")'
+        expect:
+          results:
+            - path: "tasks/past.md"
+          meta:
+            total_count: 1
+
+      - name: "date component .year"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: "due_date.year == 2020"
+        expect:
+          results:
+            - path: "tasks/past.md"
+          meta:
+            total_count: 1
+
+      - name: "date component .month"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: "due_date.month == 12"
+        expect:
+          results:
+            - path: "tasks/future.md"
+          meta:
+            total_count: 1
+
+      - name: "date component .day"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: "due_date.day == 31"
+        expect:
+          results:
+            - path: "tasks/future.md"
+          meta:
+            total_count: 1
+
+      - name: "datetime component .hour"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: "created_at.hour == 10"
+        expect:
+          results:
+            - path: "tasks/past.md"
+          meta:
+            total_count: 1
+
+      - name: "date subtraction returns milliseconds"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'date("2020-01-02") - date("2020-01-01") == 86400000'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "duration function with multiplication"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'duration("1d") * 2 == 172800000'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "calendar arithmetic clamps to end of month"
+        spec_ref: "§11.8"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'date("2024-01-31") + "1M" == date("2024-02-29")'
+        expect:
+          meta:
+            total_count: 2
+
+  # =============================================================================
+  # Group 10: Conditional expression
+  # =============================================================================
+
+  - name: "conditional expression (if)"
+    spec_ref: "§11.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            priority:
+              type: integer
+            label:
+              type: string
+          ---
+      files:
+        items/high.md: |
+          ---
+          type: item
+          priority: 5
+          label: "A"
+          ---
+        items/low.md: |
+          ---
+          type: item
+          priority: 1
+          label: "B"
+          ---
+
+    tests:
+      - name: "if expression true branch"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'if(priority > 3, "high", "low") == "high"'
+        expect:
+          results:
+            - path: "items/high.md"
+          meta:
+            total_count: 1
+
+      - name: "if expression false branch"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'if(priority > 3, "high", "low") == "low"'
+        expect:
+          results:
+            - path: "items/low.md"
+          meta:
+            total_count: 1
+
+      - name: "nested if expression"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'if(priority >= 4, "critical", if(priority >= 2, "normal", "low")) == "low"'
+        expect:
+          results:
+            - path: "items/low.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 11: Type checking and conversion
+  # =============================================================================
+
+  - name: "type checking and conversion"
+    spec_ref: "§11.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            count:
+              type: integer
+            active:
+              type: boolean
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Test"
+          count: 42
+          active: true
+          tags: [x]
+          ---
+
+    tests:
+      - name: "isType string"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.isType("string")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "isType number"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'count.isType("number")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "isType boolean"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'active.isType("boolean")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "isType list"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'tags.isType("list")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "toString conversion"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'count.toString() == "42"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "number function parses string"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'number("3.14") > 3'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "number from boolean true returns 1"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "number(true) == 1"
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "isTruthy coercion"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "count.isTruthy()"
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 12: Object methods
+  # =============================================================================
+
+  - name: "object methods"
+    spec_ref: "§11.13"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            metadata:
+              type: object
+              fields:
+                author:
+                  type: string
+                version:
+                  type: integer
+            empty_obj:
+              type: object
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          metadata:
+            author: "Alice"
+            version: 3
+          ---
+        items/b.md: |
+          ---
+          type: item
+          metadata:
+            author: "Bob"
+            version: 1
+          empty_obj: {}
+          ---
+
+    tests:
+      - name: "object.keys"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'metadata.keys().contains("author")'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "object.values"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'metadata.values().contains("Alice")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "object.isEmpty on empty object"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "empty_obj.isEmpty()"
+        expect:
+          results:
+            - path: "items/b.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 13: Operator precedence
+  # =============================================================================
+
+  - name: "operator precedence"
+    spec_ref: "§11.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            a:
+              type: integer
+            b:
+              type: integer
+            c:
+              type: integer
+            flag:
+              type: boolean
+          ---
+      files:
+        items/x.md: |
+          ---
+          type: item
+          a: 2
+          b: 3
+          c: 4
+          flag: true
+          ---
+
+    tests:
+      - name: "multiplication before addition"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "a + b * c == 14"
+        expect:
+          results:
+            - path: "items/x.md"
+          meta:
+            total_count: 1
+
+      - name: "parentheses override precedence"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "(a + b) * c == 20"
+        expect:
+          results:
+            - path: "items/x.md"
+          meta:
+            total_count: 1
+
+      - name: "comparison before logical AND"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "a > 1 && b < 5"
+        expect:
+          results:
+            - path: "items/x.md"
+          meta:
+            total_count: 1
+
+      - name: "AND before OR"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "a == 99 || b == 3 && flag == true"
+        expect:
+          results:
+            - path: "items/x.md"
+          meta:
+            total_count: 1
+
+      - name: "null coalescing has lowest precedence"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "(null ?? 5) + 1 == 6"
+        expect:
+          results:
+            - path: "items/x.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 14: Error handling in expressions
+  # =============================================================================
+
+  - name: "expression error handling"
+    spec_ref: "§11.18"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            value:
+              type: integer
+            label:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          value: 10
+          label: "test"
+          ---
+        items/b.md: |
+          ---
+          type: item
+          value: 0
+          label: "zero"
+          ---
+
+    tests:
+      - name: "division by zero returns null"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "10 / 0 == null"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "property access on null returns null"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "null.length == null"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "method call on null returns null"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "null.contains(\"x\") == null"
+        expect:
+          meta:
+            total_count: 2
+
+  # =============================================================================
+  # Group 15: Expression error codes
+  # =============================================================================
+
+  - name: "expression error codes"
+    spec_ref: "§11.18, Appendix C.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            value:
+              type: integer
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          value: 1
+          ---
+
+    tests:
+      - name: "invalid expression syntax"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "value =="
+        expect:
+          error:
+            code: invalid_expression
+
+      - name: "unknown function"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "nonexistent_func(value)"
+        expect:
+          error:
+            code: unknown_function
+
+      - name: "wrong argument count"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "if(true)"
+        expect:
+          error:
+            code: wrong_argument_count
+
+      - name: "type error in expression"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: '"hello" + 5'
+        expect:
+          error:
+            code: type_error
+
+  # =============================================================================
+  # Group 16: file.hasProperty and file.inFolder
+  # =============================================================================
+
+  - name: "file utility functions"
+    spec_ref: "§11.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            status:
+              type: string
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: item
+          title: "Task A"
+          status: "open"
+          ---
+        notes/b.md: |
+          ---
+          type: item
+          title: "Note B"
+          ---
+        tasks/sub/c.md: |
+          ---
+          type: item
+          title: "Subtask C"
+          status: "done"
+          ---
+
+    tests:
+      - name: "file.hasProperty returns true for present key"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'file.hasProperty("status")'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "file.hasProperty returns false for missing key"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: '!file.hasProperty("status")'
+        expect:
+          results:
+            - path: "notes/b.md"
+          meta:
+            total_count: 1
+
+      - name: "file.inFolder matches direct folder"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'file.inFolder("tasks")'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "file.inFolder matches subfolder"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'file.inFolder("tasks/sub")'
+        expect:
+          results:
+            - path: "tasks/sub/c.md"
+          meta:
+            total_count: 1
+
+      - name: "file.inFolder does not match different folder"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'file.inFolder("archive")'
+        expect:
+          meta:
+            total_count: 0
+
+  # =============================================================================
+  # Group 17: note. namespace and bracket notation
+  # =============================================================================
+
+  - name: "note namespace and bracket notation"
+    spec_ref: "§11.3, §10.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            field-with-dashes:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Test"
+          field-with-dashes: "dash-value"
+          ---
+
+    tests:
+      - name: "note namespace accesses raw frontmatter"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'note.type == "item"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "bracket notation for fields with special characters"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'note["field-with-dashes"] == "dash-value"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 18: expression_depth_exceeded
+  # =============================================================================
+
+  - name: "expression depth limit"
+    spec_ref: "§11.18, Appendix C.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            value:
+              type: integer
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          value: 1
+          ---
+
+    tests:
+      - name: "deeply nested expression exceeds depth limit"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, value, 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0)"
+        expect:
+          error:
+            code: expression_depth_exceeded

@@ -1,0 +1,466 @@
+name: "body content search"
+level: 3
+category: body_search
+spec_ref: "§10.5"
+
+groups:
+  # =============================================================================
+  # Group 1: Basic body search with string methods
+  # =============================================================================
+
+  - name: "file.body basic search"
+    spec_ref: "§10.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "Meeting notes"
+          ---
+          # Meeting Notes
+
+          Discussed the TODO items for the sprint.
+          Action: deploy to staging by Friday.
+        notes/b.md: |
+          ---
+          type: note
+          title: "API docs"
+          ---
+          # API Documentation
+
+          The API endpoint accepts POST requests.
+          See the TODO section for pending work.
+        notes/c.md: |
+          ---
+          type: note
+          title: "Empty note"
+          ---
+        notes/d.md: |
+          ---
+          type: note
+          title: "Code example"
+          ---
+          Here is some code:
+
+          ```python
+          def hello():
+              # TODO: implement this
+              pass
+          ```
+
+          End of note.
+
+    tests:
+      - name: "file.body.contains finds keyword"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: 'file.body.contains("TODO")'
+        expect:
+          meta:
+            total_count: 3
+
+      - name: "file.body.contains is case-sensitive"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: 'file.body.contains("todo")'
+        expect:
+          meta:
+            total_count: 0
+
+      - name: "case-insensitive body search with .lower()"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: 'file.body.lower().contains("todo")'
+        expect:
+          meta:
+            total_count: 3
+
+      - name: "file.body.contains on file with no body"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: 'file.body.contains("anything")'
+        expect:
+          meta:
+            total_count: 0
+
+      - name: "file.body.startsWith"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: 'file.body.trim().startsWith("# Meeting")'
+        expect:
+          results:
+            - path: "notes/a.md"
+          meta:
+            total_count: 1
+
+      - name: "file.body.endsWith"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: 'file.body.trim().endsWith("End of note.")'
+        expect:
+          results:
+            - path: "notes/d.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 2: Regex body search
+  # =============================================================================
+
+  - name: "file.body regex search"
+    spec_ref: "§10.5, §11.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/api.md: |
+          ---
+          type: note
+          title: "API reference"
+          ---
+          The API supports GET, POST, and DELETE methods.
+          Endpoint: /api/v2/users
+        notes/readme.md: |
+          ---
+          type: note
+          title: "Readme"
+          ---
+          Welcome to the project.
+          No API references here.
+
+    tests:
+      - name: "file.body.matches with regex"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: 'file.body.matches("\\bAPI\\b")'
+        expect:
+          results:
+            - path: "notes/api.md"
+          meta:
+            total_count: 1
+
+      - name: "file.body.matches with path pattern"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: 'file.body.matches("/api/v\\d+/")'
+        expect:
+          results:
+            - path: "notes/api.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 3: Body includes code blocks
+  # =============================================================================
+
+  - name: "file.body includes raw text from code blocks"
+    spec_ref: "§10.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/code.md: |
+          ---
+          type: note
+          title: "Code example"
+          ---
+          Some prose.
+
+          ```javascript
+          const MAGIC_NUMBER = 42;
+          ```
+
+          More prose.
+
+    tests:
+      - name: "body search finds content inside code blocks"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: 'file.body.contains("MAGIC_NUMBER")'
+        expect:
+          results:
+            - path: "notes/code.md"
+          meta:
+            total_count: 1
+
+      - name: "body search finds code fence markers"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: 'file.body.contains("```javascript")'
+        expect:
+          results:
+            - path: "notes/code.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 4: Body search combined with other filters
+  # =============================================================================
+
+  - name: "body search combined with other query clauses"
+    spec_ref: "§10.5, §10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: string
+          ---
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Bug fix"
+          status: "open"
+          ---
+          Steps to reproduce the bug:
+          1. Open the login page
+          2. Enter invalid credentials
+          3. Observe the error
+        tasks/b.md: |
+          ---
+          type: task
+          title: "Feature"
+          status: "done"
+          ---
+          This feature adds a new login page component.
+        notes/c.md: |
+          ---
+          type: note
+          title: "Login docs"
+          ---
+          Documentation about the login flow.
+
+    tests:
+      - name: "body search with type filter"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'file.body.contains("login")'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "body search with type and status filter"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where:
+              and:
+                - 'file.body.lower().contains("login")'
+                - 'status == "open"'
+        expect:
+          results:
+            - path: "tasks/a.md"
+          meta:
+            total_count: 1
+
+      - name: "body search across all types"
+        operation: query
+        input:
+          query:
+            where: 'file.body.lower().contains("login")'
+        expect:
+          meta:
+            total_count: 3
+
+  # =============================================================================
+  # Group 5: Body is empty or missing
+  # =============================================================================
+
+  - name: "body edge cases"
+    spec_ref: "§10.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/with-body.md: |
+          ---
+          type: note
+          title: "Has body"
+          ---
+          Some content here.
+        notes/empty-body.md: |
+          ---
+          type: note
+          title: "Empty body"
+          ---
+        notes/no-body.md: |
+          ---
+          type: note
+          title: "Frontmatter only"
+          ---
+
+    tests:
+      - name: "file.body.isEmpty on file with body content"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: "!file.body.isEmpty()"
+        expect:
+          results:
+            - path: "notes/with-body.md"
+          meta:
+            total_count: 1
+
+      - name: "file.body.isEmpty on file with empty body"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: "file.body.isEmpty()"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "file.body.length on file with content"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: "file.body.length > 0"
+        expect:
+          results:
+            - path: "notes/with-body.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 6: Body with unicode and special characters
+  # =============================================================================
+
+  - name: "body search with unicode"
+    spec_ref: "§10.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/unicode.md: |
+          ---
+          type: note
+          title: "Unicode note"
+          ---
+          日本語のテキスト
+          Ñoño español
+          Ümlauts everywhere
+
+    tests:
+      - name: "body search with CJK characters"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: 'file.body.contains("日本語")'
+        expect:
+          results:
+            - path: "notes/unicode.md"
+          meta:
+            total_count: 1
+
+      - name: "body search with accented characters"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: 'file.body.contains("Ñoño")'
+        expect:
+          results:
+            - path: "notes/unicode.md"
+          meta:
+            total_count: 1
+
+      - name: "body search with umlaut"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: 'file.body.contains("Ümlauts")'
+        expect:
+          results:
+            - path: "notes/unicode.md"
+          meta:
+            total_count: 1

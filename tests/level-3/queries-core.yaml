@@ -1,0 +1,1188 @@
+name: "core query model"
+level: 3
+category: queries
+spec_ref: "§10"
+
+groups:
+  # =============================================================================
+  # Group 1: Basic type filtering
+  # =============================================================================
+
+  - name: "query by type"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, done]
+              default: open
+          ---
+        note.md: |
+          ---
+          name: note
+          fields:
+            content:
+              type: string
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Task A"
+          status: open
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          title: "Task B"
+          status: done
+          ---
+        notes/x.md: |
+          ---
+          type: note
+          content: "Note X"
+          ---
+        notes/y.md: |
+          ---
+          type: note
+          content: "Note Y"
+          ---
+
+    tests:
+      - name: "filter by single type"
+        operation: query
+        input:
+          query:
+            types: [task]
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "filter by multiple types (OR)"
+        operation: query
+        input:
+          query:
+            types: [task, note]
+        expect:
+          meta:
+            total_count: 4
+
+      - name: "filter by type returns only matching type"
+        operation: query
+        input:
+          query:
+            types: [note]
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "query without type filter returns all files"
+        operation: query
+        input:
+          query: {}
+        expect:
+          meta:
+            total_count: 4
+
+  # =============================================================================
+  # Group 2: Folder filtering
+  # =============================================================================
+
+  - name: "query by folder"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        projects/alpha/a.md: |
+          ---
+          type: item
+          title: "Alpha A"
+          ---
+        projects/alpha/sub/b.md: |
+          ---
+          type: item
+          title: "Alpha Sub B"
+          ---
+        projects/beta/c.md: |
+          ---
+          type: item
+          title: "Beta C"
+          ---
+        archive/d.md: |
+          ---
+          type: item
+          title: "Archived D"
+          ---
+
+    tests:
+      - name: "folder filter matches files in folder"
+        operation: query
+        input:
+          query:
+            types: [item]
+            folder: "projects/alpha"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "folder filter includes subfolders"
+        operation: query
+        input:
+          query:
+            types: [item]
+            folder: "projects"
+        expect:
+          meta:
+            total_count: 3
+
+      - name: "folder filter excludes other folders"
+        operation: query
+        input:
+          query:
+            types: [item]
+            folder: "archive"
+        expect:
+          results:
+            - path: "archive/d.md"
+          meta:
+            total_count: 1
+
+      - name: "folder filter with no matches"
+        operation: query
+        input:
+          query:
+            types: [item]
+            folder: "nonexistent"
+        expect:
+          meta:
+            total_count: 0
+
+  # =============================================================================
+  # Group 3: Where clause - single expression
+  # =============================================================================
+
+  - name: "where clause - single expression"
+    spec_ref: "§10.3, §10.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+            status:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Urgent fix"
+          priority: 5
+          status: "open"
+          tags: [bug, urgent]
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          title: "Nice to have"
+          priority: 1
+          status: "open"
+          tags: [feature]
+          ---
+        tasks/c.md: |
+          ---
+          type: task
+          title: "Completed"
+          priority: 3
+          status: "done"
+          tags: [bug]
+          ---
+
+    tests:
+      - name: "where with single string expression"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'status == "open"'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "where with numeric comparison"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: "priority >= 3"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "where with list method"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'tags.contains("bug")'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "where combining type and expression"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'status == "open" && priority >= 3'
+        expect:
+          results:
+            - path: "tasks/a.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 4: Where clause - logical operators
+  # =============================================================================
+
+  - name: "where clause - logical operators (YAML structure)"
+    spec_ref: "§10.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+            status:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Critical bug"
+          priority: 5
+          status: "open"
+          tags: [bug, urgent]
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          title: "Low feature"
+          priority: 1
+          status: "open"
+          tags: [feature]
+          ---
+        tasks/c.md: |
+          ---
+          type: task
+          title: "Done bug"
+          priority: 3
+          status: "done"
+          tags: [bug]
+          ---
+        tasks/d.md: |
+          ---
+          type: task
+          title: "Blocked task"
+          priority: 4
+          status: "blocked"
+          tags: [infra]
+          ---
+
+    tests:
+      - name: "and operator - all must match"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where:
+              and:
+                - 'status == "open"'
+                - "priority >= 3"
+        expect:
+          results:
+            - path: "tasks/a.md"
+          meta:
+            total_count: 1
+
+      - name: "or operator - any must match"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where:
+              or:
+                - 'status == "blocked"'
+                - "priority >= 5"
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "not operator - must not match"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where:
+              not: 'status == "done"'
+        expect:
+          meta:
+            total_count: 3
+
+      - name: "nested logical operators"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where:
+              and:
+                - 'status != "done"'
+                - or:
+                    - "priority >= 4"
+                    - 'tags.contains("urgent")'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "deeply nested and/or/not"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where:
+              and:
+                - 'status != "done"'
+                - or:
+                    - "priority >= 5"
+                    - and:
+                        - 'status == "blocked"'
+                        - not: 'tags.contains("bug")'
+        expect:
+          meta:
+            total_count: 2
+
+  # =============================================================================
+  # Group 5: Sorting
+  # =============================================================================
+
+  - name: "order_by sorting"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+            due_date:
+              type: date
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "A task"
+          priority: 3
+          due_date: 2024-03-15
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          title: "B task"
+          priority: 5
+          due_date: 2024-01-01
+          ---
+        tasks/c.md: |
+          ---
+          type: task
+          title: "C task"
+          priority: 1
+          due_date: 2024-06-30
+          ---
+
+    tests:
+      - name: "sort ascending by integer"
+        operation: query
+        input:
+          query:
+            types: [task]
+            order_by:
+              - field: priority
+                direction: asc
+        expect:
+          results:
+            - path: "tasks/c.md"
+            - path: "tasks/a.md"
+            - path: "tasks/b.md"
+
+      - name: "sort descending by integer"
+        operation: query
+        input:
+          query:
+            types: [task]
+            order_by:
+              - field: priority
+                direction: desc
+        expect:
+          results:
+            - path: "tasks/b.md"
+            - path: "tasks/a.md"
+            - path: "tasks/c.md"
+
+      - name: "sort by date ascending"
+        operation: query
+        input:
+          query:
+            types: [task]
+            order_by:
+              - field: due_date
+                direction: asc
+        expect:
+          results:
+            - path: "tasks/b.md"
+            - path: "tasks/a.md"
+            - path: "tasks/c.md"
+
+      - name: "sort by string ascending"
+        operation: query
+        input:
+          query:
+            types: [task]
+            order_by:
+              - field: title
+                direction: asc
+        expect:
+          results:
+            - path: "tasks/a.md"
+            - path: "tasks/b.md"
+            - path: "tasks/c.md"
+
+  # =============================================================================
+  # Group 6: Multi-field sorting and null handling
+  # =============================================================================
+
+  - name: "multi-field sorting and null handling"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            category:
+              type: string
+            priority:
+              type: integer
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          category: "alpha"
+          priority: 3
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          category: "alpha"
+          priority: 1
+          ---
+        tasks/c.md: |
+          ---
+          type: task
+          category: "beta"
+          priority: 5
+          ---
+        tasks/d.md: |
+          ---
+          type: task
+          priority: 2
+          ---
+
+    tests:
+      - name: "multi-field sort: category asc then priority desc"
+        operation: query
+        input:
+          query:
+            types: [task]
+            order_by:
+              - field: category
+                direction: asc
+              - field: priority
+                direction: desc
+        expect:
+          results:
+            - path: "tasks/a.md"
+            - path: "tasks/b.md"
+            - path: "tasks/c.md"
+            - path: "tasks/d.md"
+
+      - name: "null values sort last in ascending order"
+        operation: query
+        input:
+          query:
+            types: [task]
+            order_by:
+              - field: category
+                direction: asc
+        expect:
+          results:
+            - path: "tasks/a.md"
+            - path: "tasks/b.md"
+            - path: "tasks/c.md"
+            - path: "tasks/d.md"
+
+      - name: "null values sort first in descending order"
+        operation: query
+        input:
+          query:
+            types: [task]
+            order_by:
+              - field: category
+                direction: desc
+        expect:
+          results:
+            - path: "tasks/d.md"
+            - path: "tasks/c.md"
+            - path: "tasks/a.md"
+            - path: "tasks/b.md"
+
+  # =============================================================================
+  # Group 7: Stable tie-breaker
+  # =============================================================================
+
+  - name: "deterministic tie-breaking by file.path"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            priority:
+              type: integer
+          ---
+      files:
+        tasks/c.md: |
+          ---
+          type: task
+          priority: 1
+          ---
+        tasks/a.md: |
+          ---
+          type: task
+          priority: 1
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          priority: 1
+          ---
+
+    tests:
+      - name: "equal sort values produce deterministic order by file.path"
+        operation: query
+        input:
+          query:
+            types: [task]
+            order_by:
+              - field: priority
+                direction: asc
+        expect:
+          results:
+            - path: "tasks/a.md"
+            - path: "tasks/b.md"
+            - path: "tasks/c.md"
+
+  # =============================================================================
+  # Group 8: Pagination
+  # =============================================================================
+
+  - name: "limit and offset pagination"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            seq:
+              type: integer
+          ---
+      files:
+        items/01.md: |
+          ---
+          type: item
+          seq: 1
+          ---
+        items/02.md: |
+          ---
+          type: item
+          seq: 2
+          ---
+        items/03.md: |
+          ---
+          type: item
+          seq: 3
+          ---
+        items/04.md: |
+          ---
+          type: item
+          seq: 4
+          ---
+        items/05.md: |
+          ---
+          type: item
+          seq: 5
+          ---
+
+    tests:
+      - name: "limit restricts result count"
+        operation: query
+        input:
+          query:
+            types: [item]
+            order_by:
+              - field: seq
+                direction: asc
+            limit: 2
+        expect:
+          results:
+            - path: "items/01.md"
+            - path: "items/02.md"
+          meta:
+            total_count: 5
+            has_more: true
+
+      - name: "offset skips results"
+        operation: query
+        input:
+          query:
+            types: [item]
+            order_by:
+              - field: seq
+                direction: asc
+            limit: 2
+            offset: 2
+        expect:
+          results:
+            - path: "items/03.md"
+            - path: "items/04.md"
+          meta:
+            total_count: 5
+            has_more: true
+
+      - name: "last page has_more is false"
+        operation: query
+        input:
+          query:
+            types: [item]
+            order_by:
+              - field: seq
+                direction: asc
+            limit: 2
+            offset: 4
+        expect:
+          results:
+            - path: "items/05.md"
+          meta:
+            total_count: 5
+            has_more: false
+
+      - name: "offset beyond total returns empty"
+        operation: query
+        input:
+          query:
+            types: [item]
+            order_by:
+              - field: seq
+                direction: asc
+            limit: 10
+            offset: 100
+        expect:
+          results: []
+          meta:
+            total_count: 5
+            has_more: false
+
+      - name: "no limit returns all results with has_more false"
+        operation: query
+        input:
+          query:
+            types: [item]
+            order_by:
+              - field: seq
+                direction: asc
+        expect:
+          meta:
+            total_count: 5
+            has_more: false
+
+  # =============================================================================
+  # Group 9: Result structure
+  # =============================================================================
+
+  - name: "result structure and envelope"
+    spec_ref: "§10.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            priority:
+              type: integer
+              default: 3
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Test task"
+          ---
+
+    tests:
+      - name: "result includes path and types"
+        operation: query
+        input:
+          query:
+            types: [task]
+        expect:
+          results:
+            - path: "tasks/a.md"
+              types: [task]
+
+      - name: "result frontmatter includes effective values (defaults applied)"
+        operation: query
+        input:
+          query:
+            types: [task]
+        expect:
+          results:
+            - path: "tasks/a.md"
+              frontmatter:
+                title: "Test task"
+                priority: 3
+
+      - name: "meta includes total_count and has_more"
+        operation: query
+        input:
+          query:
+            types: [task]
+        expect:
+          meta:
+            total_count: 1
+            has_more: false
+
+  # =============================================================================
+  # Group 10: include_body
+  # =============================================================================
+
+  - name: "include_body in results"
+    spec_ref: "§10.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "My note"
+          ---
+          This is the body content.
+
+          It has multiple paragraphs.
+
+    tests:
+      - name: "body not included by default"
+        operation: query
+        input:
+          query:
+            types: [note]
+        expect:
+          results:
+            - path: "notes/a.md"
+              body: null
+
+      - name: "body included when include_body is true"
+        operation: query
+        input:
+          query:
+            types: [note]
+            include_body: true
+        expect:
+          results:
+            - path: "notes/a.md"
+              body_contains: "This is the body content."
+
+  # =============================================================================
+  # Group 11: Empty results and edge cases
+  # =============================================================================
+
+  - name: "query edge cases"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "query on empty collection returns empty results"
+        setup:
+          files: {}
+        operation: query
+        input:
+          query:
+            types: [task]
+        expect:
+          results: []
+          meta:
+            total_count: 0
+            has_more: false
+
+      - name: "query for nonexistent type returns empty"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              type: task
+              title: "Exists"
+              ---
+        operation: query
+        input:
+          query:
+            types: [nonexistent]
+        expect:
+          results: []
+          meta:
+            total_count: 0
+
+      - name: "where with impossible condition returns empty"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              type: task
+              title: "Exists"
+              ---
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: "1 == 2"
+        expect:
+          results: []
+          meta:
+            total_count: 0
+
+  # =============================================================================
+  # Group 12: Combined clauses
+  # =============================================================================
+
+  - name: "combined query clauses"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+            status:
+              type: string
+          ---
+      files:
+        projects/a/t1.md: |
+          ---
+          type: task
+          title: "P-A Task 1"
+          priority: 5
+          status: "open"
+          ---
+        projects/a/t2.md: |
+          ---
+          type: task
+          title: "P-A Task 2"
+          priority: 2
+          status: "open"
+          ---
+        projects/a/t3.md: |
+          ---
+          type: task
+          title: "P-A Task 3"
+          priority: 4
+          status: "done"
+          ---
+        projects/b/t4.md: |
+          ---
+          type: task
+          title: "P-B Task 4"
+          priority: 3
+          status: "open"
+          ---
+
+    tests:
+      - name: "type + folder + where + order_by + limit"
+        operation: query
+        input:
+          query:
+            types: [task]
+            folder: "projects/a"
+            where: 'status == "open"'
+            order_by:
+              - field: priority
+                direction: desc
+            limit: 1
+        expect:
+          results:
+            - path: "projects/a/t1.md"
+          meta:
+            total_count: 2
+            has_more: true
+
+      - name: "type + where + order_by returns correct order"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'status == "open"'
+            order_by:
+              - field: priority
+                direction: desc
+        expect:
+          results:
+            - path: "projects/a/t1.md"
+            - path: "projects/b/t4.md"
+            - path: "projects/a/t2.md"
+
+  # =============================================================================
+  # Group 13: String collation
+  # =============================================================================
+
+  - name: "string collation and enum sort order"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            label:
+              type: string
+            status:
+              type: enum
+              values: [open, in_progress, blocked, done]
+          ---
+      files:
+        items/upper.md: |
+          ---
+          type: item
+          label: "Apple"
+          status: done
+          ---
+        items/lower.md: |
+          ---
+          type: item
+          label: "banana"
+          status: open
+          ---
+        items/mixed.md: |
+          ---
+          type: item
+          label: "Cherry"
+          status: in_progress
+          ---
+
+    tests:
+      - name: "string sort is case-sensitive Unicode code point order"
+        operation: query
+        input:
+          query:
+            types: [item]
+            order_by:
+              - field: label
+                direction: asc
+        expect:
+          results:
+            - path: "items/upper.md"
+            - path: "items/mixed.md"
+            - path: "items/lower.md"
+
+      - name: "enum sort follows values list declaration order"
+        operation: query
+        input:
+          query:
+            types: [item]
+            order_by:
+              - field: status
+                direction: asc
+        expect:
+          results:
+            - path: "items/lower.md"
+            - path: "items/mixed.md"
+            - path: "items/upper.md"
+
+  # =============================================================================
+  # Group 14: Querying untyped files and multi-type files
+  # =============================================================================
+
+  - name: "untyped and multi-type queries"
+    spec_ref: "§10.3, §10.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+        urgent.md: |
+          ---
+          name: urgent
+          fields:
+            priority:
+              type: integer
+          ---
+      files:
+        items/typed.md: |
+          ---
+          type: task
+          title: "Typed"
+          ---
+        items/multi.md: |
+          ---
+          types: [task, urgent]
+          title: "Multi-type"
+          priority: 5
+          ---
+        items/untyped.md: |
+          ---
+          title: "No type"
+          ---
+
+    tests:
+      - name: "query for untyped files"
+        operation: query
+        input:
+          query:
+            where: "types.length == 0"
+        expect:
+          results:
+            - path: "items/untyped.md"
+          meta:
+            total_count: 1
+
+      - name: "multi-type file appears in both type queries"
+        operation: query
+        input:
+          query:
+            types: [urgent]
+        expect:
+          results:
+            - path: "items/multi.md"
+          meta:
+            total_count: 1
+
+      - name: "multi-type file matched by types.contains"
+        operation: query
+        input:
+          query:
+            where: 'types.contains("task") && types.contains("urgent")'
+        expect:
+          results:
+            - path: "items/multi.md"
+          meta:
+            total_count: 1

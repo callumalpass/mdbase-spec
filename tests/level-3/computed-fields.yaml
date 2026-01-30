@@ -1,0 +1,666 @@
+name: "computed fields"
+level: 3
+category: computed_fields
+spec_ref: "§5.12"
+
+groups:
+  # =============================================================================
+  # Group 1: Basic computed fields
+  # =============================================================================
+
+  - name: "basic computed field evaluation"
+    spec_ref: "§5.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        person.md: |
+          ---
+          name: person
+          fields:
+            first_name:
+              type: string
+            last_name:
+              type: string
+            full_name:
+              type: string
+              computed: "first_name + ' ' + last_name"
+          ---
+      files:
+        people/alice.md: |
+          ---
+          type: person
+          first_name: "Alice"
+          last_name: "Smith"
+          ---
+        people/bob.md: |
+          ---
+          type: person
+          first_name: "Bob"
+          last_name: "Jones"
+          ---
+
+    tests:
+      - name: "computed field is evaluated at read time"
+        operation: read
+        input:
+          path: "people/alice.md"
+        expect:
+          frontmatter:
+            first_name: "Alice"
+            last_name: "Smith"
+            full_name: "Alice Smith"
+
+      - name: "computed field usable in query filter"
+        operation: query
+        input:
+          query:
+            types: [person]
+            where: 'full_name == "Bob Jones"'
+        expect:
+          results:
+            - path: "people/bob.md"
+          meta:
+            total_count: 1
+
+      - name: "computed field included in query results"
+        operation: query
+        input:
+          query:
+            types: [person]
+            where: 'first_name == "Alice"'
+        expect:
+          results:
+            - path: "people/alice.md"
+              frontmatter:
+                first_name: "Alice"
+                last_name: "Smith"
+                full_name: "Alice Smith"
+
+  # =============================================================================
+  # Group 2: Computed fields with boolean expressions
+  # =============================================================================
+
+  - name: "computed fields with boolean and conditional expressions"
+    spec_ref: "§5.12, §11.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+            status:
+              type: string
+            due_date:
+              type: date
+            is_overdue:
+              type: boolean
+              computed: "due_date < today() && status != 'done'"
+            urgency_label:
+              type: string
+              computed: "if(priority >= 4, 'critical', if(priority >= 2, 'normal', 'low'))"
+          ---
+      files:
+        tasks/overdue.md: |
+          ---
+          type: task
+          title: "Overdue task"
+          priority: 5
+          status: "open"
+          due_date: 2020-01-01
+          ---
+        tasks/future.md: |
+          ---
+          type: task
+          title: "Future task"
+          priority: 1
+          status: "open"
+          due_date: 2099-12-31
+          ---
+        tasks/done.md: |
+          ---
+          type: task
+          title: "Completed task"
+          priority: 4
+          status: "done"
+          due_date: 2020-06-01
+          ---
+
+    tests:
+      - name: "boolean computed field is_overdue"
+        operation: read
+        input:
+          path: "tasks/overdue.md"
+        expect:
+          frontmatter:
+            is_overdue: true
+
+      - name: "boolean computed field not overdue when done"
+        operation: read
+        input:
+          path: "tasks/done.md"
+        expect:
+          frontmatter:
+            is_overdue: false
+
+      - name: "conditional computed field urgency_label"
+        operation: read
+        input:
+          path: "tasks/overdue.md"
+        expect:
+          frontmatter:
+            urgency_label: "critical"
+
+      - name: "conditional computed field low urgency"
+        operation: read
+        input:
+          path: "tasks/future.md"
+        expect:
+          frontmatter:
+            urgency_label: "low"
+
+      - name: "query using computed boolean field"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: "is_overdue == true"
+        expect:
+          results:
+            - path: "tasks/overdue.md"
+          meta:
+            total_count: 1
+
+      - name: "query using computed string field"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'urgency_label == "critical"'
+        expect:
+          meta:
+            total_count: 2
+
+  # =============================================================================
+  # Group 3: Computed fields NOT persisted
+  # =============================================================================
+
+  - name: "computed fields are not persisted to disk"
+    spec_ref: "§5.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            score:
+              type: integer
+            double_score:
+              type: integer
+              computed: "score * 2"
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Test"
+          score: 5
+          ---
+
+    tests:
+      - name: "computed field is not written to disk on read"
+        operation: read
+        input:
+          path: "tasks/a.md"
+        expect:
+          frontmatter:
+            double_score: 10
+          frontmatter_not_written:
+            - double_score
+
+      - name: "computed field is not written to disk after update"
+        operation: update
+        input:
+          path: "tasks/a.md"
+          frontmatter:
+            score: 7
+        expect:
+          frontmatter:
+            double_score: 14
+          frontmatter_not_written:
+            - double_score
+
+  # =============================================================================
+  # Group 4: Computed field overrides persisted value
+  # =============================================================================
+
+  - name: "computed field overrides persisted value"
+    spec_ref: "§5.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            a:
+              type: integer
+            b:
+              type: integer
+            sum:
+              type: integer
+              computed: "a + b"
+          ---
+      files:
+        tasks/override.md: |
+          ---
+          type: task
+          a: 3
+          b: 4
+          sum: 999
+          ---
+
+    tests:
+      - name: "persisted value is ignored in favor of computed value"
+        operation: read
+        input:
+          path: "tasks/override.md"
+        expect:
+          frontmatter:
+            sum: 7
+
+  # =============================================================================
+  # Group 5: Computed field dependency ordering
+  # =============================================================================
+
+  - name: "computed field dependency ordering"
+    spec_ref: "§5.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            x:
+              type: integer
+            double_x:
+              type: integer
+              computed: "x * 2"
+            quad_x:
+              type: integer
+              computed: "double_x * 2"
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          x: 5
+          ---
+
+    tests:
+      - name: "computed field can reference another computed field"
+        operation: read
+        input:
+          path: "items/a.md"
+        expect:
+          frontmatter:
+            x: 5
+            double_x: 10
+            quad_x: 20
+
+  # =============================================================================
+  # Group 6: Circular computed field detection
+  # =============================================================================
+
+  - name: "circular computed field detection"
+    spec_ref: "§5.12, Appendix C.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+
+    tests:
+      - name: "direct circular dependency between two computed fields"
+        setup:
+          types:
+            item.md: |
+              ---
+              name: item
+              fields:
+                a:
+                  type: integer
+                  computed: "b + 1"
+                b:
+                  type: integer
+                  computed: "a + 1"
+              ---
+        operation: load_types
+        expect:
+          error:
+            code: circular_computed
+
+      - name: "self-referencing computed field"
+        setup:
+          types:
+            item.md: |
+              ---
+              name: item
+              fields:
+                x:
+                  type: integer
+                  computed: "x + 1"
+              ---
+        operation: load_types
+        expect:
+          error:
+            code: circular_computed
+
+      - name: "indirect circular dependency through chain"
+        setup:
+          types:
+            item.md: |
+              ---
+              name: item
+              fields:
+                a:
+                  type: integer
+                  computed: "c + 1"
+                b:
+                  type: integer
+                  computed: "a + 1"
+                c:
+                  type: integer
+                  computed: "b + 1"
+              ---
+        operation: load_types
+        expect:
+          error:
+            code: circular_computed
+
+  # =============================================================================
+  # Group 7: Computed field validation constraints
+  # =============================================================================
+
+  - name: "computed field type definition constraints"
+    spec_ref: "§5.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+
+    tests:
+      - name: "computed field with required: true is rejected"
+        setup:
+          types:
+            bad.md: |
+              ---
+              name: bad
+              fields:
+                x:
+                  type: string
+                  computed: "'hello'"
+                  required: true
+              ---
+        operation: load_types
+        expect:
+          error:
+            code: invalid_type_definition
+
+      - name: "computed field with default is rejected"
+        setup:
+          types:
+            bad.md: |
+              ---
+              name: bad
+              fields:
+                x:
+                  type: string
+                  computed: "'hello'"
+                  default: "world"
+              ---
+        operation: load_types
+        expect:
+          error:
+            code: invalid_type_definition
+
+      - name: "computed field with generated is rejected"
+        setup:
+          types:
+            bad.md: |
+              ---
+              name: bad
+              fields:
+                x:
+                  type: string
+                  computed: "'hello'"
+                  generated: now
+              ---
+        operation: load_types
+        expect:
+          error:
+            code: invalid_type_definition
+
+  # =============================================================================
+  # Group 8: Computed fields with inheritance
+  # =============================================================================
+
+  - name: "computed fields with type inheritance"
+    spec_ref: "§5.12, §5.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        base.md: |
+          ---
+          name: base
+          fields:
+            first:
+              type: string
+            last:
+              type: string
+            display:
+              type: string
+              computed: "first + ' ' + last"
+          ---
+        child.md: |
+          ---
+          name: child
+          extends: base
+          fields:
+            title:
+              type: string
+          ---
+        override.md: |
+          ---
+          name: override
+          extends: base
+          fields:
+            display:
+              type: string
+              computed: "last + ', ' + first"
+          ---
+      files:
+        items/child.md: |
+          ---
+          type: child
+          first: "Jane"
+          last: "Doe"
+          title: "Engineer"
+          ---
+        items/override.md: |
+          ---
+          type: override
+          first: "John"
+          last: "Smith"
+          ---
+
+    tests:
+      - name: "child inherits computed field from parent"
+        operation: read
+        input:
+          path: "items/child.md"
+        expect:
+          frontmatter:
+            display: "Jane Doe"
+
+      - name: "child can override parent computed field"
+        operation: read
+        input:
+          path: "items/override.md"
+        expect:
+          frontmatter:
+            display: "Smith, John"
+
+  # =============================================================================
+  # Group 9: Computed fields with null inputs
+  # =============================================================================
+
+  - name: "computed fields with null/missing inputs"
+    spec_ref: "§5.12, §11.18"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            a:
+              type: integer
+            b:
+              type: integer
+            sum:
+              type: integer
+              computed: "(a ?? 0) + (b ?? 0)"
+            raw_sum:
+              type: integer
+              computed: "a + b"
+          ---
+      files:
+        items/full.md: |
+          ---
+          type: item
+          a: 3
+          b: 4
+          ---
+        items/partial.md: |
+          ---
+          type: item
+          a: 5
+          ---
+
+    tests:
+      - name: "computed field with all inputs present"
+        operation: read
+        input:
+          path: "items/full.md"
+        expect:
+          frontmatter:
+            sum: 7
+
+      - name: "computed field with null coalescing handles missing input"
+        operation: read
+        input:
+          path: "items/partial.md"
+        expect:
+          frontmatter:
+            sum: 5
+
+      - name: "computed field returns null when null propagates"
+        operation: read
+        input:
+          path: "items/partial.md"
+        expect:
+          frontmatter:
+            raw_sum: null
+
+  # =============================================================================
+  # Group 10: Computed fields sortable and queryable
+  # =============================================================================
+
+  - name: "computed fields in sorting and ordering"
+    spec_ref: "§5.12, §10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            effort:
+              type: integer
+            impact:
+              type: integer
+            score:
+              type: integer
+              computed: "effort + impact"
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          effort: 3
+          impact: 7
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          effort: 8
+          impact: 2
+          ---
+        tasks/c.md: |
+          ---
+          type: task
+          effort: 1
+          impact: 1
+          ---
+
+    tests:
+      - name: "sort by computed field"
+        operation: query
+        input:
+          query:
+            types: [task]
+            order_by:
+              - field: score
+                direction: desc
+        expect:
+          results:
+            - path: "tasks/a.md"
+            - path: "tasks/b.md"
+            - path: "tasks/c.md"
+
+      - name: "filter by computed field"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: "score >= 10"
+        expect:
+          results:
+            - path: "tasks/a.md"
+            - path: "tasks/b.md"
+          meta:
+            total_count: 2

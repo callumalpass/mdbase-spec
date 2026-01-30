@@ -1,0 +1,643 @@
+name: "advanced query features (Query+ profile)"
+level: 3
+category: queries
+spec_ref: "§10.7"
+profile: "query+"
+
+groups:
+  # =============================================================================
+  # Group 1: Formulas
+  # =============================================================================
+
+  - name: "query formulas"
+    spec_ref: "§10.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+            status:
+              type: string
+            due_date:
+              type: date
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Overdue task"
+          priority: 5
+          status: "open"
+          due_date: 2020-01-01
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          title: "Future task"
+          priority: 2
+          status: "open"
+          due_date: 2099-12-31
+          ---
+        tasks/c.md: |
+          ---
+          type: task
+          title: "Done task"
+          priority: 3
+          status: "done"
+          due_date: 2020-06-01
+          ---
+
+    tests:
+      - name: "formula defines computed value in results"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              is_high: "priority >= 4"
+            where: "formula.is_high == true"
+        expect:
+          results:
+            - path: "tasks/a.md"
+          meta:
+            total_count: 1
+
+      - name: "formula with complex expression"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              urgency: 'priority * 10 + if(due_date < today(), 50, 0)'
+            order_by:
+              - field: formula.urgency
+                direction: desc
+        expect:
+          results:
+            - path: "tasks/a.md"
+            - path: "tasks/c.md"
+            - path: "tasks/b.md"
+
+      - name: "formula can reference fields with null coalescing"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              label: 'if(status == "done", "complete", "pending")'
+            where: 'formula.label == "pending"'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "multiple formulas"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              is_overdue: 'due_date < today() && status != "done"'
+              display: 'if(priority >= 4, "critical", "normal")'
+            where: "formula.is_overdue == true"
+        expect:
+          results:
+            - path: "tasks/a.md"
+              formulas:
+                is_overdue: true
+                display: "critical"
+
+  # =============================================================================
+  # Group 2: Sort by formula
+  # =============================================================================
+
+  - name: "sorting by formula"
+    spec_ref: "§10.3, §10.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            priority:
+              type: integer
+            score:
+              type: integer
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          priority: 3
+          score: 10
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          priority: 5
+          score: 2
+          ---
+        tasks/c.md: |
+          ---
+          type: task
+          priority: 1
+          score: 8
+          ---
+
+    tests:
+      - name: "order_by formula field"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              combined: "priority + score"
+            order_by:
+              - field: formula.combined
+                direction: desc
+        expect:
+          results:
+            - path: "tasks/a.md"
+            - path: "tasks/c.md"
+            - path: "tasks/b.md"
+
+  # =============================================================================
+  # Group 3: groupBy
+  # =============================================================================
+
+  - name: "groupBy clause"
+    spec_ref: "§10.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: string
+            priority:
+              type: integer
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Task A"
+          status: "open"
+          priority: 3
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          title: "Task B"
+          status: "open"
+          priority: 5
+          ---
+        tasks/c.md: |
+          ---
+          type: task
+          title: "Task C"
+          status: "done"
+          priority: 2
+          ---
+        tasks/d.md: |
+          ---
+          type: task
+          title: "Task D"
+          priority: 4
+          ---
+
+    tests:
+      - name: "groupBy creates groups by property value"
+        operation: query
+        input:
+          query:
+            types: [task]
+            groupBy:
+              property: status
+              direction: ASC
+        expect:
+          groups:
+            - key: "done"
+              results:
+                - path: "tasks/c.md"
+            - key: "open"
+              results:
+                - path: "tasks/a.md"
+                - path: "tasks/b.md"
+            - key: null
+              results:
+                - path: "tasks/d.md"
+
+      - name: "groupBy with order_by sorts within groups"
+        operation: query
+        input:
+          query:
+            types: [task]
+            groupBy:
+              property: status
+              direction: ASC
+            order_by:
+              - field: priority
+                direction: desc
+        expect:
+          groups:
+            - key: "done"
+              results:
+                - path: "tasks/c.md"
+            - key: "open"
+              results:
+                - path: "tasks/b.md"
+                - path: "tasks/a.md"
+
+      - name: "groupBy direction DESC reverses group order"
+        operation: query
+        input:
+          query:
+            types: [task]
+            groupBy:
+              property: status
+              direction: DESC
+        expect:
+          groups:
+            - key: null
+              results:
+                - path: "tasks/d.md"
+            - key: "open"
+              results:
+                - path: "tasks/a.md"
+                - path: "tasks/b.md"
+            - key: "done"
+              results:
+                - path: "tasks/c.md"
+
+  # =============================================================================
+  # Group 4: property_summaries
+  # =============================================================================
+
+  - name: "property summaries"
+    spec_ref: "§10.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            priority:
+              type: integer
+            hours:
+              type: number
+            done:
+              type: boolean
+            due_date:
+              type: date
+            label:
+              type: string
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          priority: 4
+          hours: 8.5
+          done: true
+          due_date: 2024-03-15
+          label: "alpha"
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          priority: 2
+          hours: 3.0
+          done: false
+          due_date: 2024-01-01
+          label: "beta"
+          ---
+        tasks/c.md: |
+          ---
+          type: task
+          priority: 6
+          hours: 5.5
+          done: true
+          due_date: 2024-06-30
+          ---
+
+    tests:
+      - name: "Average summary"
+        operation: query
+        input:
+          query:
+            types: [task]
+            property_summaries:
+              priority: Average
+        expect:
+          summaries:
+            priority: 4
+
+      - name: "Sum summary"
+        operation: query
+        input:
+          query:
+            types: [task]
+            property_summaries:
+              hours: Sum
+        expect:
+          summaries:
+            hours: 17.0
+
+      - name: "Min and Max summaries"
+        operation: query
+        input:
+          query:
+            types: [task]
+            property_summaries:
+              priority: Min
+              hours: Max
+        expect:
+          summaries:
+            priority: 2
+            hours: 8.5
+
+      - name: "Earliest and Latest date summaries"
+        operation: query
+        input:
+          query:
+            types: [task]
+            property_summaries:
+              due_date: Earliest
+        expect:
+          summaries:
+            due_date: "2024-01-01"
+
+      - name: "Checked and Unchecked boolean summaries"
+        operation: query
+        input:
+          query:
+            types: [task]
+            property_summaries:
+              done: Checked
+        expect:
+          summaries:
+            done: 2
+
+      - name: "Empty and Filled summaries"
+        operation: query
+        input:
+          query:
+            types: [task]
+            property_summaries:
+              label: Filled
+        expect:
+          summaries:
+            label: 2
+
+      - name: "Unique summary"
+        operation: query
+        input:
+          query:
+            types: [task]
+            property_summaries:
+              done: Unique
+        expect:
+          summaries:
+            done: 2
+
+  # =============================================================================
+  # Group 5: Custom summaries
+  # =============================================================================
+
+  - name: "custom summaries"
+    spec_ref: "§10.7, §11.14"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            score:
+              type: integer
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          score: 10
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          score: 20
+          ---
+        tasks/c.md: |
+          ---
+          type: task
+          score: 30
+          ---
+
+    tests:
+      - name: "custom summary formula using values keyword"
+        operation: query
+        input:
+          query:
+            types: [task]
+            summaries:
+              total: "values.reduce(acc + value, 0)"
+            property_summaries:
+              score: total
+        expect:
+          summaries:
+            score: 60
+
+      - name: "custom summary with average formula"
+        operation: query
+        input:
+          query:
+            types: [task]
+            summaries:
+              avg: "values.reduce(acc + value, 0) / values.length"
+            property_summaries:
+              score: avg
+        expect:
+          summaries:
+            score: 20
+
+  # =============================================================================
+  # Group 6: Formula error codes
+  # =============================================================================
+
+  - name: "formula error codes"
+    spec_ref: "§10.7, Appendix C.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            value:
+              type: integer
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          value: 1
+          ---
+
+    tests:
+      - name: "circular formula reference"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              a: "formula.b + 1"
+              b: "formula.a + 1"
+        expect:
+          error:
+            code: circular_formula
+
+      - name: "invalid formula expression"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              bad: "value ++ 2"
+        expect:
+          error:
+            code: invalid_formula
+
+      - name: "formula evaluation error (division by zero)"
+        operation: query
+        input:
+          query:
+            types: [task]
+            formulas:
+              oops: "value / 0"
+        expect:
+          error:
+            code: formula_evaluation_error
+
+  # =============================================================================
+  # Group 7: properties display config
+  # =============================================================================
+
+  - name: "properties display configuration"
+    spec_ref: "§10.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            status:
+              type: string
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          status: "open"
+          ---
+
+    tests:
+      - name: "properties clause does not affect query logic"
+        operation: query
+        input:
+          query:
+            types: [task]
+            properties:
+              status:
+                displayName: "Current Status"
+        expect:
+          results:
+            - path: "tasks/a.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 8: groupBy with property_summaries
+  # =============================================================================
+
+  - name: "groupBy with per-group summaries"
+    spec_ref: "§10.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            status:
+              type: string
+            hours:
+              type: number
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          status: "open"
+          hours: 5
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          status: "open"
+          hours: 3
+          ---
+        tasks/c.md: |
+          ---
+          type: task
+          status: "done"
+          hours: 10
+          ---
+
+    tests:
+      - name: "property_summaries computed per group when groupBy present"
+        operation: query
+        input:
+          query:
+            types: [task]
+            groupBy:
+              property: status
+              direction: ASC
+            property_summaries:
+              hours: Sum
+        expect:
+          groups:
+            - key: "done"
+              summaries:
+                hours: 10
+            - key: "open"
+              summaries:
+                hours: 8
