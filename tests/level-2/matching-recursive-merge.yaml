@@ -1,0 +1,806 @@
+name: "recursive constraint merging for list items and object fields"
+level: 2
+category: matching
+spec_ref: "§6.5"
+
+groups:
+  # =============================================================================
+  # Group 1: list.items recursive constraint merging
+  # =============================================================================
+  #
+  # §6.5: "Item schemas MUST be compatible and are merged recursively using
+  # these same rules"
+  #
+  # Two types define the same list field with different item-level constraints.
+  # The merged result should apply the most restrictive intersection of the
+  # item constraints.
+
+  - name: "list items recursive constraint merging"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        type-a.md: |
+          ---
+          name: type-a
+          match:
+            path_glob: "items/**/*.md"
+          fields:
+            tags:
+              type: list
+              items:
+                type: string
+                min_length: 1
+          ---
+        type-b.md: |
+          ---
+          name: type-b
+          match:
+            path_glob: "items/**/*.md"
+          fields:
+            tags:
+              type: list
+              items:
+                type: string
+                min_length: 3
+                max_length: 20
+          ---
+
+    tests:
+      - name: "list item satisfying both item constraints passes"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              tags:
+                - "hello"
+                - "world"
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: true
+
+      - name: "list item failing merged min_length (higher of 1 and 3) fails"
+        setup:
+          files:
+            items/i2.md: |
+              ---
+              tags:
+                - "ab"
+              ---
+        operation: validate
+        input:
+          path: "items/i2.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_item_invalid
+              field: tags
+
+      - name: "list item exceeding merged max_length fails"
+        setup:
+          files:
+            items/i3.md: |
+              ---
+              tags:
+                - "this string is way too long for the constraint"
+              ---
+        operation: validate
+        input:
+          path: "items/i3.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_item_invalid
+              field: tags
+
+      - name: "empty string list item fails merged min_length 3"
+        setup:
+          files:
+            items/i4.md: |
+              ---
+              tags:
+                - ""
+              ---
+        operation: validate
+        input:
+          path: "items/i4.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_item_invalid
+              field: tags
+
+  # =============================================================================
+  # Group 2: list.items with incompatible base types
+  # =============================================================================
+  #
+  # When two types define the same list with different item base types,
+  # this is an incompatible definition producing type_conflict.
+
+  - name: "list items incompatible base types produce type_conflict"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        str-list.md: |
+          ---
+          name: str-list
+          match:
+            path_glob: "data/**/*.md"
+          fields:
+            values:
+              type: list
+              items:
+                type: string
+          ---
+        int-list.md: |
+          ---
+          name: int-list
+          match:
+            path_glob: "data/**/*.md"
+          fields:
+            values:
+              type: list
+              items:
+                type: integer
+          ---
+
+    tests:
+      - name: "list items with different base types produce type_conflict"
+        setup:
+          files:
+            data/d1.md: |
+              ---
+              values:
+                - "hello"
+              ---
+        operation: validate
+        input:
+          path: "data/d1.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_conflict
+              field: values
+
+  # =============================================================================
+  # Group 3: list.items pattern merging
+  # =============================================================================
+  #
+  # Two types define the same list field with different item-level patterns.
+  # Merged result must match ALL patterns.
+
+  - name: "list items pattern merging"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        upper-start.md: |
+          ---
+          name: upper-start
+          match:
+            path_glob: "codes/**/*.md"
+          fields:
+            codes:
+              type: list
+              items:
+                type: string
+                pattern: "^[A-Z]"
+          ---
+        digit-end.md: |
+          ---
+          name: digit-end
+          match:
+            path_glob: "codes/**/*.md"
+          fields:
+            codes:
+              type: list
+              items:
+                type: string
+                pattern: "\\d+$"
+          ---
+
+    tests:
+      - name: "list item matching both item patterns passes"
+        setup:
+          files:
+            codes/c1.md: |
+              ---
+              codes:
+                - "A123"
+                - "B456"
+              ---
+        operation: validate
+        input:
+          path: "codes/c1.md"
+        expect:
+          valid: true
+
+      - name: "list item matching only first item pattern fails"
+        setup:
+          files:
+            codes/c2.md: |
+              ---
+              codes:
+                - "Abc"
+              ---
+        operation: validate
+        input:
+          path: "codes/c2.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_item_invalid
+              field: codes
+
+      - name: "list item matching only second item pattern fails"
+        setup:
+          files:
+            codes/c3.md: |
+              ---
+              codes:
+                - "abc123"
+              ---
+        operation: validate
+        input:
+          path: "codes/c3.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_item_invalid
+              field: codes
+
+  # =============================================================================
+  # Group 4: object.fields recursive constraint merging
+  # =============================================================================
+  #
+  # §6.5: "Fields are merged by name; overlapping fields are merged recursively"
+  #
+  # Two types define the same object field with overlapping sub-fields that
+  # have different constraints. Merged result applies recursive merging.
+
+  - name: "object fields recursive constraint merging"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        profile-a.md: |
+          ---
+          name: profile-a
+          match:
+            path_glob: "people/**/*.md"
+          fields:
+            author:
+              type: object
+              fields:
+                name:
+                  type: string
+                  min_length: 1
+                email:
+                  type: string
+          ---
+        profile-b.md: |
+          ---
+          name: profile-b
+          match:
+            path_glob: "people/**/*.md"
+          fields:
+            author:
+              type: object
+              fields:
+                name:
+                  type: string
+                  min_length: 3
+                  max_length: 50
+                email:
+                  type: string
+                  required: true
+          ---
+
+    tests:
+      - name: "object with sub-fields satisfying all merged constraints passes"
+        setup:
+          files:
+            people/p1.md: |
+              ---
+              author:
+                name: "Alice"
+                email: "alice@example.com"
+              ---
+        operation: validate
+        input:
+          path: "people/p1.md"
+        expect:
+          valid: true
+
+      - name: "object sub-field failing merged min_length (higher of 1 and 3) fails"
+        setup:
+          files:
+            people/p2.md: |
+              ---
+              author:
+                name: "Al"
+                email: "al@example.com"
+              ---
+        operation: validate
+        input:
+          path: "people/p2.md"
+        expect:
+          valid: false
+          issues:
+            - code: string_too_short
+              field: author.name
+
+      - name: "object sub-field exceeding merged max_length fails"
+        setup:
+          files:
+            people/p3.md: |
+              ---
+              author:
+                name: "A very long name that exceeds the fifty character maximum limit set"
+                email: "long@example.com"
+              ---
+        operation: validate
+        input:
+          path: "people/p3.md"
+        expect:
+          valid: false
+          issues:
+            - code: string_too_long
+              field: author.name
+
+      - name: "object sub-field missing when merged required is true fails"
+        setup:
+          files:
+            people/p4.md: |
+              ---
+              author:
+                name: "Alice"
+              ---
+        operation: validate
+        input:
+          path: "people/p4.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: author.email
+
+  # =============================================================================
+  # Group 5: object.fields with incompatible sub-field types
+  # =============================================================================
+  #
+  # When two types define the same object field with overlapping sub-fields
+  # that have incompatible base types, this produces type_conflict.
+
+  - name: "object sub-field incompatible types produce type_conflict"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        meta-str.md: |
+          ---
+          name: meta-str
+          match:
+            path_glob: "docs/**/*.md"
+          fields:
+            meta:
+              type: object
+              fields:
+                priority:
+                  type: string
+          ---
+        meta-int.md: |
+          ---
+          name: meta-int
+          match:
+            path_glob: "docs/**/*.md"
+          fields:
+            meta:
+              type: object
+              fields:
+                priority:
+                  type: integer
+          ---
+
+    tests:
+      - name: "object sub-fields with different base types produce type_conflict"
+        setup:
+          files:
+            docs/d1.md: |
+              ---
+              meta:
+                priority: "high"
+              ---
+        operation: validate
+        input:
+          path: "docs/d1.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_conflict
+              field: meta.priority
+
+  # =============================================================================
+  # Group 6: object.fields with non-overlapping sub-fields merge as union
+  # =============================================================================
+  #
+  # When two types define the same object field with non-overlapping sub-fields,
+  # the merged object has all sub-fields from both types.
+
+  - name: "object fields non-overlapping sub-fields merge as union"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        contact-name.md: |
+          ---
+          name: contact-name
+          match:
+            path_glob: "contacts/**/*.md"
+          fields:
+            info:
+              type: object
+              fields:
+                name:
+                  type: string
+                  required: true
+          ---
+        contact-email.md: |
+          ---
+          name: contact-email
+          match:
+            path_glob: "contacts/**/*.md"
+          fields:
+            info:
+              type: object
+              fields:
+                email:
+                  type: string
+                  required: true
+          ---
+
+    tests:
+      - name: "object with all sub-fields from both types passes"
+        setup:
+          files:
+            contacts/c1.md: |
+              ---
+              info:
+                name: "Alice"
+                email: "alice@example.com"
+              ---
+        operation: validate
+        input:
+          path: "contacts/c1.md"
+        expect:
+          valid: true
+
+      - name: "object missing sub-field required by first type fails"
+        setup:
+          files:
+            contacts/c2.md: |
+              ---
+              info:
+                email: "noname@example.com"
+              ---
+        operation: validate
+        input:
+          path: "contacts/c2.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: info.name
+
+      - name: "object missing sub-field required by second type fails"
+        setup:
+          files:
+            contacts/c3.md: |
+              ---
+              info:
+                name: "No Email"
+              ---
+        operation: validate
+        input:
+          path: "contacts/c3.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: info.email
+
+  # =============================================================================
+  # Group 7: list.items with list-level constraint merging combined
+  # =============================================================================
+  #
+  # Both list-level constraints (min_items, max_items) and item-level
+  # constraints are merged simultaneously.
+
+  - name: "combined list-level and item-level constraint merging"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        type-min.md: |
+          ---
+          name: type-min
+          match:
+            path_glob: "entries/**/*.md"
+          fields:
+            labels:
+              type: list
+              min_items: 1
+              items:
+                type: string
+                min_length: 2
+          ---
+        type-max.md: |
+          ---
+          name: type-max
+          match:
+            path_glob: "entries/**/*.md"
+          fields:
+            labels:
+              type: list
+              max_items: 5
+              items:
+                type: string
+                max_length: 30
+          ---
+
+    tests:
+      - name: "list satisfying both list-level and item-level merged constraints passes"
+        setup:
+          files:
+            entries/e1.md: |
+              ---
+              labels:
+                - "valid"
+                - "labels"
+              ---
+        operation: validate
+        input:
+          path: "entries/e1.md"
+        expect:
+          valid: true
+
+      - name: "empty list fails merged min_items 1"
+        setup:
+          files:
+            entries/e2.md: |
+              ---
+              labels: []
+              ---
+        operation: validate
+        input:
+          path: "entries/e2.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_too_short
+              field: labels
+
+      - name: "list item failing merged item min_length 2 fails"
+        setup:
+          files:
+            entries/e3.md: |
+              ---
+              labels:
+                - "x"
+              ---
+        operation: validate
+        input:
+          path: "entries/e3.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_item_invalid
+              field: labels
+
+      - name: "list exceeding merged max_items 5 fails"
+        setup:
+          files:
+            entries/e4.md: |
+              ---
+              labels:
+                - "one"
+                - "two"
+                - "three"
+                - "four"
+                - "five"
+                - "six"
+              ---
+        operation: validate
+        input:
+          path: "entries/e4.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_too_long
+              field: labels
+
+  # =============================================================================
+  # Group 8: Type name additional special character rejection
+  # =============================================================================
+  #
+  # §5.3: "Names MUST: Consist of lowercase letters, numbers, hyphens, and
+  # underscores"
+  #
+  # Prior tests only cover dots. These test additional invalid characters.
+
+  - name: "type name special character rejection"
+    spec_ref: "§5.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+
+    tests:
+      - name: "type name with space is rejected"
+        setup:
+          types:
+            my-type.md: |
+              ---
+              name: "my type"
+              fields:
+                title:
+                  type: string
+              ---
+        operation: validate
+        input:
+          path: "dummy.md"
+        expect:
+          error:
+            code: invalid_type_definition
+
+      - name: "type name with colon is rejected"
+        setup:
+          types:
+            my-type.md: |
+              ---
+              name: "my:type"
+              fields:
+                title:
+                  type: string
+              ---
+        operation: validate
+        input:
+          path: "dummy.md"
+        expect:
+          error:
+            code: invalid_type_definition
+
+      - name: "type name with at-sign is rejected"
+        setup:
+          types:
+            my-type.md: |
+              ---
+              name: "my@type"
+              fields:
+                title:
+                  type: string
+              ---
+        operation: validate
+        input:
+          path: "dummy.md"
+        expect:
+          error:
+            code: invalid_type_definition
+
+      - name: "type name with slash is rejected"
+        setup:
+          types:
+            my-type.md: |
+              ---
+              name: "my/type"
+              fields:
+                title:
+                  type: string
+              ---
+        operation: validate
+        input:
+          path: "dummy.md"
+        expect:
+          error:
+            code: invalid_type_definition
+
+  # =============================================================================
+  # Group 9: Types folder subdirectory scanning
+  # =============================================================================
+  #
+  # §2.3: "MAY contain subdirectories for organization (all .md files are
+  # scanned)"
+  #
+  # While phrased as MAY, when subdirectories exist, the MUST-scan behavior
+  # for the types folder implies all .md files must be found.
+
+  - name: "types folder subdirectory scanning"
+    spec_ref: "§2.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        core/task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [open, done]
+          ---
+        meta/tag.md: |
+          ---
+          name: tag
+          fields:
+            label:
+              type: string
+              required: true
+          ---
+
+    tests:
+      - name: "type in subdirectory is loaded and usable for validation"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Fix bug"
+              status: open
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "type in different subdirectory is also usable"
+        setup:
+          files:
+            tags/t1.md: |
+              ---
+              type: tag
+              label: "important"
+              ---
+        operation: validate
+        input:
+          path: "tags/t1.md"
+        expect:
+          valid: true
+
+      - name: "type from subdirectory applies constraints correctly"
+        setup:
+          files:
+            tasks/t2.md: |
+              ---
+              type: task
+              ---
+        operation: validate
+        input:
+          path: "tasks/t2.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
