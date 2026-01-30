@@ -100,7 +100,7 @@ title:
 **Validation:**
 - Value must be a string (or coercible to string)
 - Length constraints apply to character count (not bytes)
-- Pattern uses standard regex syntax (implementations SHOULD support PCRE or equivalent)
+- Pattern uses ECMAScript (ES2018+) regular expression syntax as the required baseline (see [§4.8](./04-configuration.md#48-security-considerations) for the full regex specification)
 
 ---
 

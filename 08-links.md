@@ -143,8 +143,13 @@ Given a link value and the path of the file containing it:
 
 4. **If simple name** (no `/`, no `./` or `../`):
    - If the link field has `target` constraint specifying a type, search files of that type by `id_field`
-   - Otherwise, search the entire collection for a file with matching name
-   - Example: `[[task-001]]` might find `anywhere/task-001.md` or a file with `id: task-001`
+   - Otherwise, search the entire collection for a file with matching filename (sans extension)
+   - If multiple candidates match, apply tiebreakers in order:
+     a. **Same directory**: Prefer a file in the same directory as the referring file
+     b. **Shortest path**: Prefer the file with the shortest path (closest to collection root)
+     c. **Alphabetical**: Sort candidate paths lexicographically and take the first
+   - If multiple candidates remain after all tiebreakers, resolve to `null` and emit an `ambiguous_link` warning
+   - Example: `[[task-001]]` might find `tasks/task-001.md` or a file with `id: task-001`
 
 5. **Extension handling**:
    - If target lacks extension, try configured extensions in order (default: `.md`)
@@ -326,13 +331,13 @@ This preserves user intent and keeps files human-readable.
 
 ## 8.9 Links in Body Content
 
-While this specification focuses on frontmatter, links also appear in markdown body content. Implementations MAY support:
+While this specification focuses on frontmatter, links also appear in markdown body content. Implementations SHOULD support:
 
 - Parsing links from body content
 - Updating body links during rename operations
 - Including body links in `file.links`
 
-Body link handling is OPTIONAL. See [Operations](./12-operations.md) for rename behavior.
+Implementations that do NOT support body link parsing MUST document this limitation. See [Operations](./12-operations.md) for rename behavior.
 
 ---
 

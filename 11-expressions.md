@@ -165,7 +165,7 @@ value ?? default    // Returns default if value is null
 | `.replace(pattern, repl)` | Replace pattern | `title.replace("old", "new")` |
 | `.repeat(count)` | Repeat string | `"-".repeat(3)` |
 | `.reverse()` | Reverse string | `name.reverse()` |
-| `.matches(regex)` | Regex match | `title.matches("^TASK-\\d+")` |
+| `.matches(regex)` | Regex match (see [§4.8](./04-configuration.md#48-security-considerations) for regex flavor) | `title.matches("^TASK-\\d+")` |
 
 ---
 
@@ -557,7 +557,46 @@ Expression evaluation errors should be handled gracefully:
 | Property access on null | Returns null |
 | Method call on null | Returns null |
 | Division by zero | Returns null or Infinity (implementation-defined) |
-| Invalid regex | Evaluation error |
+| Invalid regex | Evaluation error (see [§4.8](./04-configuration.md#48-security-considerations) for regex flavor) |
 | Type mismatch | Evaluation error or coercion attempt |
 
 Implementations SHOULD log evaluation errors and continue processing where possible.
+
+---
+
+## 11.18 Expression Portability
+
+Expressions using only spec-defined functions and operators are **portable expressions**. This section defines rules for maintaining portability across implementations.
+
+### Custom Functions
+
+Implementations MAY define custom functions beyond those specified in this document. Custom functions MUST be namespaced with the `ext` prefix using either `::` or `.` as a delimiter:
+
+```javascript
+ext::myFunc(value)    // Double-colon delimiter
+ext.myFunc(value)     // Dot delimiter
+```
+
+Both delimiter forms are equivalent. Implementations MUST accept either form for custom functions they define.
+
+### Rules
+
+1. **Namespace requirement**: Implementations MUST namespace all custom functions with the `ext` prefix. Unprefixed custom functions are not permitted.
+
+2. **No shadowing**: Implementations MUST NOT override or shadow built-in functions or operators defined in this specification.
+
+3. **Non-portable warnings**: Implementations SHOULD emit a warning when evaluating an expression that uses non-portable functions (i.e., `ext`-prefixed functions).
+
+4. **Documentation**: Type definitions and queries SHOULD note when they depend on non-portable expressions.
+
+### Example
+
+```yaml
+# Portable expression — uses only spec-defined functions
+filters: 'status == "open" && due_date < today()'
+
+# Non-portable expression — uses a custom function
+filters: 'ext::sentiment(title) > 0.5'
+```
+
+Implementations encountering an unknown `ext`-prefixed function MUST treat it as an evaluation error (see [§11.17](#1117-error-handling)).

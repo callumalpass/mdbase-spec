@@ -165,7 +165,7 @@ match:
 | `containsAny` | List contains any value | `tags: { containsAny: ["bug", "feature"] }` |
 | `startsWith` | String starts with | `title: { startsWith: "WIP:" }` |
 | `endsWith` | String ends with | `file: { endsWith: ".draft.md" }` |
-| `matches` | Regex match | `title: { matches: "^TASK-\\d+" }` |
+| `matches` | Regex match (see [§4.8](./04-configuration.md#48-security-considerations) for regex flavor) | `title: { matches: "^TASK-\\d+" }` |
 
 ---
 

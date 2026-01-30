@@ -369,7 +369,32 @@ This feature is OPTIONAL. If not supported, implementations MUST treat `${...}` 
 
 ### Regular Expressions
 
-Match rules and expressions may contain regular expressions (the `matches` operator). Implementations SHOULD guard against [Regular Expression Denial of Service (ReDoS)](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS) by:
+Match rules, field constraints (`pattern`), and expressions (the `matches` operator) may contain regular expressions.
+
+**Required baseline:** Implementations MUST support **ECMAScript (ES2018+)** regular expression syntax as the baseline flavor. This aligns with JavaScript-based tools (e.g., Obsidian) and is available in every major programming language.
+
+**Required features (MUST support):**
+
+| Feature | Syntax | Example |
+|---------|--------|---------|
+| Character classes | `[abc]`, `[^abc]`, `\d`, `\w`, `\s` | `\d{4}` |
+| Quantifiers | `*`, `+`, `?`, `{n}`, `{n,m}` | `\w+` |
+| Alternation | `\|` | `cat\|dog` |
+| Anchors | `^`, `$` | `^TASK-` |
+| Capturing groups | `(...)` | `(\d+)-(\d+)` |
+| Non-capturing groups | `(?:...)` | `(?:foo\|bar)` |
+| Lookahead | `(?=...)`, `(?!...)` | `\d+(?= items)` |
+
+**Optional features (SHOULD support):**
+
+| Feature | Syntax | Notes |
+|---------|--------|-------|
+| Lookbehind | `(?<=...)`, `(?<!...)` | Supported in ES2018 but not in RE2-based engines |
+| Named groups | `(?<name>...)` | Supported in ES2018 but not in RE2-based engines |
+
+Implementations that do not support optional features MUST reject patterns using those features with a clear error rather than silently ignoring them.
+
+**ReDoS mitigations:** Implementations SHOULD guard against [Regular Expression Denial of Service (ReDoS)](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS) by:
 
 - Setting timeouts on regex evaluation
 - Rejecting patterns with known dangerous constructs (e.g., nested quantifiers)

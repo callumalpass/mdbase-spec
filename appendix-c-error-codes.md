@@ -49,6 +49,7 @@ This appendix defines standard error codes for validation issues and operation e
 | `invalid_link` | Link cannot be parsed | Malformed wikilink |
 | `link_not_found` | Link target doesn't exist | Target "[[missing]]" not found |
 | `link_wrong_type` | Target is wrong type | Expected person, found task |
+| `ambiguous_link` | Multiple candidates for simple name link after tiebreakers | "[[note]]" matches notes/note.md and archive/note.md |
 
 ### Date/Time Errors
 
@@ -153,7 +154,11 @@ Errors SHOULD be returned in a consistent format:
       "severity": "error",
       "expected": { "max": 5 },
       "actual": 7,
-      "type": "task"
+      "type": "task",
+      "line": 5,
+      "column": 11,
+      "end_line": 5,
+      "end_column": 12
     },
     {
       "path": "tasks/task-001.md",
@@ -161,7 +166,11 @@ Errors SHOULD be returned in a consistent format:
       "code": "unknown_field",
       "message": "Field 'custom_field' is not defined in type 'task'",
       "severity": "warning",
-      "type": "task"
+      "type": "task",
+      "line": 8,
+      "column": 1,
+      "end_line": 8,
+      "end_column": 27
     }
   ],
   "warnings": 1,

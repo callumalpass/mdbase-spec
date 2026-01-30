@@ -182,6 +182,12 @@ Each validation issue MUST include:
 | `expected` | any | Expected value or type |
 | `actual` | any | Actual value found |
 | `type` | string | Type name that triggered the issue |
+| `line` | integer | 1-based line number in the source file |
+| `column` | integer | 1-based column number |
+| `end_line` | integer | End line of the issue range |
+| `end_column` | integer | End column of the issue range |
+
+Implementations SHOULD include `line` and `column` fields when source position information is available. These fields enable LSP-style diagnostics and precise issue reporting in CI tooling.
 
 ### Example Issue
 
@@ -194,7 +200,11 @@ Each validation issue MUST include:
   "severity": "error",
   "expected": { "max": 5 },
   "actual": 7,
-  "type": "task"
+  "type": "task",
+  "line": 5,
+  "column": 11,
+  "end_line": 5,
+  "end_column": 12
 }
 ```
 
