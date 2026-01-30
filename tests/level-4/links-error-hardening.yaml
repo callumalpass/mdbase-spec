@@ -1,0 +1,463 @@
+name: "link error code hardening"
+level: 4
+category: links
+spec_ref: "§8.2, §8.3, §8.4, §8.5"
+
+# =============================================================================
+# This file strengthens fragile error code coverage for:
+# - invalid_link: additional malformed link syntax scenarios
+# - ambiguous_link: additional ambiguity scenarios
+# - link_not_found: additional validate_exists scenarios
+# - link_wrong_type: additional target constraint scenarios
+# =============================================================================
+
+groups:
+
+  # =============================================================================
+  # Group 1: invalid_link — additional malformed link scenarios (§8.2, §8.3)
+  # =============================================================================
+
+  - name: "invalid_link — additional malformed link scenarios"
+    spec_ref: "§8.2, §8.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        notes/whitespace-link.md: |
+          ---
+          type: note
+          title: "Whitespace"
+          ref: "[[   ]]"
+          ---
+        notes/newline-link.md: |
+          ---
+          type: note
+          title: "Newline"
+          ref: "[[target\n]]"
+          ---
+        notes/only-pipe.md: |
+          ---
+          type: note
+          title: "Pipe only"
+          ref: "[[|]]"
+          ---
+        notes/only-hash.md: |
+          ---
+          type: note
+          title: "Hash only"
+          ref: "[[#]]"
+          ---
+        notes/malformed-md-link.md: |
+          ---
+          type: note
+          title: "Malformed markdown"
+          ref: "[unclosed paren](file.md"
+          ---
+        notes/empty-md-target.md: |
+          ---
+          type: note
+          title: "Empty markdown target"
+          ref: "[text]()"
+          ---
+
+    tests:
+      - name: "whitespace-only wikilink target is invalid"
+        operation: validate
+        input:
+          path: "notes/whitespace-link.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_link
+              field: ref
+
+      - name: "wikilink with embedded newline is invalid"
+        operation: validate
+        input:
+          path: "notes/newline-link.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_link
+              field: ref
+
+      - name: "wikilink with only pipe separator is invalid"
+        operation: validate
+        input:
+          path: "notes/only-pipe.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_link
+              field: ref
+
+      - name: "wikilink with only hash is invalid"
+        operation: validate
+        input:
+          path: "notes/only-hash.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_link
+              field: ref
+
+      - name: "malformed markdown link with unclosed parenthesis is invalid"
+        operation: validate
+        input:
+          path: "notes/malformed-md-link.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_link
+              field: ref
+
+      - name: "markdown link with empty target is invalid"
+        operation: validate
+        input:
+          path: "notes/empty-md-target.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_link
+              field: ref
+
+  # =============================================================================
+  # Group 2: ambiguous_link — filename match ambiguity (§8.4)
+  # =============================================================================
+
+  - name: "ambiguous_link — multiple ID matches in scoped context"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        person.md: |
+          ---
+          name: person
+          fields:
+            id:
+              type: string
+            name:
+              type: string
+          ---
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            assignee:
+              type: link
+              target: person
+              validate_exists: true
+          ---
+      files:
+        people/alice-a.md: |
+          ---
+          type: person
+          id: "alice"
+          name: "Alice A"
+          ---
+        people/alice-b.md: |
+          ---
+          type: person
+          id: "alice"
+          name: "Alice B"
+          ---
+        tasks/task-1.md: |
+          ---
+          type: task
+          title: "Task with ambiguous assignee"
+          assignee: "[[alice]]"
+          ---
+
+    tests:
+      - name: "ambiguous ID match within target-scoped resolution"
+        operation: validate
+        input:
+          path: "tasks/task-1.md"
+        expect:
+          valid: false
+          issues:
+            - code: ambiguous_link
+              field: assignee
+
+  - name: "ambiguous_link — three-way ID match"
+    spec_ref: "§8.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            ref:
+              type: link
+              validate_exists: true
+          ---
+      files:
+        a/note.md: |
+          ---
+          type: note
+          id: "shared-id"
+          ---
+        b/note.md: |
+          ---
+          type: note
+          id: "shared-id"
+          ---
+        c/note.md: |
+          ---
+          type: note
+          id: "shared-id"
+          ---
+        source.md: |
+          ---
+          type: note
+          ref: "[[shared-id]]"
+          ---
+
+    tests:
+      - name: "three files with same ID produce ambiguous_link"
+        operation: validate
+        input:
+          path: "source.md"
+        expect:
+          valid: false
+          issues:
+            - code: ambiguous_link
+              field: ref
+
+  # =============================================================================
+  # Group 3: link_not_found — additional validate_exists scenarios (§8.5)
+  # =============================================================================
+
+  - name: "link_not_found — validate_exists with different link formats"
+    spec_ref: "§8.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            wiki_ref:
+              type: link
+              validate_exists: true
+            md_ref:
+              type: link
+              validate_exists: true
+            path_ref:
+              type: link
+              validate_exists: true
+          ---
+      files:
+        notes/broken-wiki.md: |
+          ---
+          type: note
+          title: "Broken wikilink"
+          wiki_ref: "[[nonexistent-page]]"
+          ---
+        notes/broken-md.md: |
+          ---
+          type: note
+          title: "Broken markdown link"
+          md_ref: "[Missing](./missing-file.md)"
+          ---
+        notes/broken-path.md: |
+          ---
+          type: note
+          title: "Broken bare path"
+          path_ref: "./does-not-exist.md"
+          ---
+
+    tests:
+      - name: "broken wikilink with validate_exists produces link_not_found"
+        operation: validate
+        input:
+          path: "notes/broken-wiki.md"
+        expect:
+          valid: false
+          issues:
+            - code: link_not_found
+              field: wiki_ref
+
+      - name: "broken markdown link with validate_exists produces link_not_found"
+        operation: validate
+        input:
+          path: "notes/broken-md.md"
+        expect:
+          valid: false
+          issues:
+            - code: link_not_found
+              field: md_ref
+
+      - name: "broken bare path with validate_exists produces link_not_found"
+        operation: validate
+        input:
+          path: "notes/broken-path.md"
+        expect:
+          valid: false
+          issues:
+            - code: link_not_found
+              field: path_ref
+
+  # =============================================================================
+  # Group 4: link_wrong_type — additional target constraint failures (§8.5)
+  # =============================================================================
+
+  - name: "link_wrong_type — target constraint violations"
+    spec_ref: "§8.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        person.md: |
+          ---
+          name: person
+          fields:
+            id:
+              type: string
+            name:
+              type: string
+          ---
+        project.md: |
+          ---
+          name: project
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+          ---
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            assignee:
+              type: link
+              target: person
+              validate_exists: true
+            project_ref:
+              type: link
+              target: project
+              validate_exists: true
+          ---
+      files:
+        people/alice.md: |
+          ---
+          type: person
+          id: "alice"
+          name: "Alice"
+          ---
+        projects/alpha.md: |
+          ---
+          type: project
+          id: "alpha"
+          title: "Alpha Project"
+          ---
+        tasks/wrong-assignee.md: |
+          ---
+          type: task
+          title: "Wrong type for assignee"
+          assignee: "[[alpha]]"
+          ---
+        tasks/wrong-project.md: |
+          ---
+          type: task
+          title: "Wrong type for project"
+          project_ref: "[[alice]]"
+          ---
+
+    tests:
+      - name: "link to project in person-only field produces link_wrong_type"
+        operation: validate
+        input:
+          path: "tasks/wrong-assignee.md"
+        expect:
+          valid: false
+          issues:
+            - code: link_wrong_type
+              field: assignee
+
+      - name: "link to person in project-only field produces link_wrong_type"
+        operation: validate
+        input:
+          path: "tasks/wrong-project.md"
+        expect:
+          valid: false
+          issues:
+            - code: link_wrong_type
+              field: project_ref
+
+  # =============================================================================
+  # Group 5: invalid_link in list of links (§8.2, §8.5)
+  # =============================================================================
+
+  - name: "invalid_link in list of links"
+    spec_ref: "§8.2, §8.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            refs:
+              type: list
+              items:
+                type: link
+          ---
+      files:
+        notes/mixed-links.md: |
+          ---
+          type: note
+          title: "Mixed valid and invalid"
+          refs:
+            - "[[valid-target]]"
+            - "[[]]"
+            - "[[another-target]]"
+          ---
+
+    tests:
+      - name: "invalid link item in list produces validation error"
+        operation: validate
+        input:
+          path: "notes/mixed-links.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_item_invalid

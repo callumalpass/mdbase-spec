@@ -1,0 +1,172 @@
+name: "reference error code hardening"
+level: 5
+category: references
+spec_ref: "§12.5, §12.6"
+
+# =============================================================================
+# This file strengthens fragile error code coverage for:
+# - rename_ref_update_failed: additional failure scenarios
+# =============================================================================
+
+groups:
+
+  # =============================================================================
+  # Group 1: rename_ref_update_failed — multiple referrers with partial failure
+  # =============================================================================
+
+  - name: "rename_ref_update_failed — multiple referrers, partial failure"
+    spec_ref: "§12.5, §12.6, Appendix C.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          rename_update_refs: true
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        notes/target.md: |
+          ---
+          type: note
+          title: "Target"
+          ---
+        notes/referrer-a.md: |
+          ---
+          type: note
+          title: "Referrer A"
+          ref: "[[target]]"
+          ---
+        notes/referrer-b.md: |
+          ---
+          type: note
+          title: "Referrer B"
+          ref: "[[target]]"
+          ---
+
+    tests:
+      - name: "one referrer concurrently modified, other succeeds"
+        operation: rename
+        input:
+          from: "notes/target.md"
+          to: "notes/target-renamed.md"
+          update_refs: true
+        simulate:
+          external_modify:
+            path: "notes/referrer-a.md"
+            content: |
+              ---
+              type: note
+              title: "Referrer A (externally modified)"
+              ref: "[[target]]"
+              ---
+            timing: before_ref_update
+        expect:
+          from: "notes/target.md"
+          to: "notes/target-renamed.md"
+          error:
+            code: rename_ref_update_failed
+          partial_updates:
+            failed:
+              - path: "notes/referrer-a.md"
+                reason: concurrent_modification
+        # Verify the non-failing referrer was updated
+        verify_after:
+          operation: read
+          input:
+            path: "notes/referrer-b.md"
+          expect:
+            frontmatter:
+              ref: "[[target-renamed]]"
+
+  # =============================================================================
+  # Group 2: rename_ref_update_failed — body link update failure
+  # =============================================================================
+
+  - name: "rename_ref_update_failed — body link concurrent modification"
+    spec_ref: "§12.5, §12.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          rename_update_refs: true
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/target.md: |
+          ---
+          type: note
+          title: "Target"
+          ---
+        notes/body-referrer.md: |
+          ---
+          type: note
+          title: "Body Referrer"
+          ---
+          This note links to [[target]] in the body.
+
+    tests:
+      - name: "concurrent modification during body link update emits rename_ref_update_failed"
+        operation: rename
+        input:
+          from: "notes/target.md"
+          to: "notes/new-target.md"
+          update_refs: true
+        simulate:
+          external_modify:
+            path: "notes/body-referrer.md"
+            content: |
+              ---
+              type: note
+              title: "Body Referrer (changed)"
+              ---
+              This note links to [[target]] in the body. Added new content.
+            timing: before_ref_update
+        expect:
+          from: "notes/target.md"
+          to: "notes/new-target.md"
+          error:
+            code: rename_ref_update_failed
+          partial_updates:
+            failed:
+              - path: "notes/body-referrer.md"
+                reason: concurrent_modification
+
+      - name: "renamed file exists at new path despite ref update failures"
+        spec_ref: "§12.6"
+        operation: rename
+        input:
+          from: "notes/target.md"
+          to: "notes/new-target.md"
+          update_refs: true
+        simulate:
+          external_modify:
+            path: "notes/body-referrer.md"
+            content: |
+              ---
+              type: note
+              title: "Body Referrer (changed)"
+              ---
+              This note links to [[target]] in the body. Added new content.
+            timing: before_ref_update
+        verify_after:
+          operation: read
+          input:
+            path: "notes/new-target.md"
+          expect:
+            frontmatter:
+              title: "Target"

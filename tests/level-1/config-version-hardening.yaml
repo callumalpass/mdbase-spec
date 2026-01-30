@@ -1,0 +1,204 @@
+name: "configuration version and deprecated field hardening"
+level: 1
+category: config
+spec_ref: "§4.3, §4.4, §7.2"
+
+# =============================================================================
+# This file strengthens fragile error code coverage for:
+# - unsupported_version: additional version rejection scenarios
+# - deprecated_field: additional standalone type scenarios
+# =============================================================================
+
+groups:
+
+  # =============================================================================
+  # Group 1: unsupported_version — additional rejection scenarios (§4.3, §4.4)
+  # =============================================================================
+
+  - name: "unsupported_version — additional scenarios"
+    spec_ref: "§4.3, §4.4"
+
+    tests:
+      - name: "very high major version is rejected"
+        setup:
+          config: |
+            spec_version: "99.0.0"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: unsupported_version
+
+      - name: "major version 1.0.0 is rejected during 0.x era"
+        setup:
+          config: |
+            spec_version: "1.0.0"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: unsupported_version
+
+      - name: "future minor version 0.2.0 is rejected when implementation supports 0.1.x"
+        spec_ref: "§4.4.1"
+        setup:
+          config: |
+            spec_version: "0.2.0"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: unsupported_version
+
+      - name: "compatible patch version 0.1.1 is accepted"
+        spec_ref: "§4.4.1"
+        setup:
+          config: |
+            spec_version: "0.1.1"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+
+      - name: "compatible patch version 0.1.99 is accepted"
+        spec_ref: "§4.4.1"
+        setup:
+          config: |
+            spec_version: "0.1.99"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 2: deprecated_field — standalone type scenarios (§7.2)
+  # =============================================================================
+
+  - name: "deprecated_field — standalone type scenarios"
+    spec_ref: "§7.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            old_status:
+              type: string
+              deprecated: true
+            status:
+              type: string
+          ---
+
+    tests:
+      - name: "deprecated field present emits warning"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Task 1"
+              old_status: "active"
+              status: "open"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+          issues:
+            - code: deprecated_field
+              field: old_status
+              severity: warning
+
+      - name: "deprecated field absent produces no warning"
+        setup:
+          files:
+            tasks/t2.md: |
+              ---
+              type: task
+              title: "Task 2"
+              status: "open"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t2.md"
+        expect:
+          valid: true
+          issues: []
+
+      - name: "deprecated field with null value does not trigger warning"
+        setup:
+          files:
+            tasks/t3.md: |
+              ---
+              type: task
+              title: "Task 3"
+              old_status: null
+              status: "open"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t3.md"
+        expect:
+          valid: true
+          issues: []
+
+      - name: "create with deprecated field succeeds with warning"
+        setup:
+          files: {}
+        operation: create
+        input:
+          path: "tasks/new.md"
+          type: task
+          fields:
+            title: "New task"
+            old_status: "legacy"
+            status: "open"
+        expect:
+          frontmatter:
+            title: "New task"
+            old_status: "legacy"
+            status: "open"
+          warnings:
+            - contains: "deprecated"
+
+      - name: "update setting deprecated field succeeds with warning"
+        setup:
+          files:
+            tasks/existing.md: |
+              ---
+              type: task
+              title: "Existing"
+              status: "open"
+              ---
+        operation: update
+        input:
+          path: "tasks/existing.md"
+          fields:
+            old_status: "migrated"
+        expect:
+          frontmatter:
+            title: "Existing"
+            old_status: "migrated"
+            status: "open"
+          warnings:
+            - contains: "deprecated"

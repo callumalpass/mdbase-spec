@@ -1,0 +1,179 @@
+name: "expression duration and arithmetic gaps"
+level: 3
+category: expressions
+spec_ref: "§11.8"
+
+# =============================================================================
+# This file covers duration chaining and arithmetic edge cases that
+# were not explicitly tested in prior test files.
+# =============================================================================
+
+groups:
+
+  # =============================================================================
+  # Group 1: Duration chaining — compound durations via addition (§11.8)
+  # =============================================================================
+
+  - name: "duration chaining — compound durations via addition"
+    spec_ref: "§11.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        event.md: |
+          ---
+          name: event
+          fields:
+            title:
+              type: string
+            start:
+              type: datetime
+            end:
+              type: datetime
+          ---
+      files:
+        events/meeting.md: |
+          ---
+          type: event
+          title: "Meeting"
+          start: "2024-03-15T09:00:00Z"
+          end: "2024-03-15T10:30:00Z"
+          ---
+        events/workshop.md: |
+          ---
+          type: event
+          title: "Workshop"
+          start: "2024-03-15T09:00:00Z"
+          end: "2024-03-15T13:00:00Z"
+          ---
+
+    tests:
+      - name: "chained duration additions on date"
+        spec_ref: "§11.8"
+        operation: evaluate
+        input:
+          expression: 'date("2024-01-01") + "1M" + "15d"'
+        expect:
+          result: "2024-02-15"
+
+      - name: "chained duration additions on datetime"
+        operation: evaluate
+        input:
+          expression: 'datetime("2024-03-15T09:00:00Z") + "1h" + "30m"'
+        expect:
+          result: "2024-03-15T10:30:00Z"
+
+      - name: "chained duration additions equal single larger duration"
+        operation: evaluate
+        input:
+          expression: 'datetime("2024-01-01T00:00:00Z") + "1d" + "12h" == datetime("2024-01-01T00:00:00Z") + "36h"'
+        expect:
+          result: true
+
+      - name: "duration subtraction chaining"
+        operation: evaluate
+        input:
+          expression: 'date("2024-03-15") - "1M" - "15d"'
+        expect:
+          result: "2024-01-29"
+
+      - name: "mixed addition and subtraction of durations"
+        operation: evaluate
+        input:
+          expression: 'date("2024-06-15") + "1M" - "10d"'
+        expect:
+          result: "2024-07-05"
+
+      - name: "query with chained duration filter"
+        operation: query
+        input:
+          query:
+            types: [event]
+            where: 'start + "1h" + "30m" == end'
+        expect:
+          results:
+            - path: "events/meeting.md"
+          meta:
+            total_count: 1
+
+      - name: "query with compound duration in sort expression"
+        operation: query
+        input:
+          query:
+            types: [event]
+            where: 'end - start > duration("1h") + duration("1h")'
+            order_by:
+              - field: "title"
+        expect:
+          results:
+            - path: "events/workshop.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 2: Duration string rejection — compound duration string NOT supported
+  # =============================================================================
+
+  - name: "compound duration string not supported"
+    spec_ref: "§11.8"
+
+    tests:
+      - name: "compound duration string produces error"
+        operation: evaluate
+        input:
+          expression: 'date("2024-01-01") + "1d12h"'
+        expect:
+          error:
+            code: type_error
+
+      - name: "duration() with compound string produces error"
+        operation: evaluate
+        input:
+          expression: 'duration("1d12h")'
+        expect:
+          error:
+            code: type_error
+
+  # =============================================================================
+  # Group 3: Duration arithmetic edge cases (§11.8)
+  # =============================================================================
+
+  - name: "duration arithmetic edge cases"
+    spec_ref: "§11.8"
+
+    tests:
+      - name: "duration multiplication produces milliseconds"
+        operation: evaluate
+        input:
+          expression: 'duration("1h") * 3'
+        expect:
+          result: 10800000
+
+      - name: "negative duration subtraction equivalent to addition"
+        operation: evaluate
+        input:
+          expression: 'date("2024-03-15") + "1d" == date("2024-03-15") - "-1d"'
+        expect:
+          result: true
+
+      - name: "zero duration has no effect"
+        operation: evaluate
+        input:
+          expression: 'date("2024-03-15") + "0d" == date("2024-03-15")'
+        expect:
+          result: true
+
+      - name: "duration comparison via millisecond values"
+        operation: evaluate
+        input:
+          expression: 'duration("1d") > duration("12h")'
+        expect:
+          result: true
+
+      - name: "duration equality"
+        operation: evaluate
+        input:
+          expression: 'duration("24h") == duration("1d")'
+        expect:
+          result: true
