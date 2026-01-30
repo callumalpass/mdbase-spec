@@ -562,6 +562,43 @@ groups:
           error:
             code: missing_parent_type
 
+      - name: "3-node circular inheritance chain is rejected"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            alpha.md: |
+              ---
+              name: alpha
+              extends: gamma
+              fields:
+                x:
+                  type: string
+              ---
+            beta.md: |
+              ---
+              name: beta
+              extends: alpha
+              fields:
+                y:
+                  type: string
+              ---
+            gamma.md: |
+              ---
+              name: gamma
+              extends: beta
+              fields:
+                z:
+                  type: string
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: circular_inheritance
+
   # =============================================================================
   # Group 4: Strictness
   # =============================================================================
@@ -2225,3 +2262,126 @@ groups:
           valid: false
           issues:
             - code: duplicate_id
+
+  # =============================================================================
+  # Group 21: Derived field edge cases
+  # =============================================================================
+
+  - name: "derived field edge cases"
+    spec_ref: "§7.15, §5.6"
+
+    tests:
+      - name: "derived field with missing source field produces null slug"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            post.md: |
+              ---
+              name: post
+              fields:
+                title:
+                  type: string
+                slug:
+                  type: string
+                  generated:
+                    from: title
+                    transform: slugify
+              ---
+          files: {}
+        operation: create
+        input:
+          type: post
+          frontmatter: {}
+          path: "posts/untitled.md"
+        expect:
+          frontmatter:
+            slug: null
+
+      - name: "slugify handles unicode characters"
+        spec_ref: "§5.6"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            post.md: |
+              ---
+              name: post
+              fields:
+                title:
+                  type: string
+                slug:
+                  type: string
+                  generated:
+                    from: title
+                    transform: slugify
+              ---
+          files: {}
+        operation: create
+        input:
+          type: post
+          frontmatter:
+            title: "Ünïcödé Tëst Ñàmé"
+          path: "posts/unicode.md"
+        expect:
+          frontmatter:
+            slug:
+              matches: "^[a-z0-9-]+$"
+
+      - name: "slugify removes consecutive hyphens"
+        spec_ref: "§5.6"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            post.md: |
+              ---
+              name: post
+              fields:
+                title:
+                  type: string
+                slug:
+                  type: string
+                  generated:
+                    from: title
+                    transform: slugify
+              ---
+          files: {}
+        operation: create
+        input:
+          type: post
+          frontmatter:
+            title: "Hello --- World"
+          path: "posts/hyphens.md"
+        expect:
+          frontmatter:
+            slug: "hello-world"
+
+      - name: "slugify trims leading and trailing hyphens"
+        spec_ref: "§5.6"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            post.md: |
+              ---
+              name: post
+              fields:
+                title:
+                  type: string
+                slug:
+                  type: string
+                  generated:
+                    from: title
+                    transform: slugify
+              ---
+          files: {}
+        operation: create
+        input:
+          type: post
+          frontmatter:
+            title: "  --Leading & Trailing--  "
+          path: "posts/trimmed.md"
+        expect:
+          frontmatter:
+            slug: "leading-trailing"

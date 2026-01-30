@@ -604,3 +604,135 @@ groups:
           config:
             name: "Проект задач"
             description: "日本語の説明"
+
+  # =============================================================================
+  # Group 12: Version compatibility (PATCH)
+  # =============================================================================
+
+  - name: "version compatibility"
+    spec_ref: "§4.4.1"
+
+    tests:
+      - name: "PATCH version difference is accepted (0.1.1 on 0.1.0 impl)"
+        setup:
+          config: |
+            spec_version: "0.1.1"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+
+      - name: "same MINOR different PATCH is compatible"
+        setup:
+          config: |
+            spec_version: "0.1.99"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 13: Exclude glob functional behavior
+  # =============================================================================
+
+  - name: "exclude glob patterns"
+    spec_ref: "§4.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          exclude:
+            - "drafts/**"
+            - "*.draft.md"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        tasks/active.md: |
+          ---
+          type: task
+          title: "Active task"
+          ---
+        drafts/wip.md: |
+          ---
+          type: task
+          title: "Draft task"
+          ---
+        notes/idea.draft.md: |
+          ---
+          type: task
+          title: "Draft note"
+          ---
+
+    tests:
+      - name: "file in excluded glob directory is not scanned"
+        operation: read
+        input:
+          path: "drafts/wip.md"
+        expect:
+          error:
+            code: file_not_found
+
+      - name: "file matching excluded glob pattern is not scanned"
+        operation: read
+        input:
+          path: "notes/idea.draft.md"
+        expect:
+          error:
+            code: file_not_found
+
+      - name: "file not matching exclude patterns is accessible"
+        operation: read
+        input:
+          path: "tasks/active.md"
+        expect:
+          frontmatter:
+            title: "Active task"
+
+  # =============================================================================
+  # Group 14: Extensions normalization — md/mdx ignored
+  # =============================================================================
+
+  - name: "extensions md entry handling"
+    spec_ref: "§4.4"
+
+    tests:
+      - name: "md in extensions list is ignored with warning"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              extensions: ["md", "mdx"]
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          warnings:
+            - contains: "md"
+
+      - name: ".md in extensions list is ignored with warning"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              extensions: [".md"]
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          warnings:
+            - contains: ".md"

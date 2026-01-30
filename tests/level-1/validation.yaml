@@ -1069,3 +1069,115 @@ groups:
           issues:
             - code: missing_required
               field: priority
+
+  # =============================================================================
+  # Group 14: Strict mode with custom explicit_type_keys
+  # =============================================================================
+
+  - name: "strict mode with custom explicit_type_keys"
+    spec_ref: "§5.5, §6.2, §9.2.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          explicit_type_keys: ["kind"]
+      types:
+        task.md: |
+          ---
+          name: task
+          strict: true
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "custom explicit_type_key is implicitly allowed in strict mode"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              kind: task
+              title: "Test"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+          issues: []
+
+      - name: "default type key is unknown field when custom keys configured in strict mode"
+        setup:
+          files:
+            tasks/t2.md: |
+              ---
+              kind: task
+              type: task
+              title: "Test"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t2.md"
+        expect:
+          valid: false
+          issues:
+            - code: unknown_field
+              field: type
+
+  # =============================================================================
+  # Group 15: Filename pattern validation mismatch
+  # =============================================================================
+
+  - name: "filename pattern validation"
+    spec_ref: "§5.6, §9.2.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          filename_pattern: "{id}.md"
+          fields:
+            id:
+              type: string
+              required: true
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "file matching filename pattern passes"
+        setup:
+          files:
+            tasks/task-001.md: |
+              ---
+              type: task
+              id: "task-001"
+              title: "Valid filename"
+              ---
+        operation: validate
+        input:
+          path: "tasks/task-001.md"
+        expect:
+          valid: true
+
+      - name: "file not matching filename pattern emits warning"
+        setup:
+          files:
+            tasks/wrong-name.md: |
+              ---
+              type: task
+              id: "task-002"
+              title: "Mismatched filename"
+              ---
+        operation: validate
+        input:
+          path: "tasks/wrong-name.md"
+        expect:
+          valid: true
+          issues:
+            - severity: warning

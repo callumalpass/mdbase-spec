@@ -2035,3 +2035,147 @@ groups:
         expect:
           error:
             code: expression_depth_exceeded
+
+  # =============================================================================
+  # Group 19: String method edge cases
+  # =============================================================================
+
+  - name: "string method edge cases"
+    spec_ref: "§11.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            label:
+              type: string
+            code:
+              type: string
+            csv:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          label: "Hello World"
+          code: "TASK-0042"
+          csv: "one::two::three"
+          ---
+        items/b.md: |
+          ---
+          type: item
+          label: "Testing"
+          code: "DEPLOY-007"
+          csv: "alpha;;beta;;gamma"
+          ---
+
+    tests:
+      - name: "string.slice with negative end index"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'label.slice(0, -6) == "Hello"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "string.slice with negative start index"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'label.slice(-5) == "World"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "string.split with multi-character separator"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'csv.split("::")[1] == "two"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "string.split with multi-char separator and limit"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'csv.split("::", 2).length == 2'
+        expect:
+          results:
+            - path: "items/a.md"
+            - path: "items/b.md"
+          meta:
+            total_count: 2
+
+  # =============================================================================
+  # Group 20: Operator precedence — null coalescing vs logical
+  # =============================================================================
+
+  - name: "null coalescing vs logical operator precedence"
+    spec_ref: "§11.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            a:
+              type: integer
+            b:
+              type: integer
+          ---
+      files:
+        items/x.md: |
+          ---
+          type: item
+          a: 1
+          b: 2
+          ---
+        items/y.md: |
+          ---
+          type: item
+          a: null
+          b: 5
+          ---
+
+    tests:
+      - name: "null coalescing binds looser than logical OR"
+        # Expression: null || false ?? true
+        # With correct precedence (|| before ??):
+        #   (null || false) ?? true → false ?? true → false
+        # If ?? bound tighter: null || (false ?? true) → null || true → true
+        operation: evaluate
+        input:
+          expression: "null || false ?? true"
+        expect:
+          result: false
+
+      - name: "null coalescing binds looser than logical AND"
+        # Expression: null && true ?? "fallback"
+        # With correct precedence (&& before ??):
+        #   (null && true) ?? "fallback" → null ?? "fallback" → "fallback"
+        operation: evaluate
+        input:
+          expression: 'null && true ?? "fallback"'
+        expect:
+          result: "fallback"

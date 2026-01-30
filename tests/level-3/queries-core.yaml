@@ -775,6 +775,18 @@ groups:
             total_count: 5
             has_more: false
 
+      - name: "limit zero returns empty results with total_count"
+        operation: query
+        input:
+          query:
+            types: [item]
+            limit: 0
+        expect:
+          results: []
+          meta:
+            total_count: 5
+            has_more: true
+
   # =============================================================================
   # Group 9: Result structure
   # =============================================================================
