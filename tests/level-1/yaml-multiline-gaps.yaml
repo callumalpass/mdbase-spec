@@ -1,0 +1,323 @@
+name: "YAML multi-line string chomping and indentation"
+level: 1
+category: validation
+spec_ref: "§3.7"
+
+# §3.7: "Implementations MUST support all standard YAML multi-line syntaxes"
+# Prior tests cover literal block (|), folded block (>), and quoted escapes.
+# This file adds: block chomping indicators (|-, |+, >-, >+) and block
+# indentation indicators (|2, >2).
+
+groups:
+
+  # =============================================================================
+  # Group 1: Literal block chomping indicators
+  # =============================================================================
+
+  - name: "literal block chomping indicators"
+    spec_ref: "§3.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        doc.md: |
+          ---
+          name: doc
+          fields:
+            content:
+              type: string
+          ---
+
+    tests:
+      - name: "literal block clip (default |) strips trailing newlines to one"
+        setup:
+          files:
+            docs/clip.md: |
+              ---
+              type: doc
+              content: |
+                Line one.
+                Line two.
+              ---
+        operation: read
+        input:
+          path: "docs/clip.md"
+        expect:
+          frontmatter:
+            content: "Line one.\nLine two.\n"
+
+      - name: "literal block strip (|-) removes all trailing newlines"
+        setup:
+          files:
+            docs/strip.md: |
+              ---
+              type: doc
+              content: |-
+                Line one.
+                Line two.
+              ---
+        operation: read
+        input:
+          path: "docs/strip.md"
+        expect:
+          frontmatter:
+            content: "Line one.\nLine two."
+
+      - name: "literal block keep (|+) preserves trailing newlines"
+        setup:
+          files:
+            docs/keep.md: |
+              ---
+              type: doc
+              content: |+
+                Line one.
+                Line two.
+
+              ---
+        operation: read
+        input:
+          path: "docs/keep.md"
+        expect:
+          frontmatter:
+            content: "Line one.\nLine two.\n\n"
+
+  # =============================================================================
+  # Group 2: Folded block chomping indicators
+  # =============================================================================
+
+  - name: "folded block chomping indicators"
+    spec_ref: "§3.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        doc.md: |
+          ---
+          name: doc
+          fields:
+            content:
+              type: string
+          ---
+
+    tests:
+      - name: "folded block clip (default >) folds lines and strips trailing to one"
+        setup:
+          files:
+            docs/fold-clip.md: |
+              ---
+              type: doc
+              content: >
+                This is a long
+                folded paragraph.
+              ---
+        operation: read
+        input:
+          path: "docs/fold-clip.md"
+        expect:
+          frontmatter:
+            content: "This is a long folded paragraph.\n"
+
+      - name: "folded block strip (>-) folds lines and removes trailing newlines"
+        setup:
+          files:
+            docs/fold-strip.md: |
+              ---
+              type: doc
+              content: >-
+                This is a long
+                folded paragraph.
+              ---
+        operation: read
+        input:
+          path: "docs/fold-strip.md"
+        expect:
+          frontmatter:
+            content: "This is a long folded paragraph."
+
+      - name: "folded block keep (>+) folds lines and preserves trailing newlines"
+        setup:
+          files:
+            docs/fold-keep.md: |
+              ---
+              type: doc
+              content: >+
+                This is a long
+                folded paragraph.
+
+              ---
+        operation: read
+        input:
+          path: "docs/fold-keep.md"
+        expect:
+          frontmatter:
+            content: "This is a long folded paragraph.\n\n"
+
+  # =============================================================================
+  # Group 3: Block indentation indicators
+  # =============================================================================
+
+  - name: "block indentation indicators"
+    spec_ref: "§3.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        doc.md: |
+          ---
+          name: doc
+          fields:
+            content:
+              type: string
+          ---
+
+    tests:
+      - name: "literal block with explicit indentation indicator (|2)"
+        setup:
+          files:
+            docs/indent.md: |
+              ---
+              type: doc
+              content: |2
+                  Indented by 4,
+                  but indicator says 2.
+              ---
+        operation: read
+        input:
+          path: "docs/indent.md"
+        expect:
+          frontmatter:
+            content: "  Indented by 4,\n  but indicator says 2.\n"
+
+      - name: "folded block with explicit indentation indicator (>2)"
+        setup:
+          files:
+            docs/fold-indent.md: |
+              ---
+              type: doc
+              content: >2
+                  Indented folded
+                  text here.
+              ---
+        operation: read
+        input:
+          path: "docs/fold-indent.md"
+        expect:
+          frontmatter:
+            content: "  Indented folded text here.\n"
+
+  # =============================================================================
+  # Group 4: Combined chomping and indentation
+  # =============================================================================
+
+  - name: "combined chomping and indentation indicators"
+    spec_ref: "§3.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        doc.md: |
+          ---
+          name: doc
+          fields:
+            content:
+              type: string
+          ---
+
+    tests:
+      - name: "literal block with strip and indentation (|-2)"
+        setup:
+          files:
+            docs/combo.md: |
+              ---
+              type: doc
+              content: |-2
+                  Leading spaces preserved.
+                  No trailing newline.
+              ---
+        operation: read
+        input:
+          path: "docs/combo.md"
+        expect:
+          frontmatter:
+            content: "  Leading spaces preserved.\n  No trailing newline."
+
+      - name: "folded block with keep and indentation (>+2)"
+        setup:
+          files:
+            docs/combo-fold.md: |
+              ---
+              type: doc
+              content: >+2
+                  Folded with spaces
+                  and trailing newlines.
+
+              ---
+        operation: read
+        input:
+          path: "docs/combo-fold.md"
+        expect:
+          frontmatter:
+            content: "  Folded with spaces and trailing newlines.\n\n"
+
+  # =============================================================================
+  # Group 5: Multi-line string round-trip through update
+  # =============================================================================
+
+  - name: "multi-line string chomping preserved through update"
+    spec_ref: "§3.7, §12.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        doc.md: |
+          ---
+          name: doc
+          fields:
+            title:
+              type: string
+            content:
+              type: string
+          ---
+
+    tests:
+      - name: "literal block strip value preserved after unrelated field update"
+        setup:
+          files:
+            docs/roundtrip.md: |
+              ---
+              type: doc
+              title: "Original"
+              content: |-
+                No trailing newline here.
+                Second line.
+              ---
+        operation: update
+        input:
+          path: "docs/roundtrip.md"
+          fields:
+            title: "Updated"
+        expect:
+          frontmatter:
+            title: "Updated"
+            content: "No trailing newline here.\nSecond line."
+
+      - name: "empty literal block string handled correctly"
+        setup:
+          files:
+            docs/empty-block.md: |
+              ---
+              type: doc
+              title: "Test"
+              content: |
+              ---
+        operation: read
+        input:
+          path: "docs/empty-block.md"
+        expect:
+          frontmatter:
+            content: ""

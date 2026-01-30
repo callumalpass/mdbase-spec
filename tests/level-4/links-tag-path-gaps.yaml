@@ -1,0 +1,470 @@
+name: "tag pattern boundaries and path normalization"
+level: 4
+category: links
+spec_ref: "§8.6, §8.13"
+
+# §8.6: Inline tags MUST "Match the pattern [A-Za-z0-9_/-]+ after #"
+# - Tests verify that tags stop at invalid characters (punctuation, spaces)
+# - Tests verify that only valid tag characters are extracted
+#
+# §8.13: "Implementations MUST normalize paths (resolve . and .. segments)
+#         before checking containment"
+# - Tests verify . segment resolution in link paths
+# - Tests verify combined ./.. normalization
+
+groups:
+
+  # =============================================================================
+  # Group 1: Inline tag pattern boundary — invalid characters terminate tag
+  # =============================================================================
+
+  - name: "inline tag pattern boundaries"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        notes/punct-tag.md: |
+          ---
+          type: note
+          title: "Punctuation terminates tag"
+          ---
+          This has #valid-tag. followed by punctuation.
+          Also #another_tag! with exclamation.
+          And #third here with space.
+        notes/special-chars.md: |
+          ---
+          type: note
+          title: "Special chars in tag"
+          ---
+          Check #tag@symbol not valid after @.
+          And #tag.dot period terminates.
+          Plus #tag:colon stops at colon.
+        notes/nested-slash.md: |
+          ---
+          type: note
+          title: "Nested tag with slashes"
+          ---
+          Here #project/alpha/v2 is a nested tag.
+          And #project/beta_test also valid.
+        notes/numeric-tag.md: |
+          ---
+          type: note
+          title: "Numeric and underscore tags"
+          ---
+          Tag #123 is valid (all numeric after #).
+          Tag #_private with underscore prefix.
+          Tag #a1_b2-c3 mixed chars valid.
+
+    tests:
+      - name: "period terminates inline tag extraction"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("valid-tag")'
+          context_path: "notes/punct-tag.md"
+        expect:
+          result: true
+
+      - name: "period after tag is not part of tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("valid-tag.")'
+          context_path: "notes/punct-tag.md"
+        expect:
+          result: false
+
+      - name: "exclamation terminates inline tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("another_tag")'
+          context_path: "notes/punct-tag.md"
+        expect:
+          result: true
+
+      - name: "exclamation not part of tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("another_tag!")'
+          context_path: "notes/punct-tag.md"
+        expect:
+          result: false
+
+      - name: "space terminates inline tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("third")'
+          context_path: "notes/punct-tag.md"
+        expect:
+          result: true
+
+      - name: "@ symbol terminates inline tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("tag")'
+          context_path: "notes/special-chars.md"
+        expect:
+          result: true
+
+      - name: "@ symbol not included in tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("tag@symbol")'
+          context_path: "notes/special-chars.md"
+        expect:
+          result: false
+
+      - name: "period terminates tag (dot case)"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("tag")'
+          context_path: "notes/special-chars.md"
+        expect:
+          result: true
+
+      - name: "colon terminates tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("tag")'
+          context_path: "notes/special-chars.md"
+        expect:
+          result: true
+
+      - name: "colon not included in tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("tag:colon")'
+          context_path: "notes/special-chars.md"
+        expect:
+          result: false
+
+      - name: "nested tag with slashes extracted correctly"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("project/alpha/v2")'
+          context_path: "notes/nested-slash.md"
+        expect:
+          result: true
+
+      - name: "nested tag prefix matching works with slashes"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("project")'
+          context_path: "notes/nested-slash.md"
+        expect:
+          result: true
+
+      - name: "underscore tag with slash is valid"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("project/beta_test")'
+          context_path: "notes/nested-slash.md"
+        expect:
+          result: true
+
+      - name: "all-numeric tag is valid"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("123")'
+          context_path: "notes/numeric-tag.md"
+        expect:
+          result: true
+
+      - name: "underscore-prefixed tag is valid"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("_private")'
+          context_path: "notes/numeric-tag.md"
+        expect:
+          result: true
+
+      - name: "mixed alphanumeric-underscore-hyphen tag is valid"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("a1_b2-c3")'
+          context_path: "notes/numeric-tag.md"
+        expect:
+          result: true
+
+  # =============================================================================
+  # Group 2: Tag extraction count with boundary characters
+  # =============================================================================
+
+  - name: "tag extraction count with boundary characters"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/boundaries.md: |
+          ---
+          type: note
+          title: "Boundary test"
+          ---
+          #alpha, #beta; #gamma!
+          End of line #delta
+        notes/no-space.md: |
+          ---
+          type: note
+          title: "No space before hash"
+          ---
+          word#not-a-tag because no whitespace.
+          But #real-tag is preceded by space.
+
+    tests:
+      - name: "four tags extracted despite boundary punctuation"
+        operation: evaluate
+        input:
+          expression: 'file.tags.length'
+          context_path: "notes/boundaries.md"
+        expect:
+          result: 4
+
+      - name: "hash without preceding whitespace is not a tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("not-a-tag")'
+          context_path: "notes/no-space.md"
+        expect:
+          result: false
+
+      - name: "only space-preceded tag is extracted"
+        operation: evaluate
+        input:
+          expression: 'file.tags.length'
+          context_path: "notes/no-space.md"
+        expect:
+          result: 1
+
+  # =============================================================================
+  # Group 3: Path normalization with . segments
+  # =============================================================================
+
+  - name: "path normalization resolves dot segments"
+    spec_ref: "§8.13"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+              validate_exists: true
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          title: "Source"
+          ref: "[[./target]]"
+          ---
+        notes/target.md: |
+          ---
+          type: note
+          title: "Target"
+          ref: "[[./subfolder/../source]]"
+          ---
+        notes/subfolder/deep.md: |
+          ---
+          type: note
+          title: "Deep"
+          ref: "[[./../target]]"
+          ---
+
+    tests:
+      - name: "single dot segment resolves to same directory"
+        operation: resolve_link
+        input:
+          path: "notes/source.md"
+          field: ref
+        expect:
+          resolved_path: "notes/target.md"
+
+      - name: "dot-dot with preceding directory normalizes correctly"
+        operation: resolve_link
+        input:
+          path: "notes/target.md"
+          field: ref
+        expect:
+          resolved_path: "notes/source.md"
+
+      - name: "dot-slash-dot-dot normalizes to parent directory"
+        operation: resolve_link
+        input:
+          path: "notes/subfolder/deep.md"
+          field: ref
+        expect:
+          resolved_path: "notes/target.md"
+
+      - name: "normalized link passes validate_exists"
+        operation: validate
+        input:
+          path: "notes/source.md"
+        expect:
+          valid: true
+
+      - name: "combined dot segments normalized link passes validation"
+        operation: validate
+        input:
+          path: "notes/target.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 4: Path normalization — dot escape prevention
+  # =============================================================================
+
+  - name: "path normalization with dot segments and traversal"
+    spec_ref: "§8.13"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+              validate_exists: true
+          ---
+      files:
+        notes/tricky.md: |
+          ---
+          type: note
+          title: "Tricky"
+          ref: "[[./../../etc/passwd]]"
+          ---
+        notes/also-tricky.md: |
+          ---
+          type: note
+          title: "Also tricky"
+          ref: "[[foo/./../../bar/../../../escape]]"
+          ---
+
+    tests:
+      - name: "dot-slash-dot-dot escape detected after normalization"
+        operation: validate
+        input:
+          path: "notes/tricky.md"
+        expect:
+          valid: false
+          issues:
+            - code: path_traversal
+              field: ref
+
+      - name: "complex mixed dot segments escape detected"
+        operation: validate
+        input:
+          path: "notes/also-tricky.md"
+        expect:
+          valid: false
+          issues:
+            - code: path_traversal
+              field: ref
+
+  # =============================================================================
+  # Group 5: URL fragment heuristic — quote-preceded # excluded
+  # =============================================================================
+
+  - name: "URL fragment exclusion heuristic for quote-preceded hash"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/url-quotes.md: |
+          ---
+          type: note
+          title: "URL fragments in quotes"
+          ---
+          See the page "https://example.com#section" for details.
+          Also check 'https://other.com#anchor' quoted.
+          But #real-tag is a real tag.
+        notes/markdown-link.md: |
+          ---
+          type: note
+          title: "Markdown link fragment"
+          ---
+          Click [here](https://example.com/page#heading) for info.
+          Also #valid-tag here.
+
+    tests:
+      - name: "double-quote-preceded hash not extracted as tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("section")'
+          context_path: "notes/url-quotes.md"
+        expect:
+          result: false
+
+      - name: "single-quote-preceded hash not extracted as tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("anchor")'
+          context_path: "notes/url-quotes.md"
+        expect:
+          result: false
+
+      - name: "real tag alongside URL fragments is extracted"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("real-tag")'
+          context_path: "notes/url-quotes.md"
+        expect:
+          result: true
+
+      - name: "markdown link fragment not extracted as tag"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("heading")'
+          context_path: "notes/markdown-link.md"
+        expect:
+          result: false
+
+      - name: "real tag alongside markdown link fragment extracted"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("valid-tag")'
+          context_path: "notes/markdown-link.md"
+        expect:
+          result: true

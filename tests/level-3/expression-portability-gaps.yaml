@@ -1,0 +1,205 @@
+name: "expression portability and custom function rules"
+level: 3
+category: expressions
+spec_ref: "§11.19"
+
+# §11.19: "Implementations MUST namespace all custom functions with the ext prefix"
+# §11.19: "Implementations MUST NOT override or shadow built-in functions"
+# §11.19: "Implementations MUST accept either form (:: or .) for custom functions"
+# §11.19: "unknown ext-prefixed function MUST treat it as an evaluation error"
+#
+# Prior tests cover unknown ext:: function producing unknown_function error.
+# This file adds: no-shadowing verification, delimiter equivalence, and
+# expression-level error handling for custom function scenarios.
+
+groups:
+
+  # =============================================================================
+  # Group 1: Built-in functions cannot be shadowed
+  # =============================================================================
+
+  - name: "built-in functions are not shadowed"
+    spec_ref: "§11.19"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            value:
+              type: integer
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          value: 5
+          ---
+
+    tests:
+      - name: "built-in length() works on list"
+        operation: evaluate
+        input:
+          expression: '[1, 2, 3].length'
+        expect:
+          result: 3
+
+      - name: "built-in lower() works on string"
+        operation: evaluate
+        input:
+          expression: '"HELLO".lower()'
+        expect:
+          result: "hello"
+
+      - name: "built-in upper() works on string"
+        operation: evaluate
+        input:
+          expression: '"hello".upper()'
+        expect:
+          result: "HELLO"
+
+      - name: "built-in now() returns datetime"
+        operation: evaluate
+        input:
+          expression: 'now().isType("datetime")'
+        expect:
+          result: true
+
+      - name: "built-in today() returns date"
+        operation: evaluate
+        input:
+          expression: 'today().isType("date")'
+        expect:
+          result: true
+
+      - name: "built-in exists() checks persisted frontmatter"
+        operation: evaluate
+        input:
+          expression: 'exists("value")'
+          context_path: "items/a.md"
+        expect:
+          result: true
+
+      - name: "built-in default() provides fallback"
+        operation: evaluate
+        input:
+          expression: 'default(null, 42)'
+        expect:
+          result: 42
+
+  # =============================================================================
+  # Group 2: Unknown ext-prefixed functions are evaluation errors
+  # =============================================================================
+
+  - name: "unknown ext functions produce errors"
+    spec_ref: "§11.19"
+
+    tests:
+      - name: "unknown ext:: function produces unknown_function"
+        operation: evaluate
+        input:
+          expression: 'ext::myCustom("test")'
+        expect:
+          error:
+            code: unknown_function
+
+      - name: "unknown ext. function produces unknown_function"
+        operation: evaluate
+        input:
+          expression: 'ext.myCustom("test")'
+        expect:
+          error:
+            code: unknown_function
+
+      - name: "ext:: with no function name is invalid expression"
+        operation: evaluate
+        input:
+          expression: 'ext::()'
+        expect:
+          error:
+            code: invalid_expression
+
+      - name: "ext. with no function name is invalid expression"
+        operation: evaluate
+        input:
+          expression: 'ext.()'
+        expect:
+          error:
+            code: invalid_expression
+
+  # =============================================================================
+  # Group 3: Both ext:: and ext. delimiters equivalent
+  # =============================================================================
+
+  - name: "ext delimiters are equivalent"
+    spec_ref: "§11.19"
+
+    tests:
+      - name: "ext:: unknown function produces same error as ext."
+        operation: evaluate
+        input:
+          expression: 'ext::nonexistent(1, 2)'
+        expect:
+          error:
+            code: unknown_function
+
+      - name: "ext. unknown function produces same error as ext::"
+        operation: evaluate
+        input:
+          expression: 'ext.nonexistent(1, 2)'
+        expect:
+          error:
+            code: unknown_function
+
+  # =============================================================================
+  # Group 4: Expression error handling for ext functions in queries
+  # =============================================================================
+
+  - name: "ext function errors in query context"
+    spec_ref: "§11.19, §11.18"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Alpha"
+          ---
+        items/b.md: |
+          ---
+          type: item
+          title: "Beta"
+          ---
+
+    tests:
+      - name: "unknown ext function in where clause does not abort query"
+        spec_ref: "§11.18, §11.19"
+        operation: query
+        input:
+          types: [item]
+          where: 'ext::sentiment(title) > 0.5'
+        expect:
+          results: []
+
+      - name: "query without ext function returns all results normally"
+        operation: query
+        input:
+          types: [item]
+          where: 'title.startsWith("A")'
+        expect:
+          total_count: 1
+          results:
+            - path: "items/a.md"
