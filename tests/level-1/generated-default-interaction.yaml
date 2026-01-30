@@ -1,0 +1,350 @@
+name: "generated and default field interaction"
+level: 1
+category: operations
+spec_ref: "§7.2, §7.15, §12.1, §12.3"
+
+groups:
+  # =============================================================================
+  # Group 1: Generated field takes precedence over default on create
+  # =============================================================================
+
+  - name: "generated field precedence over default on create"
+    spec_ref: "§7.15, §7.2, §12.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+              required: true
+            id:
+              type: string
+              generated: ulid
+              default: "no-id"
+            created_at:
+              type: datetime
+              generated: now
+              default: "1970-01-01T00:00:00Z"
+          ---
+
+    tests:
+      - name: "generated ulid takes precedence over default when field missing"
+        operation: create
+        input:
+          type: item
+          path: "items/i1.md"
+          frontmatter:
+            title: "Test item"
+        expect:
+          frontmatter:
+            title: "Test item"
+          # The id field should have a generated ULID, not the default "no-id"
+          frontmatter_not_match:
+            id: "no-id"
+          frontmatter_written: [id]
+
+      - name: "generated now takes precedence over default when field missing"
+        operation: create
+        input:
+          type: item
+          path: "items/i2.md"
+          frontmatter:
+            title: "Test item 2"
+        expect:
+          frontmatter:
+            title: "Test item 2"
+          # created_at should have current datetime, not the epoch default
+          frontmatter_not_match:
+            created_at: "1970-01-01T00:00:00Z"
+          frontmatter_written: [created_at]
+
+      - name: "user-provided value overrides both generated and default"
+        operation: create
+        input:
+          type: item
+          path: "items/i3.md"
+          frontmatter:
+            title: "Test item 3"
+            id: "custom-id"
+            created_at: "2024-06-15T12:00:00Z"
+        expect:
+          frontmatter:
+            title: "Test item 3"
+            id: "custom-id"
+            created_at: "2024-06-15T12:00:00Z"
+          frontmatter_written:
+            id: "custom-id"
+            created_at: "2024-06-15T12:00:00Z"
+
+  # =============================================================================
+  # Group 2: Generated field satisfies required constraint
+  # =============================================================================
+
+  - name: "generated field satisfies required on create"
+    spec_ref: "§7.15, §7.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        record.md: |
+          ---
+          name: record
+          fields:
+            id:
+              type: string
+              required: true
+              generated: ulid
+            title:
+              type: string
+              required: true
+          ---
+
+    tests:
+      - name: "required field with generated strategy passes without user value"
+        operation: create
+        input:
+          type: record
+          path: "records/r1.md"
+          frontmatter:
+            title: "Record without explicit id"
+        expect:
+          frontmatter:
+            title: "Record without explicit id"
+          # id is generated, so required is satisfied
+          valid: true
+          frontmatter_written: [id]
+
+      - name: "required field without generated or default fails when missing"
+        operation: create
+        input:
+          type: record
+          path: "records/r2.md"
+          frontmatter:
+            id: "manual-id"
+        expect:
+          error:
+            code: validation_failed
+
+  # =============================================================================
+  # Group 3: Default alone vs generated alone on create — disk behavior
+  # =============================================================================
+
+  - name: "default-only field not written vs generated-only field written"
+    spec_ref: "§7.2, §7.15, §12.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: string
+              default: "open"
+            id:
+              type: string
+              generated: ulid
+          ---
+
+    tests:
+      - name: "default-only field NOT written to disk but generated field IS written"
+        operation: create
+        input:
+          type: task
+          path: "tasks/t1.md"
+          frontmatter:
+            title: "Comparison test"
+        expect:
+          frontmatter:
+            title: "Comparison test"
+            status: "open"
+          # default-only field suppressed from disk, generated field persisted
+          frontmatter_not_written: [status]
+          frontmatter_written: [id]
+
+  # =============================================================================
+  # Group 4: Generated + default interaction on update
+  # =============================================================================
+
+  - name: "generated and default interaction on update"
+    spec_ref: "§7.15, §7.2, §12.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          write_nulls: "omit"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+              required: true
+            updated_at:
+              type: datetime
+              generated: now_on_write
+            status:
+              type: string
+              generated: ulid
+              default: "pending"
+          ---
+      files:
+        items/i1.md: |
+          ---
+          type: item
+          title: "Existing item"
+          updated_at: "2024-01-01T00:00:00Z"
+          status: "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+          ---
+
+    tests:
+      - name: "now_on_write updates even when field has existing value"
+        operation: update
+        input:
+          path: "items/i1.md"
+          fields:
+            title: "Updated title"
+        expect:
+          frontmatter:
+            title: "Updated title"
+          # now_on_write always fires regardless of default
+          frontmatter_changed: [updated_at]
+
+      - name: "setting generated+default field to null removes it; default applies in effective"
+        operation: update
+        input:
+          path: "items/i1.md"
+          fields:
+            status: null
+        expect:
+          frontmatter:
+            # status removed from disk (write_nulls: omit), default re-applies in effective
+            status: "pending"
+          frontmatter_not_written: [status]
+
+  # =============================================================================
+  # Group 5: Generated uuid with default — type definition accepted
+  # =============================================================================
+
+  - name: "type with both generated and default on same field is valid"
+    spec_ref: "§7.2, §7.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        widget.md: |
+          ---
+          name: widget
+          fields:
+            name:
+              type: string
+              required: true
+            code:
+              type: string
+              generated: uuid
+              default: "NONE"
+            category:
+              type: string
+              default: "general"
+          ---
+
+    tests:
+      - name: "type with generated+default loads without error"
+        operation: validate
+        input:
+          path: "dummy.md"
+          validate: false
+        setup:
+          files:
+            dummy.md: |
+              ---
+              type: widget
+              name: "Test widget"
+              ---
+        expect:
+          types: [widget]
+
+      - name: "create uses generated value not default"
+        operation: create
+        input:
+          type: widget
+          path: "widgets/w1.md"
+          frontmatter:
+            name: "Widget A"
+        expect:
+          frontmatter:
+            name: "Widget A"
+          # code should be a UUID, not "NONE"
+          frontmatter_not_match:
+            code: "NONE"
+          frontmatter_written: [code]
+          # category has only default, no generated — suppressed from disk
+          frontmatter_not_written: [category]
+
+  # =============================================================================
+  # Group 6: Derived generated field with default fallback
+  # =============================================================================
+
+  - name: "derived generated with default when source field missing"
+    spec_ref: "§7.15, §7.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        article.md: |
+          ---
+          name: article
+          fields:
+            title:
+              type: string
+            slug:
+              type: string
+              generated:
+                from: title
+                transform: slugify
+              default: "untitled"
+          ---
+
+    tests:
+      - name: "derived field generated from present source"
+        operation: create
+        input:
+          type: article
+          path: "articles/a1.md"
+          frontmatter:
+            title: "Hello World"
+        expect:
+          frontmatter:
+            title: "Hello World"
+            slug: "hello-world"
+          frontmatter_written:
+            slug: "hello-world"
+
+      - name: "derived field with missing source produces null; default applies in effective"
+        operation: create
+        input:
+          type: article
+          path: "articles/a2.md"
+          frontmatter: {}
+        expect:
+          frontmatter:
+            # slug generation from missing title yields null
+            # default "untitled" applies as effective value
+            slug: "untitled"

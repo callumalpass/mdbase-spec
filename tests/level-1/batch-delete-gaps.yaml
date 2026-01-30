@@ -1,0 +1,300 @@
+name: "batch delete operations and check_backlinks"
+level: 1
+category: operations
+spec_ref: "§12.4, §12.7"
+
+groups:
+  # =============================================================================
+  # Group 1: Basic batch delete
+  # =============================================================================
+
+  - name: "batch delete basic behavior"
+    spec_ref: "§12.4, §12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+              required: true
+            tags:
+              type: list
+              items:
+                type: string
+              default: []
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "Alpha"
+          tags: [archive]
+          ---
+        notes/b.md: |
+          ---
+          type: note
+          title: "Beta"
+          tags: [archive]
+          ---
+        notes/c.md: |
+          ---
+          type: note
+          title: "Gamma"
+          tags: [active]
+          ---
+
+    tests:
+      - name: "batch delete removes matching files"
+        operation: batch_delete
+        input:
+          where: 'tags.contains("archive")'
+        expect:
+          batch_result:
+            total: 2
+            succeeded: 2
+            failed: 0
+        verify_after:
+          - operation: read
+            input:
+              path: "notes/a.md"
+            expect:
+              error:
+                code: file_not_found
+          - operation: read
+            input:
+              path: "notes/b.md"
+            expect:
+              error:
+                code: file_not_found
+          - operation: read
+            input:
+              path: "notes/c.md"
+            expect:
+              frontmatter:
+                title: "Gamma"
+
+      - name: "batch delete with no matches succeeds with zero total"
+        operation: batch_delete
+        input:
+          where: 'tags.contains("nonexistent")'
+        expect:
+          batch_result:
+            total: 0
+            succeeded: 0
+            failed: 0
+
+  # =============================================================================
+  # Group 2: Batch delete with check_backlinks
+  # =============================================================================
+
+  - name: "batch delete with check_backlinks"
+    spec_ref: "§12.4, §12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+              required: true
+            related:
+              type: link
+            tags:
+              type: list
+              items:
+                type: string
+              default: []
+          ---
+      files:
+        notes/target1.md: |
+          ---
+          type: note
+          title: "Target 1"
+          tags: [archive]
+          ---
+        notes/target2.md: |
+          ---
+          type: note
+          title: "Target 2"
+          tags: [archive]
+          ---
+        notes/source.md: |
+          ---
+          type: note
+          title: "Source"
+          related: "[[target1]]"
+          tags: [active]
+          ---
+
+    tests:
+      - name: "batch delete with check_backlinks reports broken links per file"
+        operation: batch_delete
+        input:
+          where: 'tags.contains("archive")'
+          check_backlinks: true
+        expect:
+          batch_result:
+            total: 2
+            succeeded: 2
+          broken_links:
+            - target: "notes/target1.md"
+              referrer: "notes/source.md"
+
+      - name: "batch delete with check_backlinks false suppresses broken link warnings"
+        setup:
+          files:
+            notes/t3.md: |
+              ---
+              type: note
+              title: "Target 3"
+              tags: [old]
+              ---
+            notes/s3.md: |
+              ---
+              type: note
+              title: "Source 3"
+              related: "[[t3]]"
+              tags: [active]
+              ---
+        operation: batch_delete
+        input:
+          where: 'tags.contains("old")'
+          check_backlinks: false
+        expect:
+          batch_result:
+            total: 1
+            succeeded: 1
+
+  # =============================================================================
+  # Group 3: Batch delete dry-run mode
+  # =============================================================================
+
+  - name: "batch delete dry-run"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+              required: true
+            tags:
+              type: list
+              items:
+                type: string
+              default: []
+          ---
+      files:
+        notes/d1.md: |
+          ---
+          type: note
+          title: "DryRun 1"
+          tags: [temp]
+          ---
+        notes/d2.md: |
+          ---
+          type: note
+          title: "DryRun 2"
+          tags: [temp]
+          ---
+
+    tests:
+      - name: "dry-run reports what would be deleted without removing files"
+        operation: batch_delete
+        input:
+          where: 'tags.contains("temp")'
+          dry_run: true
+        expect:
+          batch_result:
+            total: 2
+        verify_after:
+          - operation: read
+            input:
+              path: "notes/d1.md"
+            expect:
+              frontmatter:
+                title: "DryRun 1"
+          - operation: read
+            input:
+              path: "notes/d2.md"
+            expect:
+              frontmatter:
+                title: "DryRun 2"
+
+  # =============================================================================
+  # Group 4: Batch delete partial failure
+  # =============================================================================
+
+  - name: "batch delete partial failure continues processing"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+              required: true
+            tags:
+              type: list
+              items:
+                type: string
+              default: []
+          ---
+      files:
+        notes/ok.md: |
+          ---
+          type: note
+          title: "OK to delete"
+          tags: [cleanup]
+          ---
+        notes/fail.md: |
+          ---
+          type: note
+          title: "Will fail"
+          tags: [cleanup]
+          ---
+
+    tests:
+      - name: "I/O error on one file does not prevent other deletions"
+        operation: batch_delete
+        input:
+          where: 'tags.contains("cleanup")'
+        simulate:
+          io_error_on: "notes/fail.md"
+        expect:
+          batch_result:
+            total: 2
+            succeeded: 1
+            failed: 1
+        verify_after:
+          - operation: read
+            input:
+              path: "notes/ok.md"
+            expect:
+              error:
+                code: file_not_found
+          - operation: read
+            input:
+              path: "notes/fail.md"
+            expect:
+              frontmatter:
+                title: "Will fail"
