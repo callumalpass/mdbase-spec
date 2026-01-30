@@ -1,0 +1,698 @@
+name: "conformance edge cases — iteration 11"
+level: 1
+category: validation
+spec_ref: "§3, §5, §7"
+
+groups:
+  # =============================================================================
+  # Group 1: Non-mapping frontmatter at error validation level
+  # =============================================================================
+
+  - name: "non-mapping frontmatter at error validation level"
+    spec_ref: "§3.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types: {}
+
+    tests:
+      - name: "list frontmatter at error level fails read operation"
+        setup:
+          files:
+            notes/list-fm.md: |
+              ---
+              - item1
+              - item2
+              ---
+              Body here.
+        operation: read
+        input:
+          path: "notes/list-fm.md"
+        expect:
+          error:
+            code: invalid_frontmatter
+
+      - name: "scalar frontmatter at error level fails read operation"
+        setup:
+          files:
+            notes/scalar-fm.md: |
+              ---
+              just a string
+              ---
+              Body here.
+        operation: read
+        input:
+          path: "notes/scalar-fm.md"
+        expect:
+          error:
+            code: invalid_frontmatter
+
+      - name: "null frontmatter at error level fails read operation"
+        setup:
+          files:
+            notes/null-fm.md: |
+              ---
+              null
+              ---
+              Body here.
+        operation: read
+        input:
+          path: "notes/null-fm.md"
+        expect:
+          error:
+            code: invalid_frontmatter
+
+      - name: "integer frontmatter at error level fails read operation"
+        setup:
+          files:
+            notes/int-fm.md: |
+              ---
+              42
+              ---
+              Body here.
+        operation: read
+        input:
+          path: "notes/int-fm.md"
+        expect:
+          error:
+            code: invalid_frontmatter
+
+      - name: "list frontmatter at error level fails create validation"
+        spec_ref: "§3.2, §12.1"
+        setup:
+          files:
+            notes/list-create.md: |
+              ---
+              - one
+              - two
+              ---
+        operation: validate
+        input:
+          path: "notes/list-create.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_frontmatter
+
+  # =============================================================================
+  # Group 2: Special character field names — write round-trip
+  # =============================================================================
+
+  - name: "special character field names write round-trip"
+    spec_ref: "§3.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+
+    tests:
+      - name: "create file with dash field name preserves quoting"
+        operation: create
+        input:
+          path: "notes/dashes.md"
+          frontmatter:
+            "field-with-dashes": "value1"
+        expect:
+          frontmatter:
+            "field-with-dashes": "value1"
+
+      - name: "create file with dot field name preserves quoting"
+        operation: create
+        input:
+          path: "notes/dots.md"
+          frontmatter:
+            "field.with.dots": "value2"
+        expect:
+          frontmatter:
+            "field.with.dots": "value2"
+
+      - name: "create file with colon field name preserves quoting"
+        operation: create
+        input:
+          path: "notes/colons.md"
+          frontmatter:
+            "field:with:colons": "value3"
+        expect:
+          frontmatter:
+            "field:with:colons": "value3"
+
+      - name: "update file with special char field names round-trips"
+        setup:
+          files:
+            notes/special.md: |
+              ---
+              "field-with-dashes": "original"
+              "field.with.dots": "original"
+              ---
+        operation: update
+        input:
+          path: "notes/special.md"
+          fields:
+            "field-with-dashes": "updated"
+        expect:
+          frontmatter:
+            "field-with-dashes": "updated"
+            "field.with.dots": "original"
+
+  # =============================================================================
+  # Group 3: YAML date scalar normalization to ISO 8601 on write
+  # =============================================================================
+
+  - name: "YAML date scalar normalization"
+    spec_ref: "§7.7, §7.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        event.md: |
+          ---
+          name: event
+          fields:
+            title:
+              type: string
+              required: true
+            event_date:
+              type: date
+            event_time:
+              type: datetime
+          ---
+
+    tests:
+      - name: "YAML date scalar read as ISO 8601 string"
+        spec_ref: "§7.7"
+        setup:
+          files:
+            events/e1.md: |
+              ---
+              type: event
+              title: "Conference"
+              event_date: 2024-03-15
+              ---
+        operation: read
+        input:
+          path: "events/e1.md"
+        expect:
+          frontmatter:
+            event_date: "2024-03-15"
+
+      - name: "YAML date scalar normalized to ISO 8601 after update"
+        spec_ref: "§7.7"
+        setup:
+          files:
+            events/e2.md: |
+              ---
+              type: event
+              title: "Workshop"
+              event_date: 2024-12-01
+              ---
+        operation: update
+        input:
+          path: "events/e2.md"
+          fields:
+            title: "Updated Workshop"
+        expect:
+          frontmatter:
+            event_date: "2024-12-01"
+          frontmatter_written:
+            event_date: "2024-12-01"
+
+      - name: "YAML datetime scalar read as ISO 8601 string"
+        spec_ref: "§7.8"
+        setup:
+          files:
+            events/e3.md: |
+              ---
+              type: event
+              title: "Kickoff"
+              event_time: 2024-03-15 10:30:00
+              ---
+        operation: read
+        input:
+          path: "events/e3.md"
+        expect:
+          frontmatter:
+            event_time: "2024-03-15T10:30:00"
+
+      - name: "YAML datetime with timezone scalar normalized on write"
+        spec_ref: "§7.8"
+        setup:
+          files:
+            events/e4.md: |
+              ---
+              type: event
+              title: "Global Meetup"
+              event_time: 2024-03-15 10:30:00+05:30
+              ---
+        operation: update
+        input:
+          path: "events/e4.md"
+          fields:
+            title: "Updated Meetup"
+        expect:
+          frontmatter:
+            event_time: "2024-03-15T10:30:00+05:30"
+
+      - name: "create with ISO 8601 date string preserves format"
+        spec_ref: "§7.7"
+        operation: create
+        input:
+          path: "events/e5.md"
+          type: event
+          frontmatter:
+            title: "New Event"
+            event_date: "2024-06-15"
+        expect:
+          frontmatter:
+            event_date: "2024-06-15"
+
+  # =============================================================================
+  # Group 4: Computed field portability — Level 1/2 MUST load without error
+  # =============================================================================
+
+  - name: "computed field portability at Level 1"
+    spec_ref: "§5.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        person.md: |
+          ---
+          name: person
+          fields:
+            first_name:
+              type: string
+              required: true
+            last_name:
+              type: string
+              required: true
+            full_name:
+              type: string
+              computed: "first_name + ' ' + last_name"
+          ---
+
+    tests:
+      - name: "type with computed field loads without error"
+        setup:
+          files:
+            people/alice.md: |
+              ---
+              type: person
+              first_name: "Alice"
+              last_name: "Smith"
+              ---
+        operation: validate
+        input:
+          path: "people/alice.md"
+        expect:
+          valid: true
+
+      - name: "computed field not treated as required at Level 1"
+        setup:
+          files:
+            people/bob.md: |
+              ---
+              type: person
+              first_name: "Bob"
+              last_name: "Jones"
+              ---
+        operation: validate
+        input:
+          path: "people/bob.md"
+        expect:
+          valid: true
+
+      - name: "file with persisted computed field name is valid at Level 1"
+        setup:
+          files:
+            people/carol.md: |
+              ---
+              type: person
+              first_name: "Carol"
+              last_name: "Lee"
+              full_name: "Carol Lee"
+              ---
+        operation: validate
+        input:
+          path: "people/carol.md"
+        expect:
+          valid: true
+
+      - name: "read returns effective frontmatter ignoring computed at Level 1"
+        spec_ref: "§5.12"
+        setup:
+          files:
+            people/dave.md: |
+              ---
+              type: person
+              first_name: "Dave"
+              last_name: "Kim"
+              ---
+        operation: read
+        input:
+          path: "people/dave.md"
+        expect:
+          frontmatter:
+            first_name: "Dave"
+            last_name: "Kim"
+
+      - name: "type with multiple computed fields loads without error"
+        setup:
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+                  required: true
+                status:
+                  type: string
+                  default: "open"
+                priority:
+                  type: integer
+                  default: 3
+                summary:
+                  type: string
+                  computed: "title + ' [' + status + ']'"
+                is_urgent:
+                  type: boolean
+                  computed: "priority >= 4"
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Fix bug"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 5: Materialized defaults MUST equal declared default
+  # =============================================================================
+
+  - name: "materialized default correctness"
+    spec_ref: "§5.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: string
+              default: "open"
+            priority:
+              type: integer
+              default: 3
+            tags:
+              type: list
+              items:
+                type: string
+              default: []
+          ---
+
+    tests:
+      - name: "effective frontmatter includes default values"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test task"
+              ---
+        operation: read
+        input:
+          path: "tasks/t1.md"
+        expect:
+          frontmatter:
+            title: "Test task"
+            status: "open"
+            priority: 3
+            tags: []
+
+      - name: "explicitly provided value matching default is valid"
+        setup:
+          files:
+            tasks/t2.md: |
+              ---
+              type: task
+              title: "Test task"
+              status: "open"
+              priority: 3
+              ---
+        operation: validate
+        input:
+          path: "tasks/t2.md"
+        expect:
+          valid: true
+
+      - name: "explicitly provided value different from default is valid"
+        setup:
+          files:
+            tasks/t3.md: |
+              ---
+              type: task
+              title: "Test task"
+              status: "closed"
+              priority: 5
+              ---
+        operation: read
+        input:
+          path: "tasks/t3.md"
+        expect:
+          frontmatter:
+            status: "closed"
+            priority: 5
+
+  # =============================================================================
+  # Group 6: Type name constraints — MUST requirements
+  # =============================================================================
+
+  - name: "type name character constraints"
+    spec_ref: "§5.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+
+    tests:
+      - name: "type name must start with a letter"
+        setup:
+          types:
+            123type.md: |
+              ---
+              name: 123type
+              fields:
+                title:
+                  type: string
+              ---
+        operation: validate
+        input:
+          path: "dummy.md"
+        expect:
+          error:
+            code: invalid_type_definition
+
+      - name: "type name must not exceed 64 characters"
+        setup:
+          types:
+            abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm.md: |
+              ---
+              name: abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm
+              fields:
+                title:
+                  type: string
+              ---
+        operation: validate
+        input:
+          path: "dummy.md"
+        expect:
+          error:
+            code: invalid_type_definition
+
+      - name: "type name with uppercase is canonicalized to lowercase"
+        setup:
+          types:
+            mytask.md: |
+              ---
+              name: MyTask
+              fields:
+                title:
+                  type: string
+              ---
+          files:
+            items/i1.md: |
+              ---
+              type: mytask
+              title: "Test"
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: true
+
+      - name: "type name with valid characters accepted"
+        setup:
+          types:
+            my-task_2.md: |
+              ---
+              name: my-task_2
+              fields:
+                title:
+                  type: string
+              ---
+          files:
+            items/i1.md: |
+              ---
+              type: my-task_2
+              title: "Test"
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: true
+
+      - name: "type name with special characters rejected"
+        setup:
+          types:
+            my.type.md: |
+              ---
+              name: my.type
+              fields:
+                title:
+                  type: string
+              ---
+        operation: validate
+        input:
+          path: "dummy.md"
+        expect:
+          error:
+            code: invalid_type_definition
+
+  # =============================================================================
+  # Group 7: Forward compatibility — unknown config keys ignored
+  # =============================================================================
+
+  - name: "forward compatibility — unknown config keys"
+    spec_ref: "§4.4.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+          future_setting_xyz: true
+        future_top_level_key: "some value"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/n1.md: |
+          ---
+          type: note
+          title: "Hello"
+          ---
+
+    tests:
+      - name: "unknown settings key does not prevent config loading"
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter:
+            title: "Hello"
+
+      - name: "unknown top-level key does not prevent validation"
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 8: Validation level interaction with non-mapping frontmatter
+  # =============================================================================
+
+  - name: "non-mapping frontmatter — all three levels compared"
+    spec_ref: "§3.2, §9.1"
+
+    tests:
+      - name: "off level — list frontmatter treated as empty, read succeeds"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "off"
+          types: {}
+          files:
+            notes/n1.md: |
+              ---
+              - item1
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter: {}
+
+      - name: "warn level — list frontmatter treated as empty with warning"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "warn"
+          types: {}
+          files:
+            notes/n1.md: |
+              ---
+              - item1
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter: {}
+          warnings:
+            - code: invalid_frontmatter
+
+      - name: "error level — list frontmatter fails operation"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "error"
+          types: {}
+          files:
+            notes/n1.md: |
+              ---
+              - item1
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          error:
+            code: invalid_frontmatter
