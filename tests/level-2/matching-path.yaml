@@ -1,0 +1,461 @@
+name: "path-based type matching"
+level: 2
+category: matching
+spec_ref: "§6.3, §6.4"
+
+groups:
+  # =============================================================================
+  # Group 1: Basic path_glob matching
+  # =============================================================================
+
+  - name: "basic path_glob matching"
+    spec_ref: "§6.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          match:
+            path_glob: "tasks/*.md"
+          fields:
+            title:
+              type: string
+          ---
+        note.md: |
+          ---
+          name: note
+          match:
+            path_glob: "notes/**/*.md"
+          fields:
+            content:
+              type: string
+          ---
+
+    tests:
+      - name: "file in matching directory matches type"
+        setup:
+          files:
+            tasks/fix-bug.md: |
+              ---
+              title: "Fix the bug"
+              ---
+        operation: get_types
+        input:
+          path: "tasks/fix-bug.md"
+        expect:
+          types: [task]
+
+      - name: "file outside matching directory does not match"
+        setup:
+          files:
+            other/fix-bug.md: |
+              ---
+              title: "Fix the bug"
+              ---
+        operation: get_types
+        input:
+          path: "other/fix-bug.md"
+        expect:
+          types: []
+
+      - name: "single star does not match subdirectories"
+        setup:
+          files:
+            tasks/sub/deep.md: |
+              ---
+              title: "Nested task"
+              ---
+        operation: get_types
+        input:
+          path: "tasks/sub/deep.md"
+        expect:
+          types: []
+
+      - name: "double star matches subdirectories"
+        setup:
+          files:
+            notes/2024/january/entry.md: |
+              ---
+              content: "Deep note"
+              ---
+        operation: get_types
+        input:
+          path: "notes/2024/january/entry.md"
+        expect:
+          types: [note]
+
+      - name: "double star matches direct children too"
+        setup:
+          files:
+            notes/quick.md: |
+              ---
+              content: "Quick note"
+              ---
+        operation: get_types
+        input:
+          path: "notes/quick.md"
+        expect:
+          types: [note]
+
+  # =============================================================================
+  # Group 2: Glob wildcard patterns
+  # =============================================================================
+
+  - name: "glob wildcard patterns"
+    spec_ref: "§6.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        draft.md: |
+          ---
+          name: draft
+          match:
+            path_glob: "*.draft.md"
+          fields: {}
+          ---
+        dated.md: |
+          ---
+          name: dated
+          match:
+            path_glob: "notes/2024-*.md"
+          fields: {}
+          ---
+        single_char.md: |
+          ---
+          name: single_char
+          match:
+            path_glob: "items/?.md"
+          fields: {}
+          ---
+
+    tests:
+      - name: "star matches file name suffix pattern"
+        setup:
+          files:
+            foo.draft.md: |
+              ---
+              ---
+        operation: get_types
+        input:
+          path: "foo.draft.md"
+        expect:
+          types: [draft]
+
+      - name: "star does not match partial suffix"
+        setup:
+          files:
+            foo.drafts.md: |
+              ---
+              ---
+        operation: get_types
+        input:
+          path: "foo.drafts.md"
+        expect:
+          types: []
+
+      - name: "star with prefix matches dated files"
+        setup:
+          files:
+            notes/2024-01.md: |
+              ---
+              ---
+        operation: get_types
+        input:
+          path: "notes/2024-01.md"
+        expect:
+          types: [dated]
+
+      - name: "star with prefix does not match wrong prefix"
+        setup:
+          files:
+            notes/2023-01.md: |
+              ---
+              ---
+        operation: get_types
+        input:
+          path: "notes/2023-01.md"
+        expect:
+          types: []
+
+      - name: "question mark matches single character"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              ---
+        operation: get_types
+        input:
+          path: "items/a.md"
+        expect:
+          types: [single_char]
+
+      - name: "question mark does not match multiple characters"
+        setup:
+          files:
+            items/ab.md: |
+              ---
+              ---
+        operation: get_types
+        input:
+          path: "items/ab.md"
+        expect:
+          types: []
+
+      - name: "question mark does not match empty"
+        setup:
+          files:
+            items/.md: |
+              ---
+              ---
+        operation: get_types
+        input:
+          path: "items/.md"
+        expect:
+          types: []
+
+  # =============================================================================
+  # Group 3: Explicit declaration overrides path matching
+  # =============================================================================
+
+  - name: "explicit declaration overrides path matching"
+    spec_ref: "§6.1, §6.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          match:
+            path_glob: "tasks/**/*.md"
+          fields:
+            title:
+              type: string
+          ---
+        note.md: |
+          ---
+          name: note
+          fields:
+            content:
+              type: string
+          ---
+
+    tests:
+      - name: "explicit type overrides path match"
+        setup:
+          files:
+            tasks/not-a-task.md: |
+              ---
+              type: note
+              content: "This is a note in the tasks folder"
+              ---
+        operation: get_types
+        input:
+          path: "tasks/not-a-task.md"
+        expect:
+          types: [note]
+
+      - name: "explicit type declaration stops match rule evaluation"
+        spec_ref: "§6.6"
+        setup:
+          files:
+            tasks/explicit.md: |
+              ---
+              type: task
+              title: "Explicitly declared"
+              ---
+        operation: get_types
+        input:
+          path: "tasks/explicit.md"
+        expect:
+          types: [task]
+
+      - name: "explicit unknown type is an error"
+        setup:
+          files:
+            tasks/bad-type.md: |
+              ---
+              type: nonexistent
+              ---
+        operation: validate
+        input:
+          path: "tasks/bad-type.md"
+        expect:
+          valid: false
+          issues:
+            - code: unknown_type
+
+  # =============================================================================
+  # Group 4: Type without match rules
+  # =============================================================================
+
+  - name: "type without match rules requires explicit declaration"
+    spec_ref: "§6.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        template.md: |
+          ---
+          name: template
+          fields:
+            template_name:
+              type: string
+              required: true
+          ---
+
+    tests:
+      - name: "file does not implicitly match type without match rules"
+        setup:
+          files:
+            templates/header.md: |
+              ---
+              template_name: "header"
+              ---
+        operation: get_types
+        input:
+          path: "templates/header.md"
+        expect:
+          types: []
+
+      - name: "file explicitly declaring type without match rules is matched"
+        setup:
+          files:
+            templates/header.md: |
+              ---
+              type: template
+              template_name: "header"
+              ---
+        operation: get_types
+        input:
+          path: "templates/header.md"
+        expect:
+          types: [template]
+
+  # =============================================================================
+  # Group 5: Untyped files
+  # =============================================================================
+
+  - name: "untyped files"
+    spec_ref: "§6.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          match:
+            path_glob: "tasks/**/*.md"
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "file matching no types is untyped"
+        setup:
+          files:
+            random/doc.md: |
+              ---
+              title: "Some document"
+              ---
+        operation: get_types
+        input:
+          path: "random/doc.md"
+        expect:
+          types: []
+
+      - name: "file with empty frontmatter is untyped"
+        setup:
+          files:
+            random/empty.md: |
+              ---
+              ---
+        operation: get_types
+        input:
+          path: "random/empty.md"
+        expect:
+          types: []
+
+      - name: "file without frontmatter is untyped"
+        setup:
+          files:
+            random/no-fm.md: |
+              Just some markdown content.
+        operation: get_types
+        input:
+          path: "random/no-fm.md"
+        expect:
+          types: []
+
+  # =============================================================================
+  # Group 6: Path glob edge cases
+  # =============================================================================
+
+  - name: "path glob edge cases"
+    spec_ref: "§6.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        root_md.md: |
+          ---
+          name: root_md
+          match:
+            path_glob: "*.md"
+          fields: {}
+          ---
+        all_md.md: |
+          ---
+          name: all_md
+          match:
+            path_glob: "**/*.md"
+          fields: {}
+          ---
+
+    tests:
+      - name: "root glob matches root-level files"
+        setup:
+          files:
+            readme.md: |
+              ---
+              ---
+        operation: get_types
+        input:
+          path: "readme.md"
+        expect:
+          types: [root_md, all_md]
+
+      - name: "root glob does not match nested files"
+        setup:
+          files:
+            sub/readme.md: |
+              ---
+              ---
+        operation: get_types
+        input:
+          path: "sub/readme.md"
+        expect:
+          types: [all_md]
+
+      - name: "double-star glob matches at any depth"
+        setup:
+          files:
+            a/b/c/d/deep.md: |
+              ---
+              ---
+        operation: get_types
+        input:
+          path: "a/b/c/d/deep.md"
+        expect:
+          types: [all_md]

@@ -1,0 +1,943 @@
+name: "multi-type matching and constraint merging"
+level: 2
+category: matching
+spec_ref: "§6.2, §6.5"
+
+groups:
+  # =============================================================================
+  # Group 1: Explicit multi-type declaration
+  # =============================================================================
+
+  - name: "explicit multi-type declaration"
+    spec_ref: "§6.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [open, in_progress, done]
+          ---
+        urgent.md: |
+          ---
+          name: urgent
+          fields:
+            escalation_contact:
+              type: string
+              required: true
+            priority:
+              type: integer
+              min: 4
+              max: 5
+          ---
+
+    tests:
+      - name: "types key declares multiple types"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              types: [task, urgent]
+              title: "Critical bug"
+              status: open
+              escalation_contact: "alice@example.com"
+              priority: 5
+              ---
+        operation: get_types
+        input:
+          path: "items/a.md"
+        expect:
+          types: [task, urgent]
+
+      - name: "multi-type file must satisfy all types"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              types: [task, urgent]
+              title: "Critical bug"
+              status: open
+              escalation_contact: "alice@example.com"
+              priority: 5
+              ---
+        operation: validate
+        input:
+          path: "items/b.md"
+        expect:
+          valid: true
+
+      - name: "multi-type file missing field from one type fails"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              types: [task, urgent]
+              title: "Critical bug"
+              status: open
+              priority: 5
+              ---
+        operation: validate
+        input:
+          path: "items/c.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: escalation_contact
+
+      - name: "types key takes precedence over type key"
+        spec_ref: "§6.2"
+        setup:
+          files:
+            items/d.md: |
+              ---
+              type: task
+              types: [task, urgent]
+              title: "Has both"
+              status: open
+              escalation_contact: "bob@example.com"
+              priority: 4
+              ---
+        operation: get_types
+        input:
+          path: "items/d.md"
+        expect:
+          types: [task, urgent]
+
+  # =============================================================================
+  # Group 2: Implicit multi-type matching via match rules
+  # =============================================================================
+
+  - name: "implicit multi-type matching via match rules"
+    spec_ref: "§6.5, §6.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          match:
+            path_glob: "tasks/**/*.md"
+          fields:
+            title:
+              type: string
+            status:
+              type: string
+          ---
+        urgent.md: |
+          ---
+          name: urgent
+          match:
+            where:
+              tags:
+                contains: "urgent"
+          fields:
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+        assigned.md: |
+          ---
+          name: assigned
+          match:
+            fields_present: [assignee]
+          fields:
+            assignee:
+              type: string
+          ---
+
+    tests:
+      - name: "file matches multiple types via different match rules"
+        setup:
+          files:
+            tasks/urgent-task.md: |
+              ---
+              title: "Fix production"
+              status: "open"
+              tags: [urgent, production]
+              assignee: "alice"
+              ---
+        operation: get_types
+        input:
+          path: "tasks/urgent-task.md"
+        expect:
+          types: [task, urgent, assigned]
+
+      - name: "file matches one type but not others"
+        setup:
+          files:
+            tasks/quiet-task.md: |
+              ---
+              title: "Refactor code"
+              status: "open"
+              tags: [chore]
+              ---
+        operation: get_types
+        input:
+          path: "tasks/quiet-task.md"
+        expect:
+          types: [task]
+
+      - name: "file matches types from different criteria"
+        setup:
+          files:
+            notes/urgent-note.md: |
+              ---
+              tags: [urgent]
+              assignee: "bob"
+              ---
+        operation: get_types
+        input:
+          path: "notes/urgent-note.md"
+        expect:
+          types: [urgent, assigned]
+
+  # =============================================================================
+  # Group 3: Constraint merging - required
+  # =============================================================================
+
+  - name: "constraint merging - required fields"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        type_a.md: |
+          ---
+          name: type_a
+          fields:
+            title:
+              type: string
+              required: true
+            shared_field:
+              type: string
+          ---
+        type_b.md: |
+          ---
+          name: type_b
+          fields:
+            shared_field:
+              type: string
+              required: true
+            description:
+              type: string
+          ---
+
+    tests:
+      - name: "required is true if either type requires it"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              types: [type_a, type_b]
+              title: "Has title"
+              ---
+        operation: validate
+        input:
+          path: "items/a.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: shared_field
+
+      - name: "all required fields from both types must be present"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              types: [type_a, type_b]
+              title: "Has title"
+              shared_field: "present"
+              ---
+        operation: validate
+        input:
+          path: "items/b.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 4: Constraint merging - numeric min/max
+  # =============================================================================
+
+  - name: "constraint merging - numeric min/max"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        type_a.md: |
+          ---
+          name: type_a
+          fields:
+            priority:
+              type: integer
+              min: 1
+              max: 5
+          ---
+        type_b.md: |
+          ---
+          name: type_b
+          fields:
+            priority:
+              type: integer
+              min: 2
+              max: 3
+          ---
+
+    tests:
+      - name: "merged min is the higher of the two"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              types: [type_a, type_b]
+              priority: 1
+              ---
+        operation: validate
+        input:
+          path: "items/a.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_small
+              field: priority
+
+      - name: "merged max is the lower of the two"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              types: [type_a, type_b]
+              priority: 4
+              ---
+        operation: validate
+        input:
+          path: "items/b.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_large
+              field: priority
+
+      - name: "value within merged range passes"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              types: [type_a, type_b]
+              priority: 2
+              ---
+        operation: validate
+        input:
+          path: "items/c.md"
+        expect:
+          valid: true
+
+      - name: "value at merged min boundary passes"
+        setup:
+          files:
+            items/d.md: |
+              ---
+              types: [type_a, type_b]
+              priority: 2
+              ---
+        operation: validate
+        input:
+          path: "items/d.md"
+        expect:
+          valid: true
+
+      - name: "value at merged max boundary passes"
+        setup:
+          files:
+            items/e.md: |
+              ---
+              types: [type_a, type_b]
+              priority: 3
+              ---
+        operation: validate
+        input:
+          path: "items/e.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 5: Constraint merging - string length
+  # =============================================================================
+
+  - name: "constraint merging - string min_length/max_length"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        type_a.md: |
+          ---
+          name: type_a
+          fields:
+            name:
+              type: string
+              min_length: 1
+              max_length: 50
+          ---
+        type_b.md: |
+          ---
+          name: type_b
+          fields:
+            name:
+              type: string
+              min_length: 3
+              max_length: 20
+          ---
+
+    tests:
+      - name: "merged min_length is the higher value"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              types: [type_a, type_b]
+              name: "ab"
+              ---
+        operation: validate
+        input:
+          path: "items/a.md"
+        expect:
+          valid: false
+          issues:
+            - code: string_too_short
+              field: name
+
+      - name: "merged max_length is the lower value"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              types: [type_a, type_b]
+              name: "This string is definitely longer than twenty characters"
+              ---
+        operation: validate
+        input:
+          path: "items/b.md"
+        expect:
+          valid: false
+          issues:
+            - code: string_too_long
+              field: name
+
+      - name: "value within merged range passes"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              types: [type_a, type_b]
+              name: "Valid name"
+              ---
+        operation: validate
+        input:
+          path: "items/c.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 6: Constraint merging - enum intersection
+  # =============================================================================
+
+  - name: "constraint merging - enum intersection"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        type_a.md: |
+          ---
+          name: type_a
+          fields:
+            status:
+              type: enum
+              values: [open, in_progress, done, cancelled]
+          ---
+        type_b.md: |
+          ---
+          name: type_b
+          fields:
+            status:
+              type: enum
+              values: [open, done, archived]
+          ---
+
+    tests:
+      - name: "value in intersection of enums passes"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              types: [type_a, type_b]
+              status: open
+              ---
+        operation: validate
+        input:
+          path: "items/a.md"
+        expect:
+          valid: true
+
+      - name: "value in only one enum fails"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              types: [type_a, type_b]
+              status: in_progress
+              ---
+        operation: validate
+        input:
+          path: "items/b.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_enum
+              field: status
+
+      - name: "value in only the other enum fails"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              types: [type_a, type_b]
+              status: archived
+              ---
+        operation: validate
+        input:
+          path: "items/c.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_enum
+              field: status
+
+      - name: "another value in intersection passes"
+        setup:
+          files:
+            items/d.md: |
+              ---
+              types: [type_a, type_b]
+              status: done
+              ---
+        operation: validate
+        input:
+          path: "items/d.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 7: Constraint merging - pattern
+  # =============================================================================
+
+  - name: "constraint merging - pattern"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        type_a.md: |
+          ---
+          name: type_a
+          fields:
+            code:
+              type: string
+              pattern: "^[A-Z]+"
+          ---
+        type_b.md: |
+          ---
+          name: type_b
+          fields:
+            code:
+              type: string
+              pattern: "^[A-Z]{3}$"
+          ---
+
+    tests:
+      - name: "value matching all patterns passes"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              types: [type_a, type_b]
+              code: "ABC"
+              ---
+        operation: validate
+        input:
+          path: "items/a.md"
+        expect:
+          valid: true
+
+      - name: "value matching first pattern but not second fails"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              types: [type_a, type_b]
+              code: "ABCD"
+              ---
+        operation: validate
+        input:
+          path: "items/b.md"
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: code
+
+      - name: "value matching neither pattern fails"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              types: [type_a, type_b]
+              code: "abc"
+              ---
+        operation: validate
+        input:
+          path: "items/c.md"
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: code
+
+  # =============================================================================
+  # Group 8: Constraint merging - list min_items/max_items and unique
+  # =============================================================================
+
+  - name: "constraint merging - list constraints"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        type_a.md: |
+          ---
+          name: type_a
+          fields:
+            tags:
+              type: list
+              items:
+                type: string
+              min_items: 1
+              max_items: 10
+          ---
+        type_b.md: |
+          ---
+          name: type_b
+          fields:
+            tags:
+              type: list
+              items:
+                type: string
+              min_items: 2
+              max_items: 5
+              unique: true
+          ---
+
+    tests:
+      - name: "merged min_items is the higher value"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              types: [type_a, type_b]
+              tags: ["only-one"]
+              ---
+        operation: validate
+        input:
+          path: "items/a.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_too_short
+              field: tags
+
+      - name: "merged max_items is the lower value"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              types: [type_a, type_b]
+              tags: ["a", "b", "c", "d", "e", "f"]
+              ---
+        operation: validate
+        input:
+          path: "items/b.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_too_long
+              field: tags
+
+      - name: "unique is true if either type requires it"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              types: [type_a, type_b]
+              tags: ["a", "a", "b"]
+              ---
+        operation: validate
+        input:
+          path: "items/c.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_duplicate
+              field: tags
+
+      - name: "valid list within merged constraints passes"
+        setup:
+          files:
+            items/d.md: |
+              ---
+              types: [type_a, type_b]
+              tags: ["x", "y", "z"]
+              ---
+        operation: validate
+        input:
+          path: "items/d.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 9: Constraint merging - default values
+  # =============================================================================
+
+  - name: "constraint merging - default values"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        type_a.md: |
+          ---
+          name: type_a
+          fields:
+            status:
+              type: string
+              default: "open"
+          ---
+        type_b.md: |
+          ---
+          name: type_b
+          fields:
+            status:
+              type: string
+              default: "open"
+          ---
+        type_c.md: |
+          ---
+          name: type_c
+          fields:
+            status:
+              type: string
+              default: "closed"
+          ---
+
+    tests:
+      - name: "equal defaults from both types are valid"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              types: [type_a, type_b]
+              ---
+        operation: validate
+        input:
+          path: "items/a.md"
+        expect:
+          valid: true
+
+      - name: "equal defaults apply when field is missing"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              types: [type_a, type_b]
+              ---
+        operation: read
+        input:
+          path: "items/b.md"
+        expect:
+          frontmatter:
+            status: "open"
+
+      - name: "conflicting defaults produce an error"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              types: [type_a, type_c]
+              ---
+        operation: validate
+        input:
+          path: "items/c.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_conflict
+
+  # =============================================================================
+  # Group 10: Constraint merging - deprecated
+  # =============================================================================
+
+  - name: "constraint merging - deprecated"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "warn"
+      types:
+        type_a.md: |
+          ---
+          name: type_a
+          fields:
+            old_field:
+              type: string
+              deprecated: true
+          ---
+        type_b.md: |
+          ---
+          name: type_b
+          fields:
+            old_field:
+              type: string
+          ---
+
+    tests:
+      - name: "deprecated is true if either type marks it deprecated"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              types: [type_a, type_b]
+              old_field: "still here"
+              ---
+        operation: validate
+        input:
+          path: "items/a.md"
+        expect:
+          valid: true
+          issues:
+            - code: deprecated_field
+              field: old_field
+              severity: warning
+
+  # =============================================================================
+  # Group 11: Multi-type validation with implicit matching
+  # =============================================================================
+
+  - name: "multi-type validation with implicit matching"
+    spec_ref: "§6.5, §6.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          match:
+            path_glob: "tasks/**/*.md"
+          fields:
+            title:
+              type: string
+              required: true
+            priority:
+              type: integer
+              min: 1
+              max: 5
+          ---
+        reviewed.md: |
+          ---
+          name: reviewed
+          match:
+            fields_present: [reviewer]
+          fields:
+            reviewer:
+              type: string
+              required: true
+            priority:
+              type: integer
+              min: 1
+              max: 3
+          ---
+
+    tests:
+      - name: "implicitly matched multi-type file applies merged constraints"
+        setup:
+          files:
+            tasks/reviewed-task.md: |
+              ---
+              title: "Reviewed task"
+              priority: 4
+              reviewer: "alice"
+              ---
+        operation: validate
+        input:
+          path: "tasks/reviewed-task.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_large
+              field: priority
+
+      - name: "implicitly matched multi-type file passes with valid values"
+        setup:
+          files:
+            tasks/good-task.md: |
+              ---
+              title: "Good task"
+              priority: 2
+              reviewer: "bob"
+              ---
+        operation: validate
+        input:
+          path: "tasks/good-task.md"
+        expect:
+          valid: true

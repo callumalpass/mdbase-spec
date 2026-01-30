@@ -1,0 +1,1007 @@
+name: "field-based type matching"
+level: 2
+category: matching
+spec_ref: "§6.3, §6.4"
+
+groups:
+  # =============================================================================
+  # Group 1: fields_present matching
+  # =============================================================================
+
+  - name: "fields_present matching"
+    spec_ref: "§6.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        actionable.md: |
+          ---
+          name: actionable
+          match:
+            fields_present: [due_date, status]
+          fields:
+            due_date:
+              type: date
+            status:
+              type: string
+          ---
+
+    tests:
+      - name: "file with all fields_present fields matches"
+        setup:
+          files:
+            items/todo.md: |
+              ---
+              due_date: 2024-06-01
+              status: "open"
+              ---
+        operation: get_types
+        input:
+          path: "items/todo.md"
+        expect:
+          types: [actionable]
+
+      - name: "file missing one fields_present field does not match"
+        setup:
+          files:
+            items/partial.md: |
+              ---
+              due_date: 2024-06-01
+              ---
+        operation: get_types
+        input:
+          path: "items/partial.md"
+        expect:
+          types: []
+
+      - name: "file missing all fields_present fields does not match"
+        setup:
+          files:
+            items/empty.md: |
+              ---
+              title: "Something"
+              ---
+        operation: get_types
+        input:
+          path: "items/empty.md"
+        expect:
+          types: []
+
+      - name: "null value in fields_present field does not count as present"
+        setup:
+          files:
+            items/null-field.md: |
+              ---
+              due_date: null
+              status: "open"
+              ---
+        operation: get_types
+        input:
+          path: "items/null-field.md"
+        expect:
+          types: []
+
+      - name: "empty string in fields_present field counts as present"
+        setup:
+          files:
+            items/empty-str.md: |
+              ---
+              due_date: 2024-01-01
+              status: ""
+              ---
+        operation: get_types
+        input:
+          path: "items/empty-str.md"
+        expect:
+          types: [actionable]
+
+      - name: "zero value in fields_present field counts as present"
+        setup:
+          files:
+            items/zero.md: |
+              ---
+              due_date: 2024-01-01
+              status: 0
+              ---
+        operation: get_types
+        input:
+          path: "items/zero.md"
+        expect:
+          types: [actionable]
+
+      - name: "false value in fields_present field counts as present"
+        setup:
+          files:
+            items/false-val.md: |
+              ---
+              due_date: 2024-01-01
+              status: false
+              ---
+        operation: get_types
+        input:
+          path: "items/false-val.md"
+        expect:
+          types: [actionable]
+
+  # =============================================================================
+  # Group 2: where - exact equality
+  # =============================================================================
+
+  - name: "where exact equality"
+    spec_ref: "§6.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          match:
+            where:
+              kind: "task"
+          fields:
+            kind:
+              type: string
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "exact equality match succeeds"
+        setup:
+          files:
+            items/t1.md: |
+              ---
+              kind: "task"
+              title: "Do something"
+              ---
+        operation: get_types
+        input:
+          path: "items/t1.md"
+        expect:
+          types: [task]
+
+      - name: "exact equality match fails on different value"
+        setup:
+          files:
+            items/t2.md: |
+              ---
+              kind: "note"
+              title: "A note"
+              ---
+        operation: get_types
+        input:
+          path: "items/t2.md"
+        expect:
+          types: []
+
+      - name: "exact equality match fails on missing field"
+        setup:
+          files:
+            items/t3.md: |
+              ---
+              title: "No kind"
+              ---
+        operation: get_types
+        input:
+          path: "items/t3.md"
+        expect:
+          types: []
+
+      - name: "exact equality match fails on null"
+        setup:
+          files:
+            items/t4.md: |
+              ---
+              kind: null
+              title: "Null kind"
+              ---
+        operation: get_types
+        input:
+          path: "items/t4.md"
+        expect:
+          types: []
+
+  # =============================================================================
+  # Group 3: where - exists operator
+  # =============================================================================
+
+  - name: "where exists operator"
+    spec_ref: "§6.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        assigned.md: |
+          ---
+          name: assigned
+          match:
+            where:
+              assignee:
+                exists: true
+          fields:
+            assignee:
+              type: string
+          ---
+        unassigned.md: |
+          ---
+          name: unassigned
+          match:
+            where:
+              assignee:
+                exists: false
+          fields: {}
+          ---
+
+    tests:
+      - name: "exists true matches when field is present and non-null"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              assignee: "alice"
+              ---
+        operation: get_types
+        input:
+          path: "items/a.md"
+        expect:
+          types: [assigned]
+
+      - name: "exists true does not match when field is missing"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              title: "No assignee"
+              ---
+        operation: get_types
+        input:
+          path: "items/b.md"
+        expect:
+          types: [unassigned]
+
+      - name: "exists true does not match when field is null"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              assignee: null
+              ---
+        operation: get_types
+        input:
+          path: "items/c.md"
+        expect:
+          types: [unassigned]
+
+      - name: "exists false matches when field is missing"
+        setup:
+          files:
+            items/d.md: |
+              ---
+              title: "Unassigned"
+              ---
+        operation: get_types
+        input:
+          path: "items/d.md"
+        expect:
+          types: [unassigned]
+
+  # =============================================================================
+  # Group 4: where - comparison operators
+  # =============================================================================
+
+  - name: "where comparison operators"
+    spec_ref: "§6.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        high_priority.md: |
+          ---
+          name: high_priority
+          match:
+            where:
+              priority:
+                gte: 4
+          fields:
+            priority:
+              type: integer
+          ---
+        low_priority.md: |
+          ---
+          name: low_priority
+          match:
+            where:
+              priority:
+                lt: 3
+          fields:
+            priority:
+              type: integer
+          ---
+
+    tests:
+      - name: "gte matches equal value"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              priority: 4
+              ---
+        operation: get_types
+        input:
+          path: "items/a.md"
+        expect:
+          types: [high_priority]
+
+      - name: "gte matches greater value"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              priority: 5
+              ---
+        operation: get_types
+        input:
+          path: "items/b.md"
+        expect:
+          types: [high_priority]
+
+      - name: "gte does not match lesser value"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              priority: 3
+              ---
+        operation: get_types
+        input:
+          path: "items/c.md"
+        expect:
+          types: []
+
+      - name: "lt matches lesser value"
+        setup:
+          files:
+            items/d.md: |
+              ---
+              priority: 2
+              ---
+        operation: get_types
+        input:
+          path: "items/d.md"
+        expect:
+          types: [low_priority]
+
+      - name: "lt does not match equal value"
+        setup:
+          files:
+            items/e.md: |
+              ---
+              priority: 3
+              ---
+        operation: get_types
+        input:
+          path: "items/e.md"
+        expect:
+          types: []
+
+      - name: "gt matches strictly greater value"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            above_three.md: |
+              ---
+              name: above_three
+              match:
+                where:
+                  score:
+                    gt: 3
+              fields:
+                score:
+                  type: integer
+              ---
+          files:
+            items/f.md: |
+              ---
+              score: 4
+              ---
+        operation: get_types
+        input:
+          path: "items/f.md"
+        expect:
+          types: [above_three]
+
+      - name: "gt does not match equal value"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            above_three.md: |
+              ---
+              name: above_three
+              match:
+                where:
+                  score:
+                    gt: 3
+              fields:
+                score:
+                  type: integer
+              ---
+          files:
+            items/g.md: |
+              ---
+              score: 3
+              ---
+        operation: get_types
+        input:
+          path: "items/g.md"
+        expect:
+          types: []
+
+      - name: "eq matches exact value"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            priority_three.md: |
+              ---
+              name: priority_three
+              match:
+                where:
+                  priority:
+                    eq: 3
+              fields:
+                priority:
+                  type: integer
+              ---
+          files:
+            items/h.md: |
+              ---
+              priority: 3
+              ---
+        operation: get_types
+        input:
+          path: "items/h.md"
+        expect:
+          types: [priority_three]
+
+      - name: "neq matches non-equal value"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            not_done.md: |
+              ---
+              name: not_done
+              match:
+                where:
+                  status:
+                    neq: "done"
+              fields:
+                status:
+                  type: string
+              ---
+          files:
+            items/i.md: |
+              ---
+              status: "open"
+              ---
+        operation: get_types
+        input:
+          path: "items/i.md"
+        expect:
+          types: [not_done]
+
+      - name: "neq does not match equal value"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            not_done.md: |
+              ---
+              name: not_done
+              match:
+                where:
+                  status:
+                    neq: "done"
+              fields:
+                status:
+                  type: string
+              ---
+          files:
+            items/j.md: |
+              ---
+              status: "done"
+              ---
+        operation: get_types
+        input:
+          path: "items/j.md"
+        expect:
+          types: []
+
+      - name: "lte matches equal value"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            capped.md: |
+              ---
+              name: capped
+              match:
+                where:
+                  level:
+                    lte: 5
+              fields:
+                level:
+                  type: integer
+              ---
+          files:
+            items/k.md: |
+              ---
+              level: 5
+              ---
+        operation: get_types
+        input:
+          path: "items/k.md"
+        expect:
+          types: [capped]
+
+      - name: "lte does not match greater value"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            capped.md: |
+              ---
+              name: capped
+              match:
+                where:
+                  level:
+                    lte: 5
+              fields:
+                level:
+                  type: integer
+              ---
+          files:
+            items/l.md: |
+              ---
+              level: 6
+              ---
+        operation: get_types
+        input:
+          path: "items/l.md"
+        expect:
+          types: []
+
+  # =============================================================================
+  # Group 5: where - list operators
+  # =============================================================================
+
+  - name: "where list operators"
+    spec_ref: "§6.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        urgent.md: |
+          ---
+          name: urgent
+          match:
+            where:
+              tags:
+                contains: "urgent"
+          fields:
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+        critical.md: |
+          ---
+          name: critical
+          match:
+            where:
+              tags:
+                containsAll: ["urgent", "production"]
+          fields:
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+        flagged.md: |
+          ---
+          name: flagged
+          match:
+            where:
+              tags:
+                containsAny: ["bug", "security"]
+          fields:
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+
+    tests:
+      - name: "contains matches when list includes value"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              tags: [urgent, bug]
+              ---
+        operation: get_types
+        input:
+          path: "items/a.md"
+        expect:
+          types: [urgent, flagged]
+
+      - name: "contains does not match when list lacks value"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              tags: [feature, enhancement]
+              ---
+        operation: get_types
+        input:
+          path: "items/b.md"
+        expect:
+          types: []
+
+      - name: "containsAll matches when list has all required values"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              tags: [urgent, production, bug]
+              ---
+        operation: get_types
+        input:
+          path: "items/c.md"
+        expect:
+          types: [urgent, critical, flagged]
+
+      - name: "containsAll does not match when missing one required value"
+        setup:
+          files:
+            items/d.md: |
+              ---
+              tags: [urgent, staging]
+              ---
+        operation: get_types
+        input:
+          path: "items/d.md"
+        expect:
+          types: [urgent]
+
+      - name: "containsAny matches when list has at least one value"
+        setup:
+          files:
+            items/e.md: |
+              ---
+              tags: [security, feature]
+              ---
+        operation: get_types
+        input:
+          path: "items/e.md"
+        expect:
+          types: [flagged]
+
+      - name: "containsAny does not match when list has none of the values"
+        setup:
+          files:
+            items/f.md: |
+              ---
+              tags: [feature, enhancement]
+              ---
+        operation: get_types
+        input:
+          path: "items/f.md"
+        expect:
+          types: []
+
+      - name: "contains does not match on missing field"
+        setup:
+          files:
+            items/g.md: |
+              ---
+              title: "No tags"
+              ---
+        operation: get_types
+        input:
+          path: "items/g.md"
+        expect:
+          types: []
+
+      - name: "contains does not match on null field"
+        setup:
+          files:
+            items/h.md: |
+              ---
+              tags: null
+              ---
+        operation: get_types
+        input:
+          path: "items/h.md"
+        expect:
+          types: []
+
+      - name: "contains on empty list does not match"
+        setup:
+          files:
+            items/i.md: |
+              ---
+              tags: []
+              ---
+        operation: get_types
+        input:
+          path: "items/i.md"
+        expect:
+          types: []
+
+  # =============================================================================
+  # Group 6: where - string operators
+  # =============================================================================
+
+  - name: "where string operators"
+    spec_ref: "§6.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        wip.md: |
+          ---
+          name: wip
+          match:
+            where:
+              title:
+                startsWith: "WIP:"
+          fields:
+            title:
+              type: string
+          ---
+        draft_ext.md: |
+          ---
+          name: draft_ext
+          match:
+            where:
+              filename:
+                endsWith: ".draft.md"
+          fields:
+            filename:
+              type: string
+          ---
+        ticket.md: |
+          ---
+          name: ticket
+          match:
+            where:
+              title:
+                matches: "^TASK-\\d+"
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "startsWith matches prefix"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              title: "WIP: Work in progress"
+              ---
+        operation: get_types
+        input:
+          path: "items/a.md"
+        expect:
+          types: [wip]
+
+      - name: "startsWith does not match wrong prefix"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              title: "DONE: Finished work"
+              ---
+        operation: get_types
+        input:
+          path: "items/b.md"
+        expect:
+          types: []
+
+      - name: "startsWith does not match substring in middle"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              title: "This is WIP: stuff"
+              ---
+        operation: get_types
+        input:
+          path: "items/c.md"
+        expect:
+          types: []
+
+      - name: "endsWith matches suffix"
+        setup:
+          files:
+            items/d.md: |
+              ---
+              filename: "readme.draft.md"
+              ---
+        operation: get_types
+        input:
+          path: "items/d.md"
+        expect:
+          types: [draft_ext]
+
+      - name: "endsWith does not match wrong suffix"
+        setup:
+          files:
+            items/e.md: |
+              ---
+              filename: "readme.md"
+              ---
+        operation: get_types
+        input:
+          path: "items/e.md"
+        expect:
+          types: []
+
+      - name: "matches with regex pattern"
+        setup:
+          files:
+            items/f.md: |
+              ---
+              title: "TASK-1234 Fix the bug"
+              ---
+        operation: get_types
+        input:
+          path: "items/f.md"
+        expect:
+          types: [ticket]
+
+      - name: "matches regex does not match non-conforming string"
+        setup:
+          files:
+            items/g.md: |
+              ---
+              title: "Fix TASK-1234 bug"
+              ---
+        operation: get_types
+        input:
+          path: "items/g.md"
+        expect:
+          types: []
+
+      - name: "string operator on missing field does not match"
+        setup:
+          files:
+            items/h.md: |
+              ---
+              other: "something"
+              ---
+        operation: get_types
+        input:
+          path: "items/h.md"
+        expect:
+          types: []
+
+      - name: "string operator on null field does not match"
+        setup:
+          files:
+            items/i.md: |
+              ---
+              title: null
+              ---
+        operation: get_types
+        input:
+          path: "items/i.md"
+        expect:
+          types: []
+
+  # =============================================================================
+  # Group 7: Combined match conditions (AND logic)
+  # =============================================================================
+
+  - name: "combined match conditions use AND logic"
+    spec_ref: "§6.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        active_task.md: |
+          ---
+          name: active_task
+          match:
+            path_glob: "tasks/**/*.md"
+            fields_present: [status, assignee]
+            where:
+              status:
+                neq: "done"
+          fields:
+            status:
+              type: string
+            assignee:
+              type: string
+          ---
+
+    tests:
+      - name: "file satisfying all conditions matches"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              status: "open"
+              assignee: "alice"
+              ---
+        operation: get_types
+        input:
+          path: "tasks/t1.md"
+        expect:
+          types: [active_task]
+
+      - name: "file failing path condition does not match"
+        setup:
+          files:
+            other/t2.md: |
+              ---
+              status: "open"
+              assignee: "alice"
+              ---
+        operation: get_types
+        input:
+          path: "other/t2.md"
+        expect:
+          types: []
+
+      - name: "file failing fields_present condition does not match"
+        setup:
+          files:
+            tasks/t3.md: |
+              ---
+              status: "open"
+              ---
+        operation: get_types
+        input:
+          path: "tasks/t3.md"
+        expect:
+          types: []
+
+      - name: "file failing where condition does not match"
+        setup:
+          files:
+            tasks/t4.md: |
+              ---
+              status: "done"
+              assignee: "alice"
+              ---
+        operation: get_types
+        input:
+          path: "tasks/t4.md"
+        expect:
+          types: []
+
+      - name: "file failing multiple conditions does not match"
+        setup:
+          files:
+            other/t5.md: |
+              ---
+              status: "done"
+              ---
+        operation: get_types
+        input:
+          path: "other/t5.md"
+        expect:
+          types: []

@@ -1,0 +1,707 @@
+name: "matching evaluation order and edge cases"
+level: 2
+category: matching
+spec_ref: "§6.1, §6.2, §6.5, §6.6"
+
+groups:
+  # =============================================================================
+  # Group 1: Evaluation order
+  # =============================================================================
+
+  - name: "evaluation order - explicit before match rules"
+    spec_ref: "§6.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          match:
+            path_glob: "tasks/**/*.md"
+          fields:
+            title:
+              type: string
+          ---
+        note.md: |
+          ---
+          name: note
+          match:
+            path_glob: "notes/**/*.md"
+          fields:
+            content:
+              type: string
+          ---
+        urgent.md: |
+          ---
+          name: urgent
+          match:
+            where:
+              tags:
+                contains: "urgent"
+          fields:
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+
+    tests:
+      - name: "explicit type stops all match rule evaluation"
+        setup:
+          files:
+            tasks/override.md: |
+              ---
+              type: note
+              content: "Override in tasks folder"
+              tags: [urgent]
+              ---
+        operation: get_types
+        input:
+          path: "tasks/override.md"
+        expect:
+          types: [note]
+
+      - name: "explicit types stops all match rule evaluation"
+        setup:
+          files:
+            tasks/override2.md: |
+              ---
+              types: [note]
+              content: "Override in tasks folder"
+              tags: [urgent]
+              ---
+        operation: get_types
+        input:
+          path: "tasks/override2.md"
+        expect:
+          types: [note]
+
+      - name: "without explicit type all match rules are evaluated"
+        setup:
+          files:
+            tasks/both.md: |
+              ---
+              title: "Urgent task"
+              tags: [urgent]
+              ---
+        operation: get_types
+        input:
+          path: "tasks/both.md"
+        expect:
+          types: [task, urgent]
+
+  # =============================================================================
+  # Group 2: Type name case sensitivity
+  # =============================================================================
+
+  - name: "type name case sensitivity"
+    spec_ref: "§6.2, §5.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "uppercase type name is normalized to lowercase"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              type: Task
+              title: "Case test"
+              ---
+        operation: get_types
+        input:
+          path: "items/a.md"
+        expect:
+          types: [task]
+
+      - name: "mixed case type name is normalized to lowercase"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              type: TASK
+              title: "All caps"
+              ---
+        operation: get_types
+        input:
+          path: "items/b.md"
+        expect:
+          types: [task]
+
+  # =============================================================================
+  # Group 3: Custom explicit_type_keys
+  # =============================================================================
+
+  - name: "custom explicit_type_keys"
+    spec_ref: "§6.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          explicit_type_keys: [kind, kinds]
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+        note.md: |
+          ---
+          name: note
+          match:
+            path_glob: "notes/**/*.md"
+          fields:
+            content:
+              type: string
+          ---
+
+    tests:
+      - name: "custom singular type key works"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              kind: task
+              title: "Custom key"
+              ---
+        operation: get_types
+        input:
+          path: "items/a.md"
+        expect:
+          types: [task]
+
+      - name: "custom plural type key works"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              kinds: [task, note]
+              title: "Custom plural key"
+              content: "Also a note"
+              ---
+        operation: get_types
+        input:
+          path: "items/b.md"
+        expect:
+          types: [task, note]
+
+      - name: "default type key is not recognized when custom keys configured"
+        setup:
+          files:
+            notes/c.md: |
+              ---
+              type: task
+              title: "Default key ignored"
+              ---
+        operation: get_types
+        input:
+          path: "notes/c.md"
+        expect:
+          types: [note]
+
+  # =============================================================================
+  # Group 4: type_conflict error
+  # =============================================================================
+
+  - name: "type_conflict - incompatible field types"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        type_a.md: |
+          ---
+          name: type_a
+          fields:
+            status:
+              type: string
+          ---
+        type_b.md: |
+          ---
+          name: type_b
+          fields:
+            status:
+              type: integer
+          ---
+
+    tests:
+      - name: "incompatible base types produce type_conflict"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              types: [type_a, type_b]
+              status: "open"
+              ---
+        operation: validate
+        input:
+          path: "items/a.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_conflict
+              field: status
+
+  - name: "type_conflict - empty enum intersection"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        type_a.md: |
+          ---
+          name: type_a
+          fields:
+            color:
+              type: enum
+              values: [red, green, blue]
+          ---
+        type_b.md: |
+          ---
+          name: type_b
+          fields:
+            color:
+              type: enum
+              values: [yellow, purple, orange]
+          ---
+
+    tests:
+      - name: "empty enum intersection produces type_conflict"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              types: [type_a, type_b]
+              color: red
+              ---
+        operation: validate
+        input:
+          path: "items/a.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_conflict
+              field: color
+
+  - name: "type_conflict - merged min exceeds merged max"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        type_a.md: |
+          ---
+          name: type_a
+          fields:
+            score:
+              type: integer
+              min: 5
+              max: 10
+          ---
+        type_b.md: |
+          ---
+          name: type_b
+          fields:
+            score:
+              type: integer
+              min: 1
+              max: 3
+          ---
+
+    tests:
+      - name: "merged min exceeding merged max produces type_conflict"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              types: [type_a, type_b]
+              score: 5
+              ---
+        operation: validate
+        input:
+          path: "items/a.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_conflict
+              field: score
+
+  # =============================================================================
+  # Group 5: list_item_invalid error
+  # =============================================================================
+
+  - name: "list_item_invalid error"
+    spec_ref: "§7.11, Appendix C.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        tagged.md: |
+          ---
+          name: tagged
+          fields:
+            tags:
+              type: list
+              items:
+                type: string
+            scores:
+              type: list
+              items:
+                type: integer
+                min: 1
+                max: 10
+          ---
+
+    tests:
+      - name: "list item with wrong type triggers list_item_invalid"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              type: tagged
+              tags: [valid, 123, true]
+              ---
+        operation: validate
+        input:
+          path: "items/a.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_item_invalid
+              field: tags
+
+      - name: "list item violating constraint triggers list_item_invalid"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              type: tagged
+              scores: [5, 11, 3]
+              ---
+        operation: validate
+        input:
+          path: "items/b.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_item_invalid
+              field: scores
+
+      - name: "valid list items pass"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              type: tagged
+              tags: [alpha, beta, gamma]
+              scores: [1, 5, 10]
+              ---
+        operation: validate
+        input:
+          path: "items/c.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 6: Strict mode with multi-type
+  # =============================================================================
+
+  - name: "strict mode with multi-type matching"
+    spec_ref: "§6.5, §9.2.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        type_a.md: |
+          ---
+          name: type_a
+          strict: true
+          fields:
+            title:
+              type: string
+            shared:
+              type: string
+          ---
+        type_b.md: |
+          ---
+          name: type_b
+          strict: true
+          fields:
+            description:
+              type: string
+            shared:
+              type: string
+          ---
+
+    tests:
+      - name: "strict multi-type allows union of all fields"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              types: [type_a, type_b]
+              title: "From A"
+              description: "From B"
+              shared: "Common"
+              ---
+        operation: validate
+        input:
+          path: "items/a.md"
+        expect:
+          valid: true
+
+      - name: "strict multi-type rejects field not in any type"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              types: [type_a, type_b]
+              title: "From A"
+              description: "From B"
+              shared: "Common"
+              extra: "Not in either"
+              ---
+        operation: validate
+        input:
+          path: "items/b.md"
+        expect:
+          valid: false
+          issues:
+            - code: unknown_field
+              field: extra
+
+  # =============================================================================
+  # Group 7: Edge cases - empty frontmatter, no types defined
+  # =============================================================================
+
+  - name: "edge cases"
+    spec_ref: "§6.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+
+    tests:
+      - name: "collection with no type definitions leaves all files untyped"
+        setup:
+          types: {}
+          files:
+            items/a.md: |
+              ---
+              title: "No types defined"
+              ---
+        operation: get_types
+        input:
+          path: "items/a.md"
+        expect:
+          types: []
+
+      - name: "file with type declaration but no matching type definition"
+        setup:
+          types: {}
+          files:
+            items/b.md: |
+              ---
+              type: nonexistent
+              ---
+        operation: validate
+        input:
+          path: "items/b.md"
+        expect:
+          valid: false
+          issues:
+            - code: unknown_type
+
+  # =============================================================================
+  # Group 8: Generated fields with multi-type
+  # =============================================================================
+
+  - name: "generated fields with multi-type matching"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        type_a.md: |
+          ---
+          name: type_a
+          fields:
+            id:
+              type: string
+              generated:
+                strategy: uuid
+          ---
+        type_b.md: |
+          ---
+          name: type_b
+          fields:
+            id:
+              type: string
+              generated:
+                strategy: uuid
+          ---
+        type_c.md: |
+          ---
+          name: type_c
+          fields:
+            id:
+              type: string
+              generated:
+                strategy: timestamp
+          ---
+
+    tests:
+      - name: "identical generated strategies are compatible"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              types: [type_a, type_b]
+              ---
+        operation: validate
+        input:
+          path: "items/a.md"
+        expect:
+          valid: true
+
+      - name: "conflicting generated strategies produce type_conflict"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              types: [type_a, type_c]
+              ---
+        operation: validate
+        input:
+          path: "items/b.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_conflict
+              field: id
+
+  # =============================================================================
+  # Group 9: where with multiple conditions on different fields
+  # =============================================================================
+
+  - name: "where with multiple field conditions"
+    spec_ref: "§6.3, §6.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        high_priority_open.md: |
+          ---
+          name: high_priority_open
+          match:
+            where:
+              status: "open"
+              priority:
+                gte: 4
+              tags:
+                contains: "important"
+          fields:
+            status:
+              type: string
+            priority:
+              type: integer
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+
+    tests:
+      - name: "all where conditions satisfied matches"
+        setup:
+          files:
+            items/a.md: |
+              ---
+              status: "open"
+              priority: 5
+              tags: [important, production]
+              ---
+        operation: get_types
+        input:
+          path: "items/a.md"
+        expect:
+          types: [high_priority_open]
+
+      - name: "one where condition fails does not match"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              status: "open"
+              priority: 2
+              tags: [important]
+              ---
+        operation: get_types
+        input:
+          path: "items/b.md"
+        expect:
+          types: []
+
+      - name: "another where condition fails does not match"
+        setup:
+          files:
+            items/c.md: |
+              ---
+              status: "closed"
+              priority: 5
+              tags: [important]
+              ---
+        operation: get_types
+        input:
+          path: "items/c.md"
+        expect:
+          types: []
+
+      - name: "list condition fails does not match"
+        setup:
+          files:
+            items/d.md: |
+              ---
+              status: "open"
+              priority: 5
+              tags: [trivial]
+              ---
+        operation: get_types
+        input:
+          path: "items/d.md"
+        expect:
+          types: []
