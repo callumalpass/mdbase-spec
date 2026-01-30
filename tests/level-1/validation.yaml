@@ -1,0 +1,1071 @@
+name: "validation and frontmatter parsing"
+level: 1
+category: validation
+spec_ref: "§9, §3"
+
+groups:
+  # =============================================================================
+  # Group 1: Required field validation
+  # =============================================================================
+
+  - name: "required field validation"
+    spec_ref: "§9.2.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            description:
+              type: string
+          ---
+
+    tests:
+      - name: "present required field passes"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Valid task"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+          issues: []
+
+      - name: "missing required field fails"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              description: "No title here"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
+
+      - name: "null required field fails"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: null
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
+
+      - name: "empty-value null required field fails"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title:
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
+
+      - name: "tilde null required field fails"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: ~
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
+
+      - name: "empty string satisfies required (string value present)"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: ""
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "required field with default is satisfied by default"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "error"
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+                  required: true
+                  default: "Untitled"
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 2: Validation levels
+  # =============================================================================
+
+  - name: "validation levels"
+    spec_ref: "§9.1"
+
+    setup:
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+          ---
+      files:
+        tasks/invalid.md: |
+          ---
+          type: task
+          ---
+
+    tests:
+      - name: "validation level off skips validation"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "off"
+        operation: read
+        input:
+          path: "tasks/invalid.md"
+        expect:
+          valid: true
+
+      - name: "validation level warn reports but succeeds"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "warn"
+        operation: read
+        input:
+          path: "tasks/invalid.md"
+        expect:
+          valid: true
+          validation:
+            issues:
+              - code: missing_required
+                field: title
+                severity: error
+
+      - name: "validation level error reports and fails"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "error"
+        operation: validate
+        input:
+          path: "tasks/invalid.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
+
+  # =============================================================================
+  # Group 3: Frontmatter parsing
+  # =============================================================================
+
+  - name: "frontmatter delimiters"
+    spec_ref: "§3.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+
+    tests:
+      - name: "standard frontmatter is parsed"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              title: My Document
+              status: draft
+              ---
+
+              # Heading
+
+              Body content here.
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter:
+            title: "My Document"
+            status: "draft"
+
+      - name: "file without frontmatter has empty frontmatter"
+        setup:
+          files:
+            notes/n1.md: |
+              # Just a heading
+
+              No frontmatter here.
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter: {}
+
+      - name: "blank line before --- means no frontmatter"
+        setup:
+          files:
+            notes/n1.md: "\n---\ntitle: fake\n---\n"
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter: {}
+
+      - name: "empty frontmatter yields empty mapping"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              ---
+              Body content.
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter: {}
+
+  - name: "frontmatter YAML structure"
+    spec_ref: "§3.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+
+    tests:
+      - name: "list frontmatter is invalid"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              - item1
+              - item2
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          error:
+            code: invalid_frontmatter
+
+      - name: "scalar frontmatter is invalid"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              just a string value
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          error:
+            code: invalid_frontmatter
+
+  # =============================================================================
+  # Group 4: Null value semantics
+  # =============================================================================
+
+  - name: "null value semantics"
+    spec_ref: "§3.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+
+    tests:
+      - name: "explicit null keyword parsed as null"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              field1: null
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter:
+            field1: null
+
+      - name: "Null (capitalized) parsed as null"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              field1: Null
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter:
+            field1: null
+
+      - name: "NULL (uppercase) parsed as null"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              field1: NULL
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter:
+            field1: null
+
+      - name: "tilde parsed as null"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              field1: ~
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter:
+            field1: null
+
+      - name: "empty value parsed as null"
+        setup:
+          files:
+            notes/n1.md: "---\nfield1:\n---\n"
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter:
+            field1: null
+
+      - name: "empty string is distinct from null"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              empty_string: ""
+              null_field: null
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter:
+            empty_string: ""
+            null_field: null
+
+      - name: "missing field is distinct from null field"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              present_null: null
+              present_string: "hello"
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter:
+            present_null: null
+            present_string: "hello"
+          # missing_field is NOT in the frontmatter at all
+
+  # =============================================================================
+  # Group 5: Writing frontmatter
+  # =============================================================================
+
+  - name: "writing null values"
+    spec_ref: "§3.4"
+
+    tests:
+      - name: "write_nulls omit removes null fields"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              write_nulls: "omit"
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+                notes:
+                  type: string
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              notes: "Some notes"
+              ---
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            notes: null
+        expect:
+          frontmatter_written:
+            title: "Test"
+          frontmatter_not_written:
+            - notes
+
+      - name: "write_nulls explicit writes null keyword"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              write_nulls: "explicit"
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+                notes:
+                  type: string
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              notes: "Some notes"
+              ---
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            notes: null
+        expect:
+          frontmatter_written:
+            notes: null
+
+  - name: "writing empty lists"
+    spec_ref: "§3.4"
+
+    tests:
+      - name: "write_empty_lists true writes empty list"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              write_empty_lists: true
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                tags:
+                  type: list
+                  items:
+                    type: string
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              tags: ["a", "b"]
+              ---
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            tags: []
+        expect:
+          frontmatter_written:
+            tags: []
+
+      - name: "write_empty_lists false omits empty list"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              write_empty_lists: false
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                tags:
+                  type: list
+                  items:
+                    type: string
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              tags: ["a", "b"]
+              ---
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            tags: []
+        expect:
+          frontmatter_not_written:
+            - tags
+
+  # =============================================================================
+  # Group 6: Body preservation
+  # =============================================================================
+
+  - name: "body preservation on update"
+    spec_ref: "§3.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, done]
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "My Task"
+          status: open
+          ---
+
+          # Task Details
+
+          This body content must be preserved.
+
+    tests:
+      - name: "body content is preserved on frontmatter update"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            status: done
+        expect:
+          body_contains: "This body content must be preserved."
+
+  # =============================================================================
+  # Group 7: Multi-line strings
+  # =============================================================================
+
+  - name: "multi-line string support"
+    spec_ref: "§3.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+
+    tests:
+      - name: "literal block scalar is parsed"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              description: |
+                This is a multi-line string.
+                Line breaks are preserved.
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter:
+            description: "This is a multi-line string.\nLine breaks are preserved.\n"
+
+      - name: "folded block scalar is parsed"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              description: >
+                This is a long line that will be
+                folded into a single line.
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter:
+            description: "This is a long line that will be folded into a single line.\n"
+
+  # =============================================================================
+  # Group 8: YAML type coercion
+  # =============================================================================
+
+  - name: "YAML type coercion"
+    spec_ref: "§3.8, §7.16"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            name:
+              type: string
+            count:
+              type: integer
+            score:
+              type: number
+            active:
+              type: boolean
+          ---
+
+    tests:
+      - name: "integer coerced to string"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: item
+              name: 123
+              ---
+        operation: read
+        input:
+          path: "items/i1.md"
+        expect:
+          frontmatter:
+            name: "123"
+
+      - name: "boolean coerced to string"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: item
+              name: true
+              ---
+        operation: read
+        input:
+          path: "items/i1.md"
+        expect:
+          frontmatter:
+            name: "true"
+
+      - name: "numeric string coerced to integer"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: item
+              count: "42"
+              ---
+        operation: read
+        input:
+          path: "items/i1.md"
+        expect:
+          frontmatter:
+            count: 42
+
+      - name: "numeric string coerced to number"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: item
+              score: "3.14"
+              ---
+        operation: read
+        input:
+          path: "items/i1.md"
+        expect:
+          frontmatter:
+            score: 3.14
+
+      - name: "string true/false coerced to boolean"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: item
+              active: "true"
+              ---
+        operation: read
+        input:
+          path: "items/i1.md"
+        expect:
+          frontmatter:
+            active: true
+
+  # =============================================================================
+  # Group 9: Validation issue format
+  # =============================================================================
+
+  - name: "validation issue format"
+    spec_ref: "§9.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            priority:
+              type: integer
+              max: 5
+          ---
+      files:
+        tasks/bad.md: |
+          ---
+          type: task
+          priority: 10
+          ---
+
+    tests:
+      - name: "validation issue includes required fields"
+        operation: validate
+        input:
+          path: "tasks/bad.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
+              path: "tasks/bad.md"
+              severity: error
+            - code: constraint_violation
+              field: priority
+              path: "tasks/bad.md"
+              severity: error
+
+  # =============================================================================
+  # Group 10: Unicode and special characters
+  # =============================================================================
+
+  - name: "unicode field values"
+    spec_ref: "§3.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+
+    tests:
+      - name: "unicode string values are accepted"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "日本語のタイトル"
+              tags: ["étiquette", "метка"]
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+      - name: "emoji in string values"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "Task 🎯"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+      - name: "string length is character count not bytes"
+        spec_ref: "§7.3"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            note.md: |
+              ---
+              name: note
+              fields:
+                title:
+                  type: string
+                  max_length: 5
+              ---
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "日本語の名"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 11: Edge cases
+  # =============================================================================
+
+  - name: "edge cases"
+    spec_ref: "§14.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "file matching zero types"
+        setup:
+          files:
+            notes/untyped.md: |
+              ---
+              title: "No type declared"
+              ---
+        operation: read
+        input:
+          path: "notes/untyped.md"
+        expect:
+          types: []
+
+      - name: "frontmatter with only null values"
+        setup:
+          files:
+            notes/nulls.md: |
+              ---
+              field1: null
+              field2: ~
+              field3:
+              ---
+        operation: read
+        input:
+          path: "notes/nulls.md"
+        expect:
+          frontmatter:
+            field1: null
+            field2: null
+            field3: null
+
+      - name: "empty collection (no files) is valid"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types: {}
+          files: {}
+        operation: validate
+        input: {}
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 12: Special characters in field names
+  # =============================================================================
+
+  - name: "special characters in field names"
+    spec_ref: "§3.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+
+    tests:
+      - name: "field names with dashes are parsed"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              field-with-dashes: value
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter:
+            field-with-dashes: "value"
+
+      - name: "field names with dots are parsed"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              "field.with.dots": value
+              ---
+        operation: read
+        input:
+          path: "notes/n1.md"
+        expect:
+          frontmatter:
+            field.with.dots: "value"
+
+  # =============================================================================
+  # Group 13: Validation with multi-type
+  # =============================================================================
+
+  - name: "multi-type validation"
+    spec_ref: "§9.2.5, §9.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [open, done]
+          ---
+        urgent.md: |
+          ---
+          name: urgent
+          fields:
+            priority:
+              type: integer
+              required: true
+              min: 1
+              max: 5
+          ---
+
+    tests:
+      - name: "file matching multiple types must satisfy all"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              types: [task, urgent]
+              title: "Critical bug"
+              status: open
+              priority: 4
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "file failing one of multiple types fails validation"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              types: [task, urgent]
+              title: "Critical bug"
+              status: open
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: priority

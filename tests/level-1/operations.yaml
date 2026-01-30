@@ -1,0 +1,781 @@
+name: "CRUD operations"
+level: 1
+category: operations
+spec_ref: "§12"
+
+groups:
+  # =============================================================================
+  # Group 1: Create
+  # =============================================================================
+
+  - name: "create operation"
+    spec_ref: "§12.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [open, in_progress, done]
+              default: open
+            priority:
+              type: integer
+              min: 1
+              max: 5
+          ---
+      files: {}
+
+    tests:
+      - name: "create a valid file"
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            title: "Fix the bug"
+            priority: 4
+          path: "tasks/fix-bug.md"
+        expect:
+          path: "tasks/fix-bug.md"
+          frontmatter:
+            title: "Fix the bug"
+            priority: 4
+
+      - name: "create applies default values in effective output"
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            title: "New task"
+          path: "tasks/new-task.md"
+        expect:
+          path: "tasks/new-task.md"
+          frontmatter:
+            title: "New task"
+            status: open
+
+      - name: "create with invalid data fails validation"
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            priority: 3
+          path: "tasks/no-title.md"
+        expect:
+          error:
+            code: validation_failed
+
+      - name: "create with unknown type fails"
+        operation: create
+        input:
+          type: nonexistent
+          frontmatter:
+            title: "Test"
+          path: "tasks/bad.md"
+        expect:
+          error:
+            code: unknown_type
+
+      - name: "create at existing path fails"
+        setup:
+          files:
+            tasks/exists.md: |
+              ---
+              type: task
+              title: "Already here"
+              ---
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            title: "Conflict"
+          path: "tasks/exists.md"
+        expect:
+          error:
+            code: path_conflict
+
+      - name: "create without path and no filename_pattern fails"
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            title: "No path"
+        expect:
+          error:
+            code: path_required
+
+      - name: "create with body content"
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            title: "Task with body"
+          body: |
+            # Description
+
+            This task has body content.
+          path: "tasks/with-body.md"
+        expect:
+          path: "tasks/with-body.md"
+          body_contains: "This task has body content."
+
+      - name: "create with constraint violation fails"
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            title: "Bad priority"
+            priority: 99
+          path: "tasks/bad-priority.md"
+        expect:
+          error:
+            code: validation_failed
+
+  # =============================================================================
+  # Group 2: Read
+  # =============================================================================
+
+  - name: "read operation"
+    spec_ref: "§12.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, done]
+              default: open
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Read me"
+          status: done
+          ---
+
+          # Details
+
+          Body content here.
+
+    tests:
+      - name: "read returns frontmatter and body"
+        operation: read
+        input:
+          path: "tasks/t1.md"
+        expect:
+          path: "tasks/t1.md"
+          types: [task]
+          frontmatter:
+            title: "Read me"
+            status: done
+          body_contains: "Body content here."
+
+      - name: "read applies defaults for missing fields"
+        setup:
+          files:
+            tasks/t2.md: |
+              ---
+              type: task
+              title: "No status set"
+              ---
+        operation: read
+        input:
+          path: "tasks/t2.md"
+        expect:
+          frontmatter:
+            title: "No status set"
+            status: open
+
+      - name: "read nonexistent file fails"
+        operation: read
+        input:
+          path: "tasks/missing.md"
+        expect:
+          error:
+            code: file_not_found
+
+      - name: "read file with invalid YAML frontmatter"
+        setup:
+          files:
+            tasks/bad.md: "---\nbad: yaml: [[\n---\n"
+        operation: read
+        input:
+          path: "tasks/bad.md"
+        expect:
+          error:
+            code: invalid_frontmatter
+
+      - name: "read returns file metadata"
+        operation: read
+        input:
+          path: "tasks/t1.md"
+        expect:
+          file:
+            name: "t1.md"
+            folder: "tasks"
+
+  # =============================================================================
+  # Group 3: Update
+  # =============================================================================
+
+  - name: "update operation"
+    spec_ref: "§12.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [open, in_progress, done]
+            priority:
+              type: integer
+              min: 1
+              max: 5
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Original"
+          status: open
+          priority: 3
+          ---
+
+          Body content to preserve.
+
+    tests:
+      - name: "update single field"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            status: done
+        expect:
+          frontmatter:
+            title: "Original"
+            status: done
+            priority: 3
+
+      - name: "update multiple fields"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            status: in_progress
+            priority: 5
+        expect:
+          frontmatter:
+            title: "Original"
+            status: in_progress
+            priority: 5
+
+      - name: "update adds new field"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            status: done
+        expect:
+          frontmatter:
+            status: done
+
+      - name: "update preserves body"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            status: done
+        expect:
+          body_contains: "Body content to preserve."
+
+      - name: "update with body replacement"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            status: done
+          body: |
+            # New Body
+
+            Replaced content.
+        expect:
+          body_contains: "Replaced content."
+
+      - name: "update nonexistent file fails"
+        operation: update
+        input:
+          path: "tasks/missing.md"
+          fields:
+            status: done
+        expect:
+          error:
+            code: file_not_found
+
+      - name: "update with invalid value fails validation"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            priority: 99
+        expect:
+          error:
+            code: validation_failed
+
+      - name: "update null field with write_nulls omit removes field"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "warn"
+              write_nulls: "omit"
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+                notes:
+                  type: string
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              notes: "Some notes"
+              ---
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            notes: null
+        expect:
+          frontmatter_not_written:
+            - notes
+
+      - name: "update null field with write_nulls explicit keeps field"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "warn"
+              write_nulls: "explicit"
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+                notes:
+                  type: string
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              notes: "Some notes"
+              ---
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            notes: null
+        expect:
+          frontmatter_written:
+            notes: null
+
+  # =============================================================================
+  # Group 4: Delete
+  # =============================================================================
+
+  - name: "delete operation"
+    spec_ref: "§12.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+      files:
+        notes/to-delete.md: |
+          ---
+          title: "Delete me"
+          ---
+
+    tests:
+      - name: "delete existing file succeeds"
+        operation: delete
+        input:
+          path: "notes/to-delete.md"
+        expect:
+          deleted: true
+          path: "notes/to-delete.md"
+
+      - name: "delete nonexistent file fails"
+        operation: delete
+        input:
+          path: "notes/missing.md"
+        expect:
+          error:
+            code: file_not_found
+
+  # =============================================================================
+  # Group 5: Rename
+  # =============================================================================
+
+  - name: "rename operation"
+    spec_ref: "§12.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+      files:
+        tasks/old-name.md: |
+          ---
+          title: "Rename me"
+          ---
+
+    tests:
+      - name: "rename file to new path"
+        operation: rename
+        input:
+          from: "tasks/old-name.md"
+          to: "tasks/new-name.md"
+        expect:
+          from: "tasks/old-name.md"
+          to: "tasks/new-name.md"
+
+      - name: "rename source not found fails"
+        operation: rename
+        input:
+          from: "tasks/missing.md"
+          to: "tasks/new.md"
+        expect:
+          error:
+            code: file_not_found
+
+      - name: "rename to existing path fails"
+        setup:
+          files:
+            tasks/old-name.md: |
+              ---
+              title: "Source"
+              ---
+            tasks/existing.md: |
+              ---
+              title: "Already here"
+              ---
+        operation: rename
+        input:
+          from: "tasks/old-name.md"
+          to: "tasks/existing.md"
+        expect:
+          error:
+            code: path_conflict
+
+      - name: "move file to different folder"
+        operation: rename
+        input:
+          from: "tasks/old-name.md"
+          to: "archive/old-name.md"
+        expect:
+          from: "tasks/old-name.md"
+          to: "archive/old-name.md"
+
+  # =============================================================================
+  # Group 6: Invalid path
+  # =============================================================================
+
+  - name: "path validation"
+    spec_ref: "§12.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+      files: {}
+
+    tests:
+      - name: "create with path traversal is rejected"
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            title: "Evil"
+          path: "../../../etc/passwd"
+        expect:
+          error:
+            code: invalid_path
+
+  # =============================================================================
+  # Group 7: Filename pattern
+  # =============================================================================
+
+  - name: "filename pattern"
+    spec_ref: "§5.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          filename_pattern: "{id}.md"
+          fields:
+            id:
+              type: string
+              required: true
+            title:
+              type: string
+          ---
+      files: {}
+
+    tests:
+      - name: "create derives path from filename_pattern"
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            id: "task-001"
+            title: "Test"
+        expect:
+          path_contains: "task-001.md"
+
+  # =============================================================================
+  # Group 8: Generated fields in operations
+  # =============================================================================
+
+  - name: "generated fields in create"
+    spec_ref: "§12.1, §7.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+              generated: uuid
+            title:
+              type: string
+              required: true
+            created_at:
+              type: datetime
+              generated: now
+            updated_at:
+              type: datetime
+              generated: now_on_write
+          ---
+      files: {}
+
+    tests:
+      - name: "generated values are populated on create"
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            title: "Generated fields test"
+          path: "tasks/gen-test.md"
+        expect:
+          frontmatter:
+            title: "Generated fields test"
+            id:
+              not_null: true
+            created_at:
+              not_null: true
+            updated_at:
+              not_null: true
+
+  - name: "generated fields in update"
+    spec_ref: "§12.3, §7.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            created_at:
+              type: datetime
+              generated: now
+            updated_at:
+              type: datetime
+              generated: now_on_write
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Original"
+          created_at: "2024-01-01T00:00:00Z"
+          updated_at: "2024-01-01T00:00:00Z"
+          ---
+
+    tests:
+      - name: "now field is not regenerated on update"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            title: "Updated"
+        expect:
+          frontmatter:
+            created_at: "2024-01-01T00:00:00Z"
+
+      - name: "now_on_write field is regenerated on update"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            title: "Updated"
+        expect:
+          frontmatter:
+            updated_at:
+              not_equals: "2024-01-01T00:00:00Z"
+
+  # =============================================================================
+  # Group 9: Derived generated field
+  # =============================================================================
+
+  - name: "derived generated field"
+    spec_ref: "§7.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        post.md: |
+          ---
+          name: post
+          fields:
+            title:
+              type: string
+              required: true
+            slug:
+              type: string
+              generated:
+                from: title
+                transform: slugify
+          ---
+      files: {}
+
+    tests:
+      - name: "slugify transform generates slug from title"
+        operation: create
+        input:
+          type: post
+          frontmatter:
+            title: "Hello World Post"
+          path: "posts/hello.md"
+        expect:
+          frontmatter:
+            slug: "hello-world-post"
+
+      - name: "user-provided slug is not overwritten"
+        operation: create
+        input:
+          type: post
+          frontmatter:
+            title: "Hello World Post"
+            slug: "custom-slug"
+          path: "posts/hello2.md"
+        expect:
+          frontmatter:
+            slug: "custom-slug"
+
+  # =============================================================================
+  # Group 10: Atomicity
+  # =============================================================================
+
+  - name: "write atomicity"
+    spec_ref: "§12.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            priority:
+              type: integer
+              min: 1
+              max: 5
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Original"
+          priority: 3
+          ---
+
+    tests:
+      - name: "failed update does not corrupt file"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            priority: 99
+        expect:
+          error:
+            code: validation_failed
+        verify_after:
+          operation: read
+          input:
+            path: "tasks/t1.md"
+          expect:
+            frontmatter:
+              title: "Original"
+              priority: 3

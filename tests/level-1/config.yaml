@@ -1,0 +1,606 @@
+name: "configuration parsing and validation"
+level: 1
+category: config
+spec_ref: "§4"
+
+# =============================================================================
+# Group 1: Minimal valid configuration
+# =============================================================================
+
+groups:
+  - name: "minimal configuration"
+    spec_ref: "§4.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+      files: {}
+
+    tests:
+      - name: "minimal config with only spec_version is valid"
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            spec_version: "0.1.0"
+
+      - name: "default settings are applied"
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            settings:
+              extensions: []
+              exclude: [".git", "node_modules", ".mdbase"]
+              include_subfolders: true
+              types_folder: "_types"
+              explicit_type_keys: ["type", "types"]
+              default_validation: "warn"
+              default_strict: false
+              id_field: "id"
+              write_nulls: "omit"
+              write_empty_lists: true
+              rename_update_refs: true
+              cache_folder: ".mdbase"
+
+  # =============================================================================
+  # Group 2: Full configuration with all fields
+  # =============================================================================
+
+  - name: "full configuration"
+    spec_ref: "§4.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        name: "Test Project"
+        description: "A test collection"
+        settings:
+          extensions: ["mdx"]
+          exclude:
+            - ".git"
+            - "node_modules"
+            - "drafts/**"
+          include_subfolders: true
+          types_folder: "schemas"
+          explicit_type_keys: ["kind"]
+          default_validation: "error"
+          default_strict: true
+          id_field: "uid"
+          write_nulls: "explicit"
+          write_empty_lists: false
+          rename_update_refs: false
+          cache_folder: ".cache"
+      types: {}
+      files: {}
+
+    tests:
+      - name: "all settings are loaded correctly"
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            spec_version: "0.1.0"
+            name: "Test Project"
+            description: "A test collection"
+            settings:
+              extensions: ["mdx"]
+              exclude: [".git", "node_modules", "drafts/**"]
+              include_subfolders: true
+              types_folder: "schemas"
+              explicit_type_keys: ["kind"]
+              default_validation: "error"
+              default_strict: true
+              id_field: "uid"
+              write_nulls: "explicit"
+              write_empty_lists: false
+              rename_update_refs: false
+              cache_folder: ".cache"
+
+  # =============================================================================
+  # Group 3: spec_version validation
+  # =============================================================================
+
+  - name: "spec_version validation"
+    spec_ref: "§4.4"
+
+    tests:
+      - name: "missing spec_version is rejected"
+        setup:
+          config: |
+            name: "No version"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_config
+
+      - name: "unsupported major version is rejected"
+        setup:
+          config: |
+            spec_version: "2.0.0"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: unsupported_version
+
+      - name: "unsupported minor version during 0.x is rejected"
+        spec_ref: "§4.4.1"
+        setup:
+          config: |
+            spec_version: "0.99.0"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: unsupported_version
+
+      - name: "spec_version 0.1 accepted as alias for 0.1.0 with warning"
+        spec_ref: "§4.4"
+        setup:
+          config: |
+            spec_version: "0.1"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            spec_version: "0.1.0"
+          warnings:
+            - contains: "0.1"
+
+  # =============================================================================
+  # Group 4: Invalid configuration structure
+  # =============================================================================
+
+  - name: "invalid configuration structure"
+    spec_ref: "§4.5"
+
+    tests:
+      - name: "non-YAML config is rejected"
+        setup:
+          config: "not: valid: yaml: [["
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_config
+
+      - name: "YAML list at top level is rejected"
+        setup:
+          config: |
+            - item1
+            - item2
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_config
+
+      - name: "YAML scalar at top level is rejected"
+        setup:
+          config: |
+            just a string
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_config
+
+      - name: "missing config file is rejected"
+        setup:
+          config: null
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: missing_config
+
+  # =============================================================================
+  # Group 5: settings.extensions normalization
+  # =============================================================================
+
+  - name: "extension normalization"
+    spec_ref: "§4.4"
+
+    tests:
+      - name: "extensions with leading dot are normalized"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              extensions: [".mdx", ".markdown"]
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            settings:
+              extensions: ["mdx", "markdown"]
+
+      - name: "extensions without leading dot pass through"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              extensions: ["mdx"]
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            settings:
+              extensions: ["mdx"]
+
+      - name: "md in extensions list emits warning"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              extensions: ["md", "mdx"]
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          warnings:
+            - contains: "md"
+
+  # =============================================================================
+  # Group 6: settings.default_validation values
+  # =============================================================================
+
+  - name: "default_validation setting"
+    spec_ref: "§4.4"
+
+    tests:
+      - name: "default_validation off is accepted"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "off"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            settings:
+              default_validation: "off"
+
+      - name: "default_validation warn is accepted"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "warn"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            settings:
+              default_validation: "warn"
+
+      - name: "default_validation error is accepted"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "error"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            settings:
+              default_validation: "error"
+
+      - name: "invalid default_validation value is rejected"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "strict"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_config
+
+  # =============================================================================
+  # Group 7: settings.default_strict values
+  # =============================================================================
+
+  - name: "default_strict setting"
+    spec_ref: "§4.4"
+
+    tests:
+      - name: "default_strict false is accepted"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_strict: false
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            settings:
+              default_strict: false
+
+      - name: "default_strict true is accepted"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_strict: true
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            settings:
+              default_strict: true
+
+      - name: "default_strict warn is accepted"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_strict: "warn"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            settings:
+              default_strict: "warn"
+
+  # =============================================================================
+  # Group 8: settings.write_nulls values
+  # =============================================================================
+
+  - name: "write_nulls setting"
+    spec_ref: "§4.4"
+
+    tests:
+      - name: "write_nulls omit is accepted"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              write_nulls: "omit"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            settings:
+              write_nulls: "omit"
+
+      - name: "write_nulls explicit is accepted"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              write_nulls: "explicit"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            settings:
+              write_nulls: "explicit"
+
+      - name: "invalid write_nulls value is rejected"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              write_nulls: "keep"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_config
+
+  # =============================================================================
+  # Group 9: Unknown keys produce warnings
+  # =============================================================================
+
+  - name: "unknown keys handling"
+    spec_ref: "§4.4.1"
+
+    tests:
+      - name: "unknown top-level key is ignored with warning"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            custom_key: "some value"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          warnings:
+            - contains: "custom_key"
+
+      - name: "unknown settings key is ignored with warning"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              future_feature: true
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          warnings:
+            - contains: "future_feature"
+
+  # =============================================================================
+  # Group 10: settings type correctness
+  # =============================================================================
+
+  - name: "settings type correctness"
+    spec_ref: "§4.5"
+
+    tests:
+      - name: "extensions must be a list"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              extensions: "mdx"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_config
+
+      - name: "exclude must be a list"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              exclude: ".git"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_config
+
+      - name: "include_subfolders must be a boolean"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              include_subfolders: "yes_please"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_config
+
+      - name: "types_folder must be a string"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              types_folder: ["_types", "_schemas"]
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_config
+
+      - name: "explicit_type_keys must be a list"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              explicit_type_keys: "type"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_config
+
+  # =============================================================================
+  # Group 11: UTF-8 encoding
+  # =============================================================================
+
+  - name: "configuration encoding"
+    spec_ref: "§4.0"
+
+    tests:
+      - name: "UTF-8 encoded config is accepted"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            name: "Проект задач"
+            description: "日本語の説明"
+          types: {}
+          files: {}
+        operation: load_config
+        input: {}
+        expect:
+          valid: true
+          config:
+            name: "Проект задач"
+            description: "日本語の説明"

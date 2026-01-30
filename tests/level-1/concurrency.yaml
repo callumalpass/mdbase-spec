@@ -1,0 +1,246 @@
+name: "concurrency and conflict detection"
+level: 1
+category: concurrency
+spec_ref: "§12.10"
+
+groups:
+  # =============================================================================
+  # Group 1: Optimistic concurrency via mtime
+  # =============================================================================
+
+  - name: "mtime-based conflict detection"
+    spec_ref: "§12.10"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, in_progress, done]
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Contested task"
+          status: open
+          ---
+
+    tests:
+      - name: "update detects concurrent modification"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            status: done
+        simulate:
+          # Between read and write, another process modifies the file
+          external_modify:
+            path: "tasks/t1.md"
+            content: |
+              ---
+              type: task
+              title: "Contested task"
+              status: in_progress
+              ---
+        expect:
+          error:
+            code: concurrent_modification
+
+      - name: "concurrent modification does not overwrite changes"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            status: done
+        simulate:
+          external_modify:
+            path: "tasks/t1.md"
+            content: |
+              ---
+              type: task
+              title: "Modified by someone else"
+              status: in_progress
+              ---
+        expect:
+          error:
+            code: concurrent_modification
+        verify_after:
+          operation: read
+          input:
+            path: "tasks/t1.md"
+          expect:
+            frontmatter:
+              title: "Modified by someone else"
+              status: in_progress
+
+  # =============================================================================
+  # Group 2: Normal update without conflict
+  # =============================================================================
+
+  - name: "update without concurrent modification"
+    spec_ref: "§12.10"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, in_progress, done]
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Normal task"
+          status: open
+          ---
+
+    tests:
+      - name: "update succeeds when no concurrent modification"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            status: done
+        expect:
+          frontmatter:
+            title: "Normal task"
+            status: done
+
+  # =============================================================================
+  # Group 3: Delete conflict detection
+  # =============================================================================
+
+  - name: "delete conflict detection"
+    spec_ref: "§12.10"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+      files:
+        notes/n1.md: |
+          ---
+          title: "Delete target"
+          ---
+
+    tests:
+      - name: "delete of concurrently modified file reports conflict"
+        operation: delete
+        input:
+          path: "notes/n1.md"
+        simulate:
+          external_modify:
+            path: "notes/n1.md"
+            content: |
+              ---
+              title: "Changed by someone else"
+              ---
+        expect:
+          error:
+            code: concurrent_modification
+
+  # =============================================================================
+  # Group 4: Rename conflict detection
+  # =============================================================================
+
+  - name: "rename conflict detection"
+    spec_ref: "§12.10"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+      files:
+        tasks/old.md: |
+          ---
+          title: "Rename target"
+          ---
+
+    tests:
+      - name: "rename detects concurrent modification of source"
+        operation: rename
+        input:
+          from: "tasks/old.md"
+          to: "tasks/new.md"
+        simulate:
+          external_modify:
+            path: "tasks/old.md"
+            content: |
+              ---
+              title: "Modified during rename"
+              ---
+        expect:
+          error:
+            code: concurrent_modification
+
+      - name: "rename detects target created concurrently"
+        operation: rename
+        input:
+          from: "tasks/old.md"
+          to: "tasks/new.md"
+        simulate:
+          external_create:
+            path: "tasks/new.md"
+            content: |
+              ---
+              title: "Someone created this first"
+              ---
+        expect:
+          error:
+            code: path_conflict
+
+  # =============================================================================
+  # Group 5: Create conflict
+  # =============================================================================
+
+  - name: "create race condition"
+    spec_ref: "§12.1, §12.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+      files: {}
+
+    tests:
+      - name: "create detects file appeared between check and write"
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            title: "New task"
+          path: "tasks/race.md"
+        simulate:
+          external_create:
+            path: "tasks/race.md"
+            content: |
+              ---
+              type: task
+              title: "Someone else created this"
+              ---
+        expect:
+          error:
+            code: path_conflict

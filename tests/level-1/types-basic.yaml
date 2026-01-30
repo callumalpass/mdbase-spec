@@ -1,0 +1,2227 @@
+name: "type definitions and field types"
+level: 1
+category: types
+spec_ref: "§5, §7"
+
+groups:
+  # =============================================================================
+  # Group 1: Type loading basics
+  # =============================================================================
+
+  - name: "type loading"
+    spec_ref: "§5.1, §5.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          description: A basic task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [open, done]
+              default: open
+          ---
+          # Task
+          Documentation for the task type.
+      files: {}
+
+    tests:
+      - name: "type is loaded from types folder"
+        operation: get_type
+        input:
+          type: task
+        expect:
+          valid: true
+          type:
+            name: task
+            description: "A basic task"
+            fields:
+              title:
+                type: string
+                required: true
+              status:
+                type: enum
+                values: [open, done]
+                default: open
+
+      - name: "type with no fields is valid"
+        operation: get_type
+        input:
+          type: task
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 2: Type name rules
+  # =============================================================================
+
+  - name: "type name validation"
+    spec_ref: "§5.3"
+
+    tests:
+      - name: "valid type name with lowercase letters"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+              ---
+          files: {}
+        operation: get_type
+        input:
+          type: task
+        expect:
+          valid: true
+
+      - name: "valid type name with hyphens and underscores"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            meeting-note.md: |
+              ---
+              name: meeting-note
+              fields:
+                title:
+                  type: string
+              ---
+          files: {}
+        operation: get_type
+        input:
+          type: meeting-note
+        expect:
+          valid: true
+
+      - name: "valid type name with numbers"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            task2.md: |
+              ---
+              name: task2
+              fields:
+                title:
+                  type: string
+              ---
+          files: {}
+        operation: get_type
+        input:
+          type: task2
+        expect:
+          valid: true
+
+      - name: "type name starting with underscore is rejected (reserved)"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            _internal.md: |
+              ---
+              name: _internal
+              fields:
+                data:
+                  type: string
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition
+
+      - name: "type name 'file' is rejected (reserved keyword)"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            file.md: |
+              ---
+              name: file
+              fields:
+                data:
+                  type: string
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition
+
+      - name: "type name 'formula' is rejected (reserved keyword)"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            formula.md: |
+              ---
+              name: formula
+              fields:
+                expr:
+                  type: string
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition
+
+      - name: "type name 'this' is rejected (reserved keyword)"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            this.md: |
+              ---
+              name: this
+              fields:
+                value:
+                  type: string
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition
+
+      - name: "type name not starting with letter is rejected"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            123task.md: |
+              ---
+              name: 123task
+              fields:
+                title:
+                  type: string
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition
+
+      - name: "type name exceeding 64 characters is rejected"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeefffffffff01234.md: |
+              ---
+              name: aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeefffffffff01234
+              fields:
+                title:
+                  type: string
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition
+
+      - name: "name mismatch with filename emits warning"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            task.md: |
+              ---
+              name: todo
+              fields:
+                title:
+                  type: string
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: true
+          warnings:
+            - contains: "name"
+
+      - name: "missing name field is rejected"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            task.md: |
+              ---
+              fields:
+                title:
+                  type: string
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition
+
+      - name: "type name is case-insensitive (canonicalized to lowercase)"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+              ---
+          files:
+            tasks/item.md: |
+              ---
+              type: Task
+              title: "Test"
+              ---
+        operation: read
+        input:
+          path: "tasks/item.md"
+        expect:
+          types: [task]
+
+  # =============================================================================
+  # Group 3: Type inheritance
+  # =============================================================================
+
+  - name: "type inheritance"
+    spec_ref: "§5.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        base.md: |
+          ---
+          name: base
+          fields:
+            id:
+              type: string
+              required: true
+            created_at:
+              type: datetime
+          ---
+        task.md: |
+          ---
+          name: task
+          extends: base
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [open, done]
+          ---
+      files: {}
+
+    tests:
+      - name: "child type inherits parent fields"
+        operation: get_type
+        input:
+          type: task
+        expect:
+          valid: true
+          type:
+            fields:
+              id:
+                type: string
+                required: true
+              created_at:
+                type: datetime
+              title:
+                type: string
+                required: true
+              status:
+                type: enum
+                values: [open, done]
+
+      - name: "file validates against inherited fields"
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              id: "t1"
+              title: "A task"
+              status: open
+              ---
+        expect:
+          valid: true
+          issues: []
+
+      - name: "missing inherited required field fails validation"
+        operation: validate
+        input:
+          path: "tasks/t2.md"
+        setup:
+          files:
+            tasks/t2.md: |
+              ---
+              type: task
+              title: "A task"
+              status: open
+              ---
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: id
+
+  - name: "type inheritance - field override"
+    spec_ref: "§5.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        base-task.md: |
+          ---
+          name: base-task
+          fields:
+            priority:
+              type: integer
+              min: 1
+              max: 3
+          ---
+        task.md: |
+          ---
+          name: task
+          extends: base-task
+          fields:
+            priority:
+              type: integer
+              min: 1
+              max: 5
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          priority: 4
+          ---
+
+    tests:
+      - name: "child field override completely replaces parent field"
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+          issues: []
+
+  - name: "type inheritance - chain"
+    spec_ref: "§5.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        root.md: |
+          ---
+          name: root
+          fields:
+            id:
+              type: string
+          ---
+        base.md: |
+          ---
+          name: base
+          extends: root
+          fields:
+            created_at:
+              type: datetime
+          ---
+        task.md: |
+          ---
+          name: task
+          extends: base
+          fields:
+            title:
+              type: string
+          ---
+      files: {}
+
+    tests:
+      - name: "inheritance chain resolves all ancestor fields"
+        operation: get_type
+        input:
+          type: task
+        expect:
+          valid: true
+          type:
+            fields:
+              id:
+                type: string
+              created_at:
+                type: datetime
+              title:
+                type: string
+
+  - name: "type inheritance - errors"
+    spec_ref: "§5.4"
+
+    tests:
+      - name: "circular inheritance is rejected"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            a.md: |
+              ---
+              name: a
+              extends: b
+              fields:
+                x:
+                  type: string
+              ---
+            b.md: |
+              ---
+              name: b
+              extends: a
+              fields:
+                y:
+                  type: string
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: circular_inheritance
+
+      - name: "self-referential extends is rejected"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            selfref.md: |
+              ---
+              name: selfref
+              extends: selfref
+              fields:
+                x:
+                  type: string
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: circular_inheritance
+
+      - name: "missing parent type is rejected"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            child.md: |
+              ---
+              name: child
+              extends: nonexistent
+              fields:
+                title:
+                  type: string
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: missing_parent_type
+
+  # =============================================================================
+  # Group 4: Strictness
+  # =============================================================================
+
+  - name: "type strictness"
+    spec_ref: "§5.5"
+
+    tests:
+      - name: "strict false allows unknown fields"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            task.md: |
+              ---
+              name: task
+              strict: false
+              fields:
+                title:
+                  type: string
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              extra_field: "allowed"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+          issues: []
+
+      - name: "strict true rejects unknown fields"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            task.md: |
+              ---
+              name: task
+              strict: true
+              fields:
+                title:
+                  type: string
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              extra_field: "not allowed"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: unknown_field
+              field: extra_field
+
+      - name: "strict warn allows unknown fields with warning"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            task.md: |
+              ---
+              name: task
+              strict: "warn"
+              fields:
+                title:
+                  type: string
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              custom: "warning"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+          issues:
+            - code: unknown_field
+              field: custom
+              severity: warning
+
+      - name: "type/types keys are implicitly allowed in strict mode"
+        spec_ref: "§9.2.4"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            task.md: |
+              ---
+              name: task
+              strict: true
+              fields:
+                title:
+                  type: string
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+          issues: []
+
+      - name: "strictness inherits from config default_strict"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_strict: true
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              unknown: "field"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: unknown_field
+              field: unknown
+
+      - name: "type-level strict overrides config default_strict"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_strict: true
+          types:
+            task.md: |
+              ---
+              name: task
+              strict: false
+              fields:
+                title:
+                  type: string
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              extra: "allowed by type override"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+          issues: []
+
+  # =============================================================================
+  # Group 5: Field type - string
+  # =============================================================================
+
+  - name: "field type: string"
+    spec_ref: "§7.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+              required: true
+              min_length: 1
+              max_length: 200
+            slug:
+              type: string
+              pattern: "^[a-z0-9-]+$"
+          ---
+
+    tests:
+      - name: "valid string value"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "My Note"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+      - name: "string too short"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: ""
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: false
+          issues:
+            - code: string_too_short
+              field: title
+
+      - name: "string too long"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaX"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: false
+          issues:
+            - code: string_too_long
+              field: title
+
+      - name: "string matches pattern"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "Valid"
+              slug: "my-valid-slug-123"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+      - name: "string fails pattern"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "Valid"
+              slug: "INVALID SLUG!"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: slug
+
+      - name: "integer coerced to string"
+        spec_ref: "§7.16"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: 42
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 6: Field type - integer
+  # =============================================================================
+
+  - name: "field type: integer"
+    spec_ref: "§7.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            priority:
+              type: integer
+              min: 1
+              max: 5
+          ---
+
+    tests:
+      - name: "valid integer value"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: 3
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "integer at min boundary"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: 1
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "integer at max boundary"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: 5
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "integer below min"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: 0
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_small
+              field: priority
+
+      - name: "integer above max"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: 6
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_large
+              field: priority
+
+      - name: "float value for integer field is rejected"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: 3.5
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: not_integer
+              field: priority
+
+      - name: "string value for integer field is type mismatch"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: "high"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_mismatch
+              field: priority
+
+      - name: "numeric string coerced to integer"
+        spec_ref: "§7.16"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: "3"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "float with no decimal coerced to integer"
+        spec_ref: "§7.16"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: 3.0
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 7: Field type - number
+  # =============================================================================
+
+  - name: "field type: number"
+    spec_ref: "§7.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        rating.md: |
+          ---
+          name: rating
+          fields:
+            score:
+              type: number
+              min: 0.0
+              max: 5.0
+          ---
+
+    tests:
+      - name: "valid float value"
+        setup:
+          files:
+            ratings/r1.md: |
+              ---
+              type: rating
+              score: 3.5
+              ---
+        operation: validate
+        input:
+          path: "ratings/r1.md"
+        expect:
+          valid: true
+
+      - name: "integer accepted as number"
+        setup:
+          files:
+            ratings/r1.md: |
+              ---
+              type: rating
+              score: 3
+              ---
+        operation: validate
+        input:
+          path: "ratings/r1.md"
+        expect:
+          valid: true
+
+      - name: "number below min"
+        setup:
+          files:
+            ratings/r1.md: |
+              ---
+              type: rating
+              score: -0.5
+              ---
+        operation: validate
+        input:
+          path: "ratings/r1.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_small
+              field: score
+
+      - name: "number above max"
+        setup:
+          files:
+            ratings/r1.md: |
+              ---
+              type: rating
+              score: 5.1
+              ---
+        operation: validate
+        input:
+          path: "ratings/r1.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_large
+              field: score
+
+      - name: "string value for number field is type mismatch"
+        setup:
+          files:
+            ratings/r1.md: |
+              ---
+              type: rating
+              score: "excellent"
+              ---
+        operation: validate
+        input:
+          path: "ratings/r1.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_mismatch
+              field: score
+
+  # =============================================================================
+  # Group 8: Field type - boolean
+  # =============================================================================
+
+  - name: "field type: boolean"
+    spec_ref: "§7.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            draft:
+              type: boolean
+              default: false
+          ---
+
+    tests:
+      - name: "true is accepted"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              draft: true
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+      - name: "false is accepted"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              draft: false
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+      - name: "string 'true' coerced to boolean"
+        spec_ref: "§7.16"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              draft: "true"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+      - name: "string 'false' coerced to boolean"
+        spec_ref: "§7.16"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              draft: "false"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+      - name: "non-boolean value is type mismatch"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              draft: "maybe"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_mismatch
+              field: draft
+
+  # =============================================================================
+  # Group 9: Field type - date / datetime / time
+  # =============================================================================
+
+  - name: "field type: date"
+    spec_ref: "§7.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        event.md: |
+          ---
+          name: event
+          fields:
+            date:
+              type: date
+          ---
+
+    tests:
+      - name: "valid ISO date"
+        setup:
+          files:
+            events/e1.md: |
+              ---
+              type: event
+              date: 2024-03-15
+              ---
+        operation: validate
+        input:
+          path: "events/e1.md"
+        expect:
+          valid: true
+
+      - name: "invalid date (Feb 30) is rejected"
+        setup:
+          files:
+            events/e1.md: |
+              ---
+              type: event
+              date: "2024-02-30"
+              ---
+        operation: validate
+        input:
+          path: "events/e1.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_date
+              field: date
+
+      - name: "non-ISO date format is rejected"
+        setup:
+          files:
+            events/e1.md: |
+              ---
+              type: event
+              date: "March 15, 2024"
+              ---
+        operation: validate
+        input:
+          path: "events/e1.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_date
+              field: date
+
+  - name: "field type: datetime"
+    spec_ref: "§7.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        event.md: |
+          ---
+          name: event
+          fields:
+            created_at:
+              type: datetime
+          ---
+
+    tests:
+      - name: "valid datetime without timezone"
+        setup:
+          files:
+            events/e1.md: |
+              ---
+              type: event
+              created_at: "2024-03-15T10:30:00"
+              ---
+        operation: validate
+        input:
+          path: "events/e1.md"
+        expect:
+          valid: true
+
+      - name: "valid datetime with Z timezone"
+        setup:
+          files:
+            events/e1.md: |
+              ---
+              type: event
+              created_at: "2024-03-15T10:30:00Z"
+              ---
+        operation: validate
+        input:
+          path: "events/e1.md"
+        expect:
+          valid: true
+
+      - name: "valid datetime with offset"
+        setup:
+          files:
+            events/e1.md: |
+              ---
+              type: event
+              created_at: "2024-03-15T10:30:00+05:30"
+              ---
+        operation: validate
+        input:
+          path: "events/e1.md"
+        expect:
+          valid: true
+
+      - name: "invalid datetime is rejected"
+        setup:
+          files:
+            events/e1.md: |
+              ---
+              type: event
+              created_at: "not a datetime"
+              ---
+        operation: validate
+        input:
+          path: "events/e1.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_datetime
+              field: created_at
+
+  - name: "field type: time"
+    spec_ref: "§7.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        event.md: |
+          ---
+          name: event
+          fields:
+            start_time:
+              type: time
+          ---
+
+    tests:
+      - name: "valid time HH:MM"
+        setup:
+          files:
+            events/e1.md: |
+              ---
+              type: event
+              start_time: "14:30"
+              ---
+        operation: validate
+        input:
+          path: "events/e1.md"
+        expect:
+          valid: true
+
+      - name: "valid time HH:MM:SS"
+        setup:
+          files:
+            events/e1.md: |
+              ---
+              type: event
+              start_time: "14:30:00"
+              ---
+        operation: validate
+        input:
+          path: "events/e1.md"
+        expect:
+          valid: true
+
+      - name: "invalid time format is rejected"
+        setup:
+          files:
+            events/e1.md: |
+              ---
+              type: event
+              start_time: "2pm"
+              ---
+        operation: validate
+        input:
+          path: "events/e1.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_time
+              field: start_time
+
+  # =============================================================================
+  # Group 10: Field type - enum
+  # =============================================================================
+
+  - name: "field type: enum"
+    spec_ref: "§7.10"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            status:
+              type: enum
+              values: [open, in_progress, done]
+              default: open
+          ---
+
+    tests:
+      - name: "valid enum value"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              status: open
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "invalid enum value"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              status: "pending"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_enum
+              field: status
+
+      - name: "enum comparison is case-sensitive"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              status: "Open"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_enum
+              field: status
+
+  # =============================================================================
+  # Group 11: Field type - list
+  # =============================================================================
+
+  - name: "field type: list"
+    spec_ref: "§7.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            tags:
+              type: list
+              items:
+                type: string
+              min_items: 1
+              max_items: 5
+              unique: true
+          ---
+
+    tests:
+      - name: "valid list"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              tags: ["bug", "urgent"]
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "list too short"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              tags: []
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_too_short
+              field: tags
+
+      - name: "list too long"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              tags: ["a", "b", "c", "d", "e", "f"]
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_too_long
+              field: tags
+
+      - name: "list with duplicate values (unique: true)"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              tags: ["bug", "bug"]
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_duplicate
+              field: tags
+
+      - name: "list item type mismatch"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              tags: [1, 2, 3]
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+        # Note: integers are coerced to strings per §7.16
+
+      - name: "non-list value for list field"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              tags: "just a string"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_mismatch
+              field: tags
+
+  # =============================================================================
+  # Group 12: Field type - object
+  # =============================================================================
+
+  - name: "field type: object"
+    spec_ref: "§7.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        article.md: |
+          ---
+          name: article
+          fields:
+            author:
+              type: object
+              fields:
+                name:
+                  type: string
+                  required: true
+                email:
+                  type: string
+          ---
+
+    tests:
+      - name: "valid object value"
+        setup:
+          files:
+            articles/a1.md: |
+              ---
+              type: article
+              author:
+                name: "Alice"
+                email: "alice@example.com"
+              ---
+        operation: validate
+        input:
+          path: "articles/a1.md"
+        expect:
+          valid: true
+
+      - name: "missing required nested field"
+        setup:
+          files:
+            articles/a1.md: |
+              ---
+              type: article
+              author:
+                email: "alice@example.com"
+              ---
+        operation: validate
+        input:
+          path: "articles/a1.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: "author.name"
+
+      - name: "non-mapping value for object field"
+        setup:
+          files:
+            articles/a1.md: |
+              ---
+              type: article
+              author: "just a string"
+              ---
+        operation: validate
+        input:
+          path: "articles/a1.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_mismatch
+              field: author
+
+  # =============================================================================
+  # Group 13: Field type - any
+  # =============================================================================
+
+  - name: "field type: any"
+    spec_ref: "§7.14"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        flexible.md: |
+          ---
+          name: flexible
+          fields:
+            metadata:
+              type: any
+          ---
+
+    tests:
+      - name: "any accepts string"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: flexible
+              metadata: "hello"
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: true
+
+      - name: "any accepts number"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: flexible
+              metadata: 42
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: true
+
+      - name: "any accepts list"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: flexible
+              metadata: [1, 2, 3]
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: true
+
+      - name: "any accepts nested object"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: flexible
+              metadata:
+                key: value
+                nested:
+                  deep: true
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: true
+
+      - name: "any accepts null"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: flexible
+              metadata: null
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: true
+
+      - name: "any accepts boolean"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: flexible
+              metadata: true
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 14: Deprecated field
+  # =============================================================================
+
+  - name: "deprecated fields"
+    spec_ref: "§7.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            old_name:
+              type: string
+              deprecated: true
+          ---
+
+    tests:
+      - name: "deprecated field emits warning"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              old_name: "old value"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+          issues:
+            - code: deprecated_field
+              field: old_name
+              severity: warning
+
+  # =============================================================================
+  # Group 15: Generated fields
+  # =============================================================================
+
+  - name: "generated fields"
+    spec_ref: "§7.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+              generated: ulid
+            title:
+              type: string
+            created_at:
+              type: datetime
+              generated: now
+            updated_at:
+              type: datetime
+              generated: now_on_write
+          ---
+
+    tests:
+      - name: "generated ulid is applied on create when missing"
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            title: "Test task"
+          path: "tasks/test.md"
+        expect:
+          frontmatter:
+            id:
+              matches: "^[0-9A-Z]{26}$"
+            title: "Test task"
+
+      - name: "generated now is applied on create when missing"
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            title: "Test task"
+          path: "tasks/test2.md"
+        expect:
+          frontmatter:
+            created_at:
+              matches: "^\\d{4}-\\d{2}-\\d{2}T"
+
+      - name: "user-provided value is not overwritten by generated strategy"
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            id: "my-custom-id"
+            title: "Test task"
+          path: "tasks/test3.md"
+        expect:
+          frontmatter:
+            id: "my-custom-id"
+
+      - name: "now_on_write updates on every write"
+        operation: update
+        input:
+          path: "tasks/existing.md"
+          fields:
+            title: "Updated title"
+        setup:
+          files:
+            tasks/existing.md: |
+              ---
+              type: task
+              id: "existing-id"
+              title: "Original"
+              created_at: "2024-01-01T00:00:00Z"
+              updated_at: "2024-01-01T00:00:00Z"
+              ---
+        expect:
+          frontmatter:
+            updated_at:
+              not_equals: "2024-01-01T00:00:00Z"
+
+  # =============================================================================
+  # Group 16: Default values
+  # =============================================================================
+
+  - name: "default values"
+    spec_ref: "§7.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, done]
+              default: open
+            tags:
+              type: list
+              items:
+                type: string
+              default: []
+          ---
+
+    tests:
+      - name: "default applied when field is missing"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              ---
+        operation: read
+        input:
+          path: "tasks/t1.md"
+        expect:
+          frontmatter:
+            title: "Test"
+            status: open
+            tags: []
+
+      - name: "default not applied when field is present but null"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              status: null
+              ---
+        operation: read
+        input:
+          path: "tasks/t1.md"
+        expect:
+          frontmatter:
+            status: null
+
+      - name: "explicit value overrides default"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              status: done
+              ---
+        operation: read
+        input:
+          path: "tasks/t1.md"
+        expect:
+          frontmatter:
+            status: done
+
+  # =============================================================================
+  # Group 17: Explicit type declaration
+  # =============================================================================
+
+  - name: "explicit type declaration"
+    spec_ref: "§5.2, §4.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+        note.md: |
+          ---
+          name: note
+          fields:
+            body:
+              type: string
+          ---
+
+    tests:
+      - name: "single type via type key"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "A task"
+              ---
+        operation: read
+        input:
+          path: "tasks/t1.md"
+        expect:
+          types: [task]
+
+      - name: "multiple types via types key"
+        setup:
+          files:
+            items/multi.md: |
+              ---
+              types: [task, note]
+              title: "Multi"
+              body: "Content"
+              ---
+        operation: read
+        input:
+          path: "items/multi.md"
+        expect:
+          types: [task, note]
+
+      - name: "unknown type name is rejected"
+        setup:
+          files:
+            items/bad.md: |
+              ---
+              type: nonexistent
+              ---
+        operation: validate
+        input:
+          path: "items/bad.md"
+        expect:
+          valid: false
+          issues:
+            - code: unknown_type
+
+      - name: "custom explicit_type_keys"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              explicit_type_keys: ["kind"]
+          types:
+            task.md: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+              ---
+          files:
+            tasks/t1.md: |
+              ---
+              kind: task
+              title: "A task"
+              ---
+        operation: read
+        input:
+          path: "tasks/t1.md"
+        expect:
+          types: [task]
+
+  # =============================================================================
+  # Group 18: Type with no fields
+  # =============================================================================
+
+  - name: "type with no fields"
+    spec_ref: "§5.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        empty.md: |
+          ---
+          name: empty
+          ---
+      files:
+        items/e1.md: |
+          ---
+          type: empty
+          whatever: "anything goes"
+          ---
+
+    tests:
+      - name: "type with no fields section allows any frontmatter"
+        operation: validate
+        input:
+          path: "items/e1.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 19: Unique field constraint
+  # =============================================================================
+
+  - name: "unique field constraint"
+    spec_ref: "§7.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        post.md: |
+          ---
+          name: post
+          fields:
+            slug:
+              type: string
+              unique: true
+          ---
+      files:
+        posts/p1.md: |
+          ---
+          type: post
+          slug: "my-post"
+          ---
+        posts/p2.md: |
+          ---
+          type: post
+          slug: "my-post"
+          ---
+        posts/p3.md: |
+          ---
+          type: post
+          slug: "other-post"
+          ---
+
+    tests:
+      - name: "duplicate unique field value is rejected"
+        operation: validate
+        input: {}
+        expect:
+          valid: false
+          issues:
+            - code: duplicate_value
+              field: slug
+
+  # =============================================================================
+  # Group 20: Duplicate id_field
+  # =============================================================================
+
+  - name: "duplicate id_field"
+    spec_ref: "§9.2.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          id: "task-001"
+          title: "First"
+          ---
+        tasks/t2.md: |
+          ---
+          type: task
+          id: "task-001"
+          title: "Second (duplicate)"
+          ---
+
+    tests:
+      - name: "duplicate id_field value is rejected"
+        operation: validate
+        input: {}
+        expect:
+          valid: false
+          issues:
+            - code: duplicate_id
