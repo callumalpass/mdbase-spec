@@ -142,16 +142,18 @@ Given a link value and the path of the file containing it:
    - Example: `[[docs/api]]` resolves to `docs/api`
 
 4. **If simple name** (no `/`, no `./` or `../`):
-   - If the link field has `target` constraint specifying a type, search files of that type by `id_field`
-   - Otherwise, search the entire collection for a file where `id_field` matches the name
-     (if no `id_field` match exists, fall back to filename matching)
-   - If multiple candidates match, apply tiebreakers in order:
+   - Define the search scope:
+     - If the link field has `target` constraint specifying a type, scope to files matching that type
+     - Otherwise, scope to the entire collection
+   - **ID match pass**: Search scoped files for `id_field == name`
+     - If exactly one match, resolve to it
+     - If multiple matches, resolution MUST fail with `ambiguous_link`
+   - **Filename match pass**: If no `id_field` match exists, search scoped files by filename
+   - If multiple filename candidates match, apply tiebreakers in order:
      a. **Same directory**: Prefer a file in the same directory as the referring file
      b. **Shortest path**: Prefer the file with the shortest path (closest to collection root)
      c. **Alphabetical**: Sort candidate paths lexicographically and take the first
    - If multiple candidates remain after all tiebreakers, resolve to `null` and emit an `ambiguous_link` warning
-   - If multiple files share the same `id_field` value, resolution MUST fail with `ambiguous_link`
-    - Example: `[[task-001]]` might find `tasks/task-001.md` or a file with `id: task-001`
 
 5. **Extension handling**:
    - If target lacks extension, try configured extensions in order (default: `.md`)
@@ -269,11 +271,20 @@ MUST extract links and tags from both frontmatter and body content using these r
 - Inline tags in body content of the form `#tag`
 
 Inline tags MUST:
-- Start at a word boundary
-- Match the pattern `[A-Za-z0-9_-]+` after `#`
+- Be preceded by whitespace or appear at the start of a line
+- Match the pattern `[A-Za-z0-9_/-]+` after `#` (forward slashes create nested tag hierarchies)
 - Be outside fenced code blocks and inline code spans
+- Not be preceded by `](` or `](http` patterns (to exclude URL fragments)
 
-Implementations SHOULD ignore tags embedded in URLs (e.g., `https://...#anchor`).
+Implementations SHOULD ignore `#` fragments in URLs. A simple heuristic is to skip any `#` that is preceded by `)`, `"`, `'`, or appears within a markdown link target (`[text](url#fragment)`).
+
+### Nested Tags
+
+Tags MAY contain forward slashes (`/`) to create hierarchies: `#inbox/to-read`, `#project/alpha/urgent`.
+
+The `file.hasTag()` function performs **prefix matching** on nested tags: `file.hasTag("inbox")` matches `#inbox`, `#inbox/to-read`, and `#inbox/processing`. This is consistent with Obsidian's tag behavior.
+
+Nesting has no depth limit. The `/` character is purely conventional — implementations do not need to build a tree structure.
 
 ---
 

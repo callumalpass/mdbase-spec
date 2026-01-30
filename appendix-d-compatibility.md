@@ -53,7 +53,7 @@ This specification adds features not in Obsidian Bases:
 | Configuration | `mdbase.yaml` | Obsidian settings |
 | Views | Not specified (query only) | Table, Board, Gallery, etc. |
 | Grouping | `groupBy` clause (single property, per §10.7) | Built-in groupBy |
-| Summaries | `property_summaries` and custom `summaries` (per §10.7, §11.13) | Built-in summary functions |
+| Summaries | `property_summaries` and custom `summaries` (per §10.7, §11.14) | Built-in summary functions |
 | Lambda style | Implicit variables (`value`, `index`, `acc`); arrow syntax optional | Implicit variables |
 | Method names | `.lower()`, `.upper()`, `.title()` | Same |
 

@@ -254,6 +254,8 @@ type: task
 types: [task, urgent]
 ```
 
+**Using `type` as a normal field:** If you want a frontmatter field named `type` to be treated as ordinary data, remove it from `settings.explicit_type_keys` and choose different declaration keys (e.g., `kind`, `kinds`).
+
 ### `settings.default_validation`
 
 The default validation level applied when not otherwise specified.
@@ -381,14 +383,14 @@ settings:
 
 ## 4.7 Environment Variables (Optional)
 
-Implementations MAY support environment variable substitution in configuration values using `${VAR}` syntax:
+Implementations MAY support environment variable substitution in configuration values using `${VAR}` syntax (and MAY also support `${VAR:-default}` for default values):
 
 ```yaml
 settings:
   cache_folder: "${MDBASE_CACHE:-/tmp/mdbase}"
 ```
 
-This feature is OPTIONAL. If not supported, implementations MUST treat `${...}` as literal strings.
+This feature is OPTIONAL. If not supported, implementations MUST treat `${...}` as literal strings. If `${VAR:-default}` is not supported, implementations MUST treat the entire string literally (no partial expansion).
 
 ---
 

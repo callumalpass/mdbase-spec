@@ -83,7 +83,7 @@ string_char = /* any character except quote or backslash */
 
 escape_sequence = "\\" ( '"' | "'" | "\\" | "n" | "r" | "t" ) ;
 
-number_literal = integer_literal
+number_literal = integer_literal [ exponent ]
                | float_literal ;
 
 integer_literal = [ "-" ] digit { digit } ;

@@ -191,6 +191,7 @@ Implementations don't need to support everything. Six conformance levels let too
 | [12-operations.md](./12-operations.md) | Create, Read, Update, Delete, Rename |
 | [13-caching.md](./13-caching.md) | Optional caching and indexing |
 | [14-conformance.md](./14-conformance.md) | Conformance levels and testing |
+| [15-watching.md](./15-watching.md) | Watch mode and change events |
 | [Appendix A](./appendix-a-examples.md) | Complete examples |
 | [Appendix B](./appendix-b-expression-grammar.md) | Formal expression grammar |
 | [Appendix C](./appendix-c-error-codes.md) | Standard error codes |

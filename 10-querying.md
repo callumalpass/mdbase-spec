@@ -114,8 +114,7 @@ where:
     - or:
         - 'tags.contains("urgent")'
         - "due_date < today()"
-    - not:
-        - "draft == true"
+    - not: "draft == true"
 ```
 
 **Shape rules (Obsidian Bases-compatible):**
@@ -202,8 +201,7 @@ where:
 
 # NOT: must not match
 where:
-  not:
-    - 'status == "done"'
+  not: 'status == "done"'
 
 # Nested logic
 where:
@@ -238,18 +236,18 @@ In query expressions, properties are accessed through namespaces:
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `file.name` | string | Filename with extension |
-| `file.basename` | string | Filename without extension |
+| `file.name` | string | Filename with extension (e.g., `"task-001.md"`) |
+| `file.basename` | string | Filename without final extension (e.g., `"task-001"`; for `"file.draft.md"` this is `"file.draft"`) |
 | `file.path` | string | Full path from collection root |
 | `file.folder` | string | Parent folder path |
-| `file.ext` | string | File extension |
+| `file.ext` | string | File extension without dot (e.g., `"md"`) |
 | `file.size` | number | File size in bytes |
 | `file.ctime` | datetime | Created time |
 | `file.mtime` | datetime | Modified time |
-| `file.links` | list | Outgoing links |
+| `file.links` | list | Outgoing links (including links to non-markdown files) |
 | `file.backlinks` | list | Incoming links (requires index) |
-| `file.tags` | list | All tags (frontmatter `tags` + inline `#tags`) |
-| `file.properties` | object | All frontmatter properties (mapping) |
+| `file.tags` | list | All tags (frontmatter `tags` + inline `#tags`, including nested) |
+| `file.properties` | object | Raw persisted frontmatter properties only (no computed fields, no applied defaults) |
 | `file.embeds` | list | All embed links in the file body |
 
 ### Body Content Properties
@@ -277,6 +275,7 @@ query:
 - Content inside fenced code blocks IS included in `file.body` (it is the raw text)
 - Implementations SHOULD support `file.body` in filters without requiring `include_body: true` in the query — the body is used for filtering, not necessarily returned in results
 - **Performance note:** Body search without caching requires reading every file. Implementations SHOULD use full-text indexes when available
+- **Note:** `file.body` includes content inside code blocks, but `file.links` and `file.tags` exclude links and tags inside code blocks (see [§8](./08-links.md)). This means `file.body.contains("[[foo]]")` may match a link that does not appear in `file.links`
 
 ### The `this` Context
 
@@ -403,7 +402,7 @@ summaries:
 - Implementations SHOULD preserve `null` values in `values` for custom summaries.
 - Built-in summaries SHOULD ignore `null`/empty values unless otherwise specified (e.g., `Empty`, `Filled`).
 
-See [Expressions §11.13](./11-expressions.md) for default summary functions.
+See [Expressions §11.14](./11-expressions.md) for default summary functions.
 
 ### `property_summaries`
 
@@ -417,7 +416,7 @@ property_summaries:
   formula.overdue: Checked
 ```
 
-Values reference either default summary names (see [Expressions §11.13](./11-expressions.md)) or custom summaries defined in the `summaries` section.
+Values reference either default summary names (see [Expressions §11.14](./11-expressions.md)) or custom summaries defined in the `summaries` section.
 
 When `groupBy` is present, property summaries are computed **per group**.
 
@@ -475,7 +474,7 @@ query:
 ```yaml
 query:
   types: [task]
-  where: 'tags.containsAny(["urgent", "blocker"])'
+  where: 'tags.containsAny("urgent", "blocker")'
 ```
 
 #### Tasks Assigned to Engineering Team Members

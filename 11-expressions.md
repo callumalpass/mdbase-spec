@@ -192,6 +192,8 @@ value ?? default    // Returns default if value is null
 
 In `filter()`, `map()`, and `reduce()`, the implicit variables `value` and `index` refer to the current element and its position. For `reduce()`, `acc` is the accumulator.
 
+`containsAll()` and `containsAny()` are variadic; passing a list literal counts as a single value and does not auto-expand.
+
 ---
 
 ## 11.7 Date/Time Functions
@@ -268,6 +270,16 @@ file.mtime > now() - "24h"  // Modified in last 24 hours
 | `m` | `minute`, `minutes` |
 | `s` | `second`, `seconds` |
 
+**Duration string format:**
+
+Each duration string contains a single number-unit pair. Whitespace between the number and unit is allowed (`"7d"` and `"7 days"` are equivalent). Compound durations in a single string (e.g., `"1d12h"`) are NOT supported — chain additions instead:
+
+```javascript
+date + "1M" + "4h" + "3m"  // Add 1 month, 4 hours, 3 minutes
+```
+
+**Calendar arithmetic:** Adding months or years clamps to the last day of the target month. For example, `date("2024-01-31") + "1M"` returns `2024-02-29` (2024 is a leap year), not `2024-03-02`.
+
 **Examples:**
 
 ```javascript
@@ -335,7 +347,7 @@ field.isEmpty()  // true if field is null, empty, or absent
 ### Provide Default
 
 ```javascript
-default(field, value)  // Return value if field is null
+default(field, value)  // Return value if field is null or missing
 field ?? value         // Null coalescing operator
 ```
 
@@ -345,6 +357,8 @@ field ?? value         // Null coalescing operator
 exists(due_date)                    // Has a due date?
 default(priority, 3)                // Default priority to 3
 assignee ?? "unassigned"            // Default to "unassigned"
+
+**Missing vs null:** In expressions, missing properties are treated like `null` for `default()` and `??`. Use `exists(field)` to distinguish missing from present-null.
 ```
 
 ---
@@ -382,14 +396,14 @@ list(value)                // Wrap in list if not already a list
 | `link.asFile()` | Resolve link to file | `parent.asFile().status` |
 | `link(path)` | Construct link | `link("tasks/task-001")` |
 | `file.hasLink(target)` | File links to target | `file.hasLink(link("api-docs"))` |
-| `file.hasTag(...tags)` | File has any tag (includes nested) | `file.hasTag("important")` |
+| `file.hasTag(...tags)` | File has any of the given tags; uses prefix matching for nested tags (see [§8](./08-links.md)) | `file.hasTag("important")` |
 | `file.hasProperty(name)` | File has frontmatter property | `file.hasProperty("status")` |
 | `file.inFolder(path)` | File is in folder (or subfolder) | `file.inFolder("archive")` |
 | `file.asLink(display?)` | Convert file to link | `file.asLink("display text")` |
 
 ---
 
-## 11.12.1 Object Methods
+## 11.13 Object Methods
 
 | Method | Description | Example |
 |--------|-------------|---------|
@@ -399,7 +413,7 @@ list(value)                // Wrap in list if not already a list
 
 ---
 
-## 11.13 Summary Functions
+## 11.14 Summary Functions
 
 Summary functions operate on a collection of values across all matching records. They are used in the `summaries` section of a query (see [Querying](./10-querying.md)).
 
@@ -440,7 +454,7 @@ Implementations SHOULD provide these built-in summary functions:
 
 ---
 
-## 11.14 Operator Precedence
+## 11.15 Operator Precedence
 
 From highest to lowest:
 
@@ -459,7 +473,7 @@ Use parentheses to clarify complex expressions.
 
 ---
 
-## 11.15 Lambda Expressions
+## 11.16 Lambda Expressions
 
 List methods like `filter()`, `map()`, and `reduce()` use implicit variables rather than arrow function syntax:
 
@@ -486,7 +500,7 @@ function argument positions and treat `=>` as part of the lambda expression itse
 
 ---
 
-## 11.16 Expression Examples
+## 11.17 Expression Examples
 
 ### Simple Filters
 
@@ -527,7 +541,7 @@ id.matches("^TASK-\\d{4}$")
 ```javascript
 tags.length > 0
 tags.contains("important")
-tags.containsAny(["urgent", "critical"])
+tags.containsAny("urgent", "critical")
 assignees.filter(a => a.asFile().team == "eng").length > 0
 ```
 
@@ -557,7 +571,7 @@ blocks.map(b => b.asFile().status).contains("blocked")
 
 ---
 
-## 11.17 Error Handling
+## 11.18 Error Handling
 
 Expression evaluation errors should be handled gracefully:
 
@@ -573,7 +587,7 @@ Implementations SHOULD log evaluation errors and continue processing where possi
 
 ---
 
-## 11.18 Expression Portability
+## 11.19 Expression Portability
 
 Expressions using only spec-defined functions and operators are **portable expressions**. This section defines rules for maintaining portability across implementations.
 
@@ -608,4 +622,4 @@ filters: 'status == "open" && due_date < today()'
 filters: 'ext::sentiment(title) > 0.5'
 ```
 
-Implementations encountering an unknown `ext`-prefixed function MUST treat it as an evaluation error (see [§11.17](#1117-error-handling)).
+Implementations encountering an unknown `ext`-prefixed function MUST treat it as an evaluation error (see [§11.18](#1118-error-handling)).

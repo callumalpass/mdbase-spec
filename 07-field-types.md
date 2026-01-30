@@ -64,7 +64,7 @@ status:
 
 ### `generated`
 
-Automatic value generation. See [7.12 Generated Fields](#712-generated-fields).
+Automatic value generation. See [7.15 Generated Fields](#715-generated-fields).
 
 ### `description`
 

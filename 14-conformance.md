@@ -163,22 +163,22 @@ tests:
 
 ### Test Categories
 
-| Category | Description |
-|----------|-------------|
-| `config` | Configuration parsing and validation |
-| `types` | Type definition loading and inheritance |
-| `matching` | Type matching rules |
-| `validation` | Schema validation |
-| `expressions` | Expression evaluation |
-| `queries` | Query execution |
-| `links` | Link parsing and resolution |
-| `operations` | CRUD operations |
-| `references` | Reference updates |
-| `caching` | Cache behavior |
-| `concurrency` | Concurrent modification detection |
-| `watching` | Watch mode event delivery |
-| `body_search` | Body content filtering |
-| `computed_fields` | Computed field evaluation |
+| Category | Description | Spec Reference |
+|----------|-------------|----------------|
+| `config` | Configuration parsing and validation | [§4](./04-configuration.md) |
+| `types` | Type definition loading and inheritance | [§5](./05-types.md) |
+| `matching` | Type matching rules | [§6](./06-matching.md) |
+| `validation` | Schema validation | [§9](./09-validation.md) |
+| `expressions` | Expression evaluation | [§11](./11-expressions.md) |
+| `queries` | Query execution | [§10](./10-querying.md) |
+| `links` | Link parsing and resolution | [§8](./08-links.md) |
+| `operations` | CRUD operations | [§12](./12-operations.md) |
+| `references` | Reference updates | [§12.5](./12-operations.md) |
+| `caching` | Cache behavior | [§13](./13-caching.md) |
+| `concurrency` | Concurrent modification detection | [§12.10](./12-operations.md) |
+| `watching` | Watch mode event delivery | [§15](./15-watching.md) |
+| `body_search` | Body content filtering | [§10.5](./10-querying.md) |
+| `computed_fields` | Computed field evaluation | [§5.12](./05-types.md) |
 
 ---
 

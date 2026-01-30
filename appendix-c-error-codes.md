@@ -83,9 +83,11 @@ This appendix defines standard error codes for validation issues and operation e
 | Code | Description | Example |
 |------|-------------|---------|
 | `file_not_found` | File doesn't exist | tasks/missing.md not found |
-| `file_exists` | File already exists (on create) | tasks/task.md already exists |
+| `path_conflict` | File already exists at target path (on create or rename) | tasks/task.md already exists |
 | `path_required` | Cannot determine file path | No path provided or derivable |
 | `invalid_path` | Path is malformed | Path contains invalid characters |
+| `invalid_frontmatter` | Frontmatter YAML cannot be parsed | YAML syntax error in frontmatter |
+| `validation_failed` | Frontmatter fails validation against type schema(s) | Contains individual validation issues (see §C.1) |
 | `permission_denied` | Filesystem permission error | Cannot write to file |
 | `concurrent_modification` | File was modified by another process during operation | File mtime changed between read and write |
 | `path_traversal` | Link resolution attempted to escape collection root | `[[../../../etc/passwd]]` escapes root |
@@ -94,9 +96,7 @@ This appendix defines standard error codes for validation issues and operation e
 
 | Code | Description | Example |
 |------|-------------|---------|
-| `rename_source_missing` | Source file doesn't exist | Cannot rename missing file |
-| `rename_target_exists` | Target path already exists | Target path occupied |
-| `rename_ref_update_failed` | Reference update failed | Could not update links in X |
+| `rename_ref_update_failed` | Reference update failed for one or more files | Could not update links in X |
 
 ### Configuration Errors
 

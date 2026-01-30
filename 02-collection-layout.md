@@ -194,8 +194,8 @@ Collections may contain non-markdown files such as images, PDFs, or other binary
 ### Status in the Collection
 
 - Non-markdown files are **valid link targets**: `[[photo.png]]` and `![img](photo.png)` resolve normally
+- They appear in `file.links` when referenced via non-embed link syntax (e.g., `[[photo.png]]`)
 - They appear in `file.embeds` when referenced via embed syntax (`![[...]]` or `![](...)`)
-- They do NOT appear in `file.links`, which is reserved for document-to-document links between records
 - Non-markdown files are not assigned types and cannot be validated against type schemas
 
 ### File Discovery
@@ -230,4 +230,4 @@ See the [[images/diagram.png]] for reference.
 ![[images/screenshot.jpg]]
 ```
 
-Here, `diagram.png` appears in `file.links` only if it uses non-embed link syntax; `screenshot.jpg` appears in `file.embeds` because it uses embed syntax.
+Here, `diagram.png` appears in `file.links` because it uses non-embed link syntax; `screenshot.jpg` appears in `file.embeds` because it uses embed syntax.

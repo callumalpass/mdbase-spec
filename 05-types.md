@@ -175,7 +175,7 @@ emitting a warning for non-canonical casing.
 
 **Reserved names** (MUST NOT be used):
 - Names starting with `_` (reserved for internal use)
-- `file`, `formula`, `this`, `note` (reserved keywords in expressions)
+- `file`, `formula`, `this` (reserved keywords in expressions)
 
 ---
 
@@ -396,6 +396,11 @@ fields:
 - Computed fields MUST NOT be `required` (they are always derived)
 - Computed fields MUST NOT have `default` or `generated` — these are mutually exclusive mechanisms
 - If a file contains a frontmatter key matching a computed field name, the persisted value is ignored and the computed value takes precedence. Implementations SHOULD emit a warning
+- If a type definition has both `computed` and `required: true` on a field, implementations MUST reject the type definition with an `invalid_type_definition` error
+
+### Conformance
+
+Computed fields are a Level 3 (Querying) capability. Implementations below Level 3 MUST still load type definitions containing computed fields without error, but MUST ignore the `computed` property and treat the field as a regular (non-computed) field. This ensures type definitions are portable across conformance levels.
 
 ### Evaluation Order
 

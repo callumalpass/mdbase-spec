@@ -26,6 +26,10 @@ Files can explicitly declare their type(s) using frontmatter keys defined in `se
 Type names SHOULD be treated case-insensitively when read from frontmatter and
 normalized to lowercase for matching; non-canonical casing SHOULD emit a warning.
 
+If you want to use a field like `type` as ordinary data, remove it from
+`settings.explicit_type_keys` and use different keys (e.g., `kind`, `kinds`) for
+type declarations.
+
 ### Single Type
 
 ```yaml
@@ -131,7 +135,7 @@ Matches files based on field value conditions. This uses a subset of the express
 match:
   where:
     # Exact equality
-    type: "task"
+    kind: "task"
     
     # Field exists and is non-null
     status:
@@ -233,6 +237,7 @@ When two types define the same field differently:
 | `values` (enum) | Take the **intersection** of allowed values |
 | `default` | If both define defaults, they MUST be equal; otherwise it is an error |
 | `unique` (list) | `true` if EITHER type requires it |
+| `unique` (cross-file) | `true` if EITHER type requires it |
 
 ```yaml
 # Type A: priority as integer 1-5
