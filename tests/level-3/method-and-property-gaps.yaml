@@ -1,0 +1,754 @@
+name: "method edge cases and file property query gaps"
+level: 3
+category: expressions
+spec_ref: "§10.5, §11.5, §11.6, §11.12, §11.18"
+
+groups:
+  # ===========================================================================
+  # Group 1: file.size in query context (§10.5)
+  # ===========================================================================
+  # §10.5 defines file.size as a number property. It is tested for read output
+  # (issue-format-and-output-gaps.yaml) but has zero coverage in query WHERE
+  # filters, ORDER_BY sorts, or comparison expressions. Since file.size is a
+  # number, it supports all numeric operations: comparisons, arithmetic, sorting.
+  - name: "file.size in query filtering and sorting"
+    spec_ref: "§10.5"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        doc.md: |
+          ---
+          name: doc
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        docs/short.md: |
+          ---
+          type: doc
+          title: "Short"
+          ---
+          Brief.
+        docs/long.md: |
+          ---
+          type: doc
+          title: "Long"
+          ---
+          This document has substantially more body content than the short one,
+          making its file size larger. We use this to test file.size comparisons
+          and sorting in query expressions.
+
+    tests:
+      - name: "file.size greater than zero in WHERE filter"
+        operation: query
+        input:
+          types: [doc]
+          where: 'file.size > 0'
+        expect:
+          results_count: 2
+
+      - name: "file.size comparison between files"
+        operation: query
+        input:
+          types: [doc]
+          where: 'file.size > 100'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Long"
+
+      - name: "file.size ascending sort"
+        operation: query
+        input:
+          types: [doc]
+          order_by:
+            - field: file.size
+              direction: asc
+        expect:
+          results_count: 2
+          results:
+            - frontmatter:
+                title: "Short"
+            - frontmatter:
+                title: "Long"
+
+      - name: "file.size descending sort"
+        operation: query
+        input:
+          types: [doc]
+          order_by:
+            - field: file.size
+              direction: desc
+        expect:
+          results_count: 2
+          results:
+            - frontmatter:
+                title: "Long"
+            - frontmatter:
+                title: "Short"
+
+      - name: "file.size in arithmetic expression"
+        operation: query
+        input:
+          types: [doc]
+          where: 'file.size * 2 > 0'
+        expect:
+          results_count: 2
+
+  # ===========================================================================
+  # Group 2: file.mtime in query context (§10.5)
+  # ===========================================================================
+  # §10.5 defines file.mtime as a datetime property. The spec's own examples
+  # in §10.8 show "file.mtime > today()" as a primary use case, yet no test
+  # uses file.mtime in a standalone WHERE filter or ORDER_BY sort. The only
+  # test appearance is as the right-hand side of "file.ctime <= file.mtime".
+  - name: "file.mtime in query filtering and sorting"
+    spec_ref: "§10.5"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "Note A"
+          ---
+        notes/b.md: |
+          ---
+          type: note
+          title: "Note B"
+          ---
+
+    tests:
+      - name: "file.mtime is non-null for all files"
+        operation: query
+        input:
+          types: [note]
+          where: 'file.mtime != null'
+        expect:
+          results_count: 2
+
+      - name: "file.mtime less than or equal to now()"
+        operation: query
+        input:
+          types: [note]
+          where: 'file.mtime <= now()'
+        expect:
+          results_count: 2
+
+      - name: "file.mtime ascending sort"
+        operation: query
+        input:
+          types: [note]
+          order_by:
+            - field: file.mtime
+              direction: asc
+        expect:
+          results_count: 2
+
+      - name: "file.mtime descending sort"
+        operation: query
+        input:
+          types: [note]
+          order_by:
+            - field: file.mtime
+              direction: desc
+        expect:
+          results_count: 2
+
+      - name: "file.mtime date arithmetic in filter"
+        operation: query
+        input:
+          types: [note]
+          where: 'now() - file.mtime >= 0'
+        expect:
+          results_count: 2
+
+      - name: "file.mtime has year component"
+        operation: query
+        input:
+          types: [note]
+          where: 'file.mtime.year >= 2020'
+        expect:
+          results_count: 2
+
+  # ===========================================================================
+  # Group 3: List method edge cases — empty list operations (§11.6)
+  # ===========================================================================
+  # §11.6 defines list methods that should handle empty lists gracefully.
+  # §11.18 says expression errors return null and do not abort queries.
+  # No test exercises .join(), .reduce(), .sort(), .reverse(), .flat(),
+  # .unique(), .filter(), or .map() on empty lists.
+  - name: "list methods on empty lists"
+    spec_ref: "§11.6, §11.18"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+            scores:
+              type: list
+              items:
+                type: integer
+          ---
+      files:
+        items/empty.md: |
+          ---
+          type: item
+          title: "Empty"
+          tags: []
+          scores: []
+          ---
+        items/full.md: |
+          ---
+          type: item
+          title: "Full"
+          tags: ["alpha", "beta", "gamma"]
+          scores: [10, 5, 8]
+          ---
+
+    tests:
+      - name: "join on empty list returns empty string"
+        operation: evaluate
+        input:
+          expression: '[].join(", ")'
+        expect:
+          result: ""
+
+      - name: "reduce on empty list returns initial value"
+        operation: evaluate
+        input:
+          expression: '[].reduce(acc + value, 0)'
+        expect:
+          result: 0
+
+      - name: "sort on empty list returns empty list"
+        operation: evaluate
+        input:
+          expression: '[].sort().length'
+        expect:
+          result: 0
+
+      - name: "reverse on empty list returns empty list"
+        operation: evaluate
+        input:
+          expression: '[].reverse().length'
+        expect:
+          result: 0
+
+      - name: "flat on empty list returns empty list"
+        operation: evaluate
+        input:
+          expression: '[].flat().length'
+        expect:
+          result: 0
+
+      - name: "unique on empty list returns empty list"
+        operation: evaluate
+        input:
+          expression: '[].unique().length'
+        expect:
+          result: 0
+
+      - name: "filter on empty list returns empty list"
+        operation: evaluate
+        input:
+          expression: '[].filter(value > 0).length'
+        expect:
+          result: 0
+
+      - name: "empty tags join in query context"
+        operation: query
+        input:
+          types: [item]
+          where: 'tags.join(", ") == ""'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Empty"
+
+      - name: "empty scores reduce in query context"
+        operation: query
+        input:
+          types: [item]
+          where: 'scores.reduce(acc + value, 0) == 0'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Empty"
+
+  # ===========================================================================
+  # Group 4: List indexing edge cases (§11.6, §11.18)
+  # ===========================================================================
+  # §11.6 defines [index] for element access. §11.18 says out-of-bounds
+  # property access returns null. No test exercises out-of-bounds indexing
+  # or negative indices on lists.
+  - name: "list index access edge cases"
+    spec_ref: "§11.6, §11.18"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Alpha"
+          tags: ["first", "second", "third"]
+          ---
+
+    tests:
+      - name: "valid index access returns element"
+        operation: query
+        input:
+          types: [item]
+          where: 'tags[0] == "first"'
+        expect:
+          results_count: 1
+
+      - name: "last element access by index"
+        operation: query
+        input:
+          types: [item]
+          where: 'tags[2] == "third"'
+        expect:
+          results_count: 1
+
+      - name: "out-of-bounds index returns null"
+        operation: query
+        input:
+          types: [item]
+          where: 'tags[99] == null'
+        expect:
+          results_count: 1
+
+      - name: "out-of-bounds index does not abort query"
+        operation: query
+        input:
+          types: [item]
+          where: 'tags[99] != null'
+        expect:
+          results_count: 0
+
+  # ===========================================================================
+  # Group 5: string.replace multiple occurrences (§11.5)
+  # ===========================================================================
+  # §11.5 defines .replace(pattern, repl) but only one test exists using a
+  # single-occurrence replacement. The behavior with multiple occurrences
+  # is untested. Also tests .repeat(0) and .repeat(1) edge cases.
+  - name: "string method edge cases"
+    spec_ref: "§11.5"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            code:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "aaa-bbb-aaa"
+          code: "TASK-001"
+          ---
+
+    tests:
+      - name: "replace replaces first occurrence"
+        operation: query
+        input:
+          types: [item]
+          where: 'title.replace("aaa", "xxx").startsWith("xxx")'
+        expect:
+          results_count: 1
+
+      - name: "repeat zero returns empty string"
+        operation: evaluate
+        input:
+          expression: '"hello".repeat(0)'
+        expect:
+          result: ""
+
+      - name: "repeat one returns original string"
+        operation: evaluate
+        input:
+          expression: '"hello".repeat(1)'
+        expect:
+          result: "hello"
+
+      - name: "contains with empty string returns true"
+        operation: evaluate
+        input:
+          expression: '"hello".contains("")'
+        expect:
+          result: true
+
+      - name: "startsWith empty string returns true"
+        operation: evaluate
+        input:
+          expression: '"hello".startsWith("")'
+        expect:
+          result: true
+
+      - name: "endsWith empty string returns true"
+        operation: evaluate
+        input:
+          expression: '"hello".endsWith("")'
+        expect:
+          result: true
+
+  # ===========================================================================
+  # Group 6: List methods on file.tags (§10.5, §11.6)
+  # ===========================================================================
+  # §10.5 defines file.tags as a list. §11.6 defines list methods including
+  # .contains(), .map(), .filter(), .sort(). All prior file.tags tests use
+  # only .length and file.hasTag(). No test calls list methods on file.tags.
+  - name: "list methods on file.tags"
+    spec_ref: "§10.5, §11.6"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Task A"
+          tags: ["urgent", "bug", "frontend"]
+          ---
+          Content with #inline-tag in body.
+        tasks/b.md: |
+          ---
+          type: task
+          title: "Task B"
+          tags: ["feature", "backend"]
+          ---
+
+    tests:
+      - name: "file.tags.contains filters by tag presence"
+        operation: query
+        input:
+          types: [task]
+          where: 'file.tags.contains("urgent")'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Task A"
+
+      - name: "file.tags.containsAny with multiple tags"
+        operation: query
+        input:
+          types: [task]
+          where: 'file.tags.containsAny("urgent", "feature")'
+        expect:
+          results_count: 2
+
+      - name: "file.tags.containsAll requires all tags"
+        operation: query
+        input:
+          types: [task]
+          where: 'file.tags.containsAll("urgent", "bug")'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Task A"
+
+      - name: "file.tags.sort returns sorted tag list"
+        operation: query
+        input:
+          types: [task]
+          where: 'file.tags.sort()[0] == "backend"'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Task B"
+
+      - name: "file.tags.join produces comma-separated string"
+        operation: query
+        input:
+          types: [task]
+          where: 'file.tags.join(", ").contains("urgent")'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Task A"
+
+  # ===========================================================================
+  # Group 7: List methods on file.links (§10.5, §11.6)
+  # ===========================================================================
+  # §10.5 defines file.links as a list. All prior tests use only .length.
+  # No test calls .map(), .filter(), or .contains() on file.links.
+  - name: "list methods on file.links"
+    spec_ref: "§10.5, §11.6, §8.6"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            related:
+              type: link
+          ---
+      files:
+        notes/hub.md: |
+          ---
+          type: note
+          title: "Hub"
+          related: "[[notes/spoke-a]]"
+          ---
+          Links to [[spoke-b]] and [[spoke-c]] in body.
+        notes/spoke-a.md: |
+          ---
+          type: note
+          title: "Spoke A"
+          ---
+        notes/spoke-b.md: |
+          ---
+          type: note
+          title: "Spoke B"
+          ---
+        notes/spoke-c.md: |
+          ---
+          type: note
+          title: "Spoke C"
+          ---
+
+    tests:
+      - name: "file.links.length counts all links"
+        operation: query
+        input:
+          types: [note]
+          where: 'file.links.length >= 3'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Hub"
+
+      - name: "file.links.filter returns subset"
+        operation: query
+        input:
+          types: [note]
+          where: 'file.links.filter(value.asFile() != null).length >= 2'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Hub"
+
+  # ===========================================================================
+  # Group 8: Numeric list methods (§11.6)
+  # ===========================================================================
+  # §11.6 defines .sort() on lists. No test exercises sort on a numeric list
+  # (all existing sort tests use string lists). Also tests .reduce() for
+  # string concatenation (non-numeric reduce).
+  - name: "numeric and non-numeric list operations"
+    spec_ref: "§11.6"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            scores:
+              type: list
+              items:
+                type: integer
+            labels:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Alpha"
+          scores: [30, 10, 20]
+          labels: ["x", "y", "z"]
+          ---
+
+    tests:
+      - name: "numeric list sort ascending"
+        operation: query
+        input:
+          types: [item]
+          where: 'scores.sort()[0] == 10'
+        expect:
+          results_count: 1
+
+      - name: "numeric list sort last element"
+        operation: query
+        input:
+          types: [item]
+          where: 'scores.sort()[2] == 30'
+        expect:
+          results_count: 1
+
+      - name: "numeric list reduce for sum"
+        operation: query
+        input:
+          types: [item]
+          where: 'scores.reduce(acc + value, 0) == 60'
+        expect:
+          results_count: 1
+
+      - name: "string list reduce for concatenation"
+        operation: evaluate
+        input:
+          expression: '["a", "b", "c"].reduce(acc + value, "")'
+        expect:
+          result: "abc"
+
+      - name: "unique preserves order"
+        operation: evaluate
+        input:
+          expression: '["b", "a", "b", "c", "a"].unique().join(",")'
+        expect:
+          result: "b,a,c"
+
+      - name: "join with empty separator"
+        operation: evaluate
+        input:
+          expression: '["a", "b", "c"].join("")'
+        expect:
+          result: "abc"
+
+      - name: "flat on already-flat list is no-op"
+        operation: evaluate
+        input:
+          expression: '[1, 2, 3].flat().length'
+        expect:
+          result: 3
+
+  # ===========================================================================
+  # Group 9: file.embeds in query context (§10.5, §8.6)
+  # ===========================================================================
+  # §10.5 defines file.embeds as a list. No test uses file.embeds in a
+  # WHERE filter or ORDER_BY sort.
+  - name: "file.embeds in query context"
+    spec_ref: "§10.5, §8.6"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/with-embed.md: |
+          ---
+          type: note
+          title: "Has Embed"
+          ---
+          Here is an embed: ![[image.png]]
+        notes/no-embed.md: |
+          ---
+          type: note
+          title: "No Embed"
+          ---
+          Plain text content only.
+
+    tests:
+      - name: "file.embeds.length filters files with embeds"
+        operation: query
+        input:
+          types: [note]
+          where: 'file.embeds.length > 0'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Has Embed"
+
+      - name: "file.embeds.length zero for files without embeds"
+        operation: query
+        input:
+          types: [note]
+          where: 'file.embeds.length == 0'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "No Embed"
+
+      - name: "sort by file.embeds.length"
+        operation: query
+        input:
+          types: [note]
+          order_by:
+            - field: file.embeds.length
+              direction: desc
+        expect:
+          results_count: 2
+          results:
+            - frontmatter:
+                title: "Has Embed"
+            - frontmatter:
+                title: "No Embed"

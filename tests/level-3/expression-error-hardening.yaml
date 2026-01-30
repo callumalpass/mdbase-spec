@@ -145,7 +145,7 @@ groups:
       - name: "nonexistent method on string is unknown_function"
         operation: evaluate
         input:
-          expression: '"hello".reverse()'
+          expression: '"hello".capitalize()'
         expect:
           error:
             code: unknown_function

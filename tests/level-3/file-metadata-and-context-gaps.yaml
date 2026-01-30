@@ -1,0 +1,349 @@
+name: "file metadata and expression context gaps"
+level: 3
+category: expressions
+spec_ref: "§10.5, §11.1, §11.3, §11.12"
+
+groups:
+  # ===========================================================================
+  # Group 1: file.ctime property (§10.5)
+  # ===========================================================================
+  # §10.5 defines file.ctime as "Created time" (datetime).
+  # file.mtime is tested in issue-format-and-output-gaps.yaml, but file.ctime
+  # has zero test coverage despite being listed in the spec's file properties
+  # table alongside file.mtime.
+  - name: "file.ctime created time"
+    spec_ref: "§10.5"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Alpha"
+          ---
+
+    tests:
+      - name: "file.ctime exists and is a valid datetime"
+        operation: read
+        input:
+          path: "items/a.md"
+        expect:
+          ctime_present: true
+
+      - name: "file.ctime is accessible in query filter expression"
+        operation: query
+        input:
+          types: [item]
+          where: 'file.ctime != null'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Alpha"
+
+      - name: "file.ctime is a datetime type in expressions"
+        operation: query
+        input:
+          types: [item]
+          where: 'file.ctime.isType("date") || file.ctime.isType("datetime")'
+        expect:
+          results_count: 1
+
+      - name: "file.ctime has year component"
+        operation: query
+        input:
+          types: [item]
+          where: 'file.ctime.year >= 2020'
+        expect:
+          results_count: 1
+
+      - name: "file.ctime can be compared with now()"
+        operation: query
+        input:
+          types: [item]
+          where: 'file.ctime <= now()'
+        expect:
+          results_count: 1
+
+      - name: "file.ctime used in sort order"
+        operation: query
+        input:
+          types: [item]
+          order_by:
+            - field: file.ctime
+              direction: asc
+        expect:
+          results_count: 1
+
+  # ===========================================================================
+  # Group 2: file.basename with double extension (§10.5)
+  # ===========================================================================
+  # §10.5 explicitly specifies: "file.basename: Filename without final
+  # extension (e.g., 'task-001'; for 'file.draft.md' this is 'file.draft')".
+  # The existing test (expressions.yaml:1161) only tests simple names like
+  # "a.md" → "a". The double-extension case is important because it verifies
+  # that ONLY the last extension is stripped.
+  - name: "file.basename strips only last extension"
+    spec_ref: "§10.5"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        items/simple.md: |
+          ---
+          type: item
+          title: "Simple"
+          ---
+        items/compound.draft.md: |
+          ---
+          type: item
+          title: "Draft"
+          ---
+        items/multi.v2.final.md: |
+          ---
+          type: item
+          title: "Multi"
+          ---
+
+    tests:
+      - name: "simple filename basename strips .md"
+        operation: query
+        input:
+          types: [item]
+          where: 'file.basename == "simple"'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Simple"
+
+      - name: "double extension basename strips only last extension"
+        spec_ref: "§10.5"
+        operation: query
+        input:
+          types: [item]
+          where: 'file.basename == "compound.draft"'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Draft"
+
+      - name: "triple extension basename strips only last extension"
+        operation: query
+        input:
+          types: [item]
+          where: 'file.basename == "multi.v2.final"'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Multi"
+
+      - name: "file.name still includes full filename with extension"
+        operation: query
+        input:
+          types: [item]
+          where: 'file.name == "compound.draft.md"'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Draft"
+
+      - name: "file.ext is still md for double-extension file"
+        operation: query
+        input:
+          types: [item]
+          where: 'file.ext == "md" && file.basename == "compound.draft"'
+        expect:
+          results_count: 1
+
+  # ===========================================================================
+  # Group 3: this context in expressions (§10.5, §11.1)
+  # ===========================================================================
+  # §10.5 says: "In embedded queries (queries within a file), `this` refers to
+  # the containing file." §11.1 lists `this` as providing "Context reference
+  # (in embedded queries)." §11.3 shows examples: this.file.name, this.author.
+  #
+  # The this context is used when a query is embedded within a file and needs
+  # to reference the containing file's properties. For example, a task file
+  # might embed a query that finds related tasks sharing the same project.
+  #
+  # No test in the entire suite (1535 tests, 58 files) uses `this` in an
+  # expression context.
+  - name: "this context references containing file"
+    spec_ref: "§10.5, §11.1"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            project:
+              type: string
+            assignee:
+              type: string
+          ---
+      files:
+        tasks/task-a.md: |
+          ---
+          type: task
+          title: "Task A"
+          project: "alpha"
+          assignee: "alice"
+          ---
+        tasks/task-b.md: |
+          ---
+          type: task
+          title: "Task B"
+          project: "alpha"
+          assignee: "bob"
+          ---
+        tasks/task-c.md: |
+          ---
+          type: task
+          title: "Task C"
+          project: "beta"
+          assignee: "alice"
+          ---
+
+    tests:
+      - name: "this.file.name accesses containing file's name"
+        operation: query
+        input:
+          types: [task]
+          context_file: "tasks/task-a.md"
+          where: 'file.name != this.file.name'
+        expect:
+          results_count: 2
+
+      - name: "this.file.path accesses containing file's path"
+        operation: query
+        input:
+          types: [task]
+          context_file: "tasks/task-a.md"
+          where: 'this.file.path == "tasks/task-a.md"'
+        expect:
+          results_count: 3
+
+      - name: "this property accesses containing file's frontmatter field"
+        operation: query
+        input:
+          types: [task]
+          context_file: "tasks/task-a.md"
+          where: 'project == this.project && file.path != this.file.path'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Task B"
+
+      - name: "this.assignee filters to same assignee as context file"
+        operation: query
+        input:
+          types: [task]
+          context_file: "tasks/task-a.md"
+          where: 'assignee == this.assignee && file.path != this.file.path'
+        expect:
+          results_count: 1
+          results:
+            - frontmatter:
+                title: "Task C"
+
+      - name: "this.file.folder accesses containing file's folder"
+        operation: query
+        input:
+          types: [task]
+          context_file: "tasks/task-a.md"
+          where: 'file.inFolder(this.file.folder)'
+        expect:
+          results_count: 3
+
+      - name: "this context with non-matching property filters to empty"
+        operation: query
+        input:
+          types: [task]
+          context_file: "tasks/task-c.md"
+          where: 'project == this.project && file.path != this.file.path'
+        expect:
+          results_count: 0
+
+  # ===========================================================================
+  # Group 4: file.ctime in multi-file ordering and comparison (§10.5)
+  # ===========================================================================
+  # Ensure file.ctime works correctly in query sort and comparison across
+  # multiple files. Since ctime values are assigned by the OS at creation time,
+  # tests verify ordering behavior without asserting exact timestamps.
+  - name: "file.ctime in multi-file context"
+    spec_ref: "§10.5"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        items/first.md: |
+          ---
+          type: item
+          title: "First"
+          ---
+        items/second.md: |
+          ---
+          type: item
+          title: "Second"
+          ---
+
+    tests:
+      - name: "file.ctime sorting by descending returns files"
+        operation: query
+        input:
+          types: [item]
+          order_by:
+            - field: file.ctime
+              direction: desc
+        expect:
+          results_count: 2
+
+      - name: "file.ctime can be used in date arithmetic"
+        operation: query
+        input:
+          types: [item]
+          where: 'now() - file.ctime >= 0'
+        expect:
+          results_count: 2
+
+      - name: "file.ctime compared to file.mtime"
+        operation: query
+        input:
+          types: [item]
+          where: 'file.ctime <= file.mtime'
+        expect:
+          results_count: 2
