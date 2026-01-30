@@ -146,6 +146,39 @@ These cannot be used as bare field names without bracket notation (e.g., use `no
 
 The keywords `note`, `file`, `formula`, and `this` serve as namespace prefixes for property access (see [Querying §10.5](./10-querying.md)). When a frontmatter field name collides with a namespace keyword, use the `note.` prefix with bracket notation: `note["file"]`, `note["formula"]`.
 
+### `file` Namespace Properties
+
+The `file` namespace provides access to file metadata. The following properties are valid under `file.`:
+
+```
+file.name       file.basename   file.path       file.folder
+file.ext        file.size       file.ctime      file.mtime
+file.body       file.links      file.backlinks  file.tags
+file.properties file.embeds
+```
+
+`file.body` is a string containing the raw markdown body content (everything after the frontmatter closing `---`). It supports all string methods defined in [§11.5](./11-expressions.md).
+
+### Chained Method Calls
+
+The grammar supports chained method calls through the recursive `postfix_op` production. This explicitly includes chained `.asFile()` for multi-hop link traversal:
+
+```
+assignee.asFile().manager.asFile().name
+```
+
+This is parsed as a sequence of postfix operations:
+```
+postfix_expression
+├── identifier: "assignee"
+├── method_call: "asFile" ()
+├── property_access: "manager"
+├── method_call: "asFile" ()
+└── property_access: "name"
+```
+
+Implementations MUST enforce a maximum traversal depth (default: 10) to prevent unbounded chains. See [§8.7](./08-links.md) for traversal rules.
+
 ---
 
 ## B.5 Whitespace and Comments

@@ -153,6 +153,15 @@ order_by:
     direction: desc
 ```
 
+### String Collation
+
+Default string ordering uses Unicode code point order (lexicographic comparison of Unicode scalar values):
+
+- Comparison is case-sensitive by default: uppercase letters sort before lowercase (`"A" < "a"`)
+- Null values sort LAST in ascending order and FIRST in descending order
+- Implementations MAY support locale-aware collation as an `ext`-prefixed extension
+- For `enum` fields, sort order follows the `values` list declaration order, not string order
+
 ### `limit` and `offset`
 
 Paginate results:
@@ -243,6 +252,32 @@ In query expressions, properties are accessed through namespaces:
 | `file.properties` | object | All frontmatter properties (mapping) |
 | `file.embeds` | list | All embed links in the file body |
 
+### Body Content Properties
+
+The `file.body` property provides access to the raw markdown body content (everything after the frontmatter closing `---`):
+
+```yaml
+# Find files that mention a keyword in their body
+query:
+  where: 'file.body.contains("TODO")'
+
+# Case-insensitive body search
+query:
+  where: 'file.body.lower().contains("important")'
+
+# Regex body search
+query:
+  where: 'file.body.matches("\\bAPI\\b")'
+```
+
+**Rules:**
+
+- `file.body` is a string and supports all string methods from [§11.5](./11-expressions.md): `.contains()`, `.matches()`, `.lower()`, `.startsWith()`, etc.
+- Body search operates on raw markdown text including syntax characters
+- Content inside fenced code blocks IS included in `file.body` (it is the raw text)
+- Implementations SHOULD support `file.body` in filters without requiring `include_body: true` in the query — the body is used for filtering, not necessarily returned in results
+- **Performance note:** Body search without caching requires reading every file. Implementations SHOULD use full-text indexes when available
+
 ### The `this` Context
 
 In embedded queries (queries within a file), `this` refers to the containing file:
@@ -280,6 +315,31 @@ Query results return file objects with this structure:
     size: 1234
   body: "..."  # Optional, if requested
 ```
+
+### Result Envelope
+
+Query results MUST include metadata alongside the result list:
+
+```yaml
+results:
+  - path: "tasks/fix-bug.md"
+    types: [task, urgent]
+    frontmatter:
+      id: "task-001"
+      title: "Fix the login bug"
+      # ...
+meta:
+  total_count: 142    # Total matching records (before limit/offset)
+  limit: 20
+  offset: 0
+  has_more: true      # Whether more results exist beyond this page
+```
+
+**Fields:**
+
+- `total_count`: The total number of records matching the query filters, ignoring `limit` and `offset`. Implementations MUST compute this accurately
+- `has_more`: `true` if `offset + length(results) < total_count`
+- When no `limit` is specified, `has_more` is `false` and `total_count` equals the result count
 
 ### Including Body Content
 
@@ -549,11 +609,6 @@ const results = await collection.query({
 **CLI access:**
 ```bash
 mdbase query --type task --where 'status == "open"' --limit 10
-```
-
-**Embedded queries (in files):**
-```markdown
-<!-- mdbase:query types=[task] where='status == "open"' -->
 ```
 
 The exact API surface is implementation-dependent.

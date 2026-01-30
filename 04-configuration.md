@@ -172,6 +172,20 @@ The version of this specification the configuration conforms to. Implementations
 **Compatibility:** Implementations MAY accept `"0.1"` as an alias for `"0.1.0"`, but
 SHOULD emit a warning and normalize to `"0.1.0"` when writing.
 
+#### 4.4.1 Version Compatibility
+
+The `spec_version` field uses semantic versioning (MAJOR.MINOR.PATCH):
+
+**PATCH bumps** (e.g., 0.1.0 → 0.1.1): Clarifications and errata only. No behavioral changes. All implementations of X.Y.z are compatible with any X.Y.z′.
+
+**MINOR bumps** (e.g., 0.1.0 → 0.2.0): Additive changes only — new optional fields, new expression functions, new config keys. Implementations of X.Y MUST ignore unknown config keys introduced in X.Y+1 rather than rejecting them. Collections authored for X.Y work on X.Y+N without modification.
+
+**MAJOR bumps** (e.g., 0.x → 1.0): Breaking changes. Implementations MUST reject configuration files with a different major version than the one they support.
+
+**During the 0.x series:** MINOR bumps MAY contain breaking changes. Implementations SHOULD treat 0.x and 0.y (x ≠ y) as potentially incompatible.
+
+**Unknown keys:** Implementations MUST ignore unknown keys under `settings` with a warning, to support forward compatibility within a major version. Unknown top-level keys (outside `settings`) MUST also be ignored with a warning.
+
 ### `name` and `description`
 
 Human-readable metadata about the collection. These have no semantic effect but are useful for documentation and tooling that displays collection information.

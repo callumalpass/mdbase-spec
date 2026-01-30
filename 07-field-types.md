@@ -74,6 +74,35 @@ Human-readable description of the field's purpose. Implementations MAY display t
 
 Mark a field as deprecated. Implementations SHOULD warn when deprecated fields are used.
 
+### `unique`
+
+Cross-file uniqueness constraint.
+
+| Value | Behavior |
+|-------|----------|
+| `false` (default) | No uniqueness checking |
+| `true` | Field value MUST be unique across all files matching the declaring type |
+
+**Rules:**
+
+- Null/undefined values are exempt from uniqueness checks — multiple files may omit the field
+- For multi-type files: uniqueness is checked within each type's file set independently
+- Validation of uniqueness requires scanning all files of the type. Implementations SHOULD use caching for performance
+- Error code: `duplicate_value`, reported with the field name, conflicting file paths, and the duplicate value
+
+**Note:** `settings.id_field` implicitly has `unique: true` behavior (see [§4.4](./04-configuration.md)). The `unique` option makes cross-file uniqueness available for any field.
+
+**Example:**
+```yaml
+fields:
+  slug:
+    type: string
+    unique: true
+  email:
+    type: string
+    unique: true
+```
+
 ---
 
 ## 7.3 `string`
@@ -213,6 +242,19 @@ created_at:
 - Must be valid datetime
 - Implementations MUST preserve timezone information if present
 - YAML timestamp scalars MAY be accepted and MUST be normalized to ISO 8601 on write
+
+### Timezone Comparison Rules
+
+- Datetime values with explicit offsets are compared as absolute instants (convert to a common epoch before comparison)
+- Datetime values WITHOUT offsets (naive) are treated as local time in the implementation's configured timezone
+- Comparing an offset-aware datetime with a naive datetime: the naive datetime is interpreted in local time, then both are compared as absolute instants
+- `now()` returns an offset-aware datetime in the implementation's local timezone
+- `today()` returns a date in the implementation's local timezone
+- Date arithmetic preserves offset: `datetime_with_offset + "1d"` keeps the same offset
+- Serialization MUST preserve the original offset if present. `2024-03-15T10:00:00+05:30` MUST NOT be normalized to UTC on write
+- Implementations MAY provide a configuration option for default timezone (not specified in this version — use the local system timezone)
+
+See also [§11.7](./11-expressions.md) for date/time functions in expressions.
 
 ---
 

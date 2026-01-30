@@ -353,7 +353,88 @@ Implementations MAY render this documentation in tooling (e.g., showing field he
 
 ---
 
-## 5.11 Complete Type File Example
+## 5.11 Schema Evolution
+
+When a type definition changes, existing files are NOT automatically migrated — files are the source of truth. The following rules define what happens for each kind of schema change:
+
+**Field added (optional):** Existing files without the field remain valid. The field is `undefined` (not `null`) until explicitly set. If a `default` is specified in the type definition, it applies at read time.
+
+**Field added (required):** Existing files without the field fail validation. Implementations MUST report `missing_required` errors. Users must add the field to affected files manually or via batch update.
+
+**Field removed:** Existing files with the removed field are treated as having an unknown field. Behavior depends on the type's `strict` setting (see [§5.5](#55-strictness)). No data is deleted from files.
+
+**Field type changed:** Existing files with values of the old type fail validation with `type_mismatch`. No automatic coercion of persisted data is performed.
+
+**Field renamed:** The specification does not track field renames — this is equivalent to removing one field and adding another. Implementations MAY provide a batch rename tool as a convenience.
+
+**Type renamed:** Existing files with `type: old_name` fail type matching. Implementations MUST provide a batch update command to update type declarations across files.
+
+**Inheritance changed:** The effective schema is recomputed. Fields gained from a new parent apply the same rules as "field added." Fields lost apply the same rules as "field removed."
+
+**Migration strategy:** Validation is the migration mechanism. Run validation on the collection after schema changes, review reported errors, and fix affected files.
+
+---
+
+## 5.12 Computed Fields
+
+Type definitions MAY include fields with a `computed` property containing an expression:
+
+```yaml
+fields:
+  full_name:
+    type: string
+    computed: "first_name + ' ' + last_name"
+  overdue:
+    type: boolean
+    computed: "due_date < today() && status != 'done'"
+```
+
+### Rules
+
+- Computed fields are evaluated at read time and are NOT persisted to the file
+- They are available in queries, formulas, and expressions like any other field
+- Computed fields MUST NOT be `required` (they are always derived)
+- Computed fields MUST NOT have `default` or `generated` — these are mutually exclusive mechanisms
+- If a file contains a frontmatter key matching a computed field name, the persisted value is ignored and the computed value takes precedence. Implementations SHOULD emit a warning
+
+### Evaluation Order
+
+Non-computed fields are resolved first, then computed fields in dependency order. Computed fields MAY reference other computed fields, which are resolved via dependency ordering.
+
+Circular computed field dependencies MUST be detected and rejected with a `circular_computed` error.
+
+### Inheritance
+
+Computed fields from parent types are inherited and MAY be overridden by child types.
+
+### Example
+
+```yaml
+# _types/task.md
+---
+name: task
+fields:
+  first_name:
+    type: string
+  last_name:
+    type: string
+  full_name:
+    type: string
+    computed: "first_name + ' ' + last_name"
+  due_date:
+    type: date
+  status:
+    type: enum
+    values: [open, in_progress, done]
+  is_overdue:
+    type: boolean
+    computed: "due_date < today() && status != 'done'"
+---
+```
+
+---
+
+## 5.13 Complete Type File Example
 
 ```markdown
 ---

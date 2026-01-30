@@ -22,7 +22,7 @@ Implementations may claim conformance at different levels. Each level builds on 
 - Implement Create, Read, Update, Delete operations
 - Type coercion (per §7.16)
 
-**Test coverage:** Basic parsing, validation, CRUD operations
+**Test coverage:** Basic parsing, validation, CRUD operations, concurrency (basic mtime conflict detection)
 
 ### Level 2: Matching
 
@@ -47,7 +47,7 @@ Implementations may claim conformance at different levels. Each level builds on 
 - Duration parsing (`duration()`)
 - Null coalescing (`??`)
 
-**Test coverage:** Core query correctness, expression edge cases
+**Test coverage:** Core query correctness, expression edge cases, body_search, computed_fields
 
 ### Level 4: Links
 
@@ -77,11 +77,11 @@ Implementations may claim conformance at different levels. Each level builds on 
 
 - Caching with staleness detection (per §13)
 - Batch operations
-- Watch mode / continuous validation
+- Watch mode with event delivery (per [§15](./15-watching.md))
 - Type creation via tooling
 - Nested collection detection (per §2)
 
-**Test coverage:** Performance, cache correctness, edge cases
+**Test coverage:** Performance, cache correctness, watching, edge cases
 
 ---
 
@@ -107,12 +107,15 @@ Implementations MAY implement features from higher levels while claiming a lower
 
 ## 14.3 Test Suite
 
-A conformance test suite is provided as a collection of test cases. Each test specifies:
+A conformance test suite is provided as a collection of test cases. Each test group specifies a `spec_ref` identifying the specification section(s) under test. Individual test cases MAY also include a `spec_ref` to pinpoint the exact clause being validated.
+
+The `spec_ref` field uses section numbers (e.g., `"§7.2"`, `"§3.4, §7.2"`). When a test case omits `spec_ref`, it inherits the group-level reference.
 
 ```yaml
 name: "required field validation"
 level: 1
 category: validation
+spec_ref: "§7.2"
 
 setup:
   config: |
@@ -147,6 +150,7 @@ tests:
       issues: []
 
   - name: "missing required field fails validation"
+    spec_ref: "§7.2"
     operation: validate
     input:
       path: "tasks/invalid.md"
@@ -171,6 +175,10 @@ tests:
 | `operations` | CRUD operations |
 | `references` | Reference updates |
 | `caching` | Cache behavior |
+| `concurrency` | Concurrent modification detection |
+| `watching` | Watch mode event delivery |
+| `body_search` | Body content filtering |
+| `computed_fields` | Computed field evaluation |
 
 ---
 
@@ -180,12 +188,12 @@ For each conformance level, implementations MUST pass:
 
 | Level | Required Categories |
 |-------|---------------------|
-| 1 | config, types (basic), validation (basic), operations |
+| 1 | config, types (basic), validation (basic), operations, concurrency |
 | 2 | + matching |
-| 3 | + expressions, queries |
+| 3 | + expressions, queries, body_search, computed_fields |
 | 4 | + links |
 | 5 | + references |
-| 6 | + caching |
+| 6 | + caching, watching |
 
 ---
 

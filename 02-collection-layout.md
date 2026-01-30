@@ -184,3 +184,50 @@ my-collection/
 ```
 
 This behavior ensures that collections remain self-contained and do not interfere with each other.
+
+---
+
+## 2.9 Non-Markdown Files
+
+Collections may contain non-markdown files such as images, PDFs, or other binary assets. These files are NOT records — they have no frontmatter and are not returned by queries.
+
+### Status in the Collection
+
+- Non-markdown files are **valid link targets**: `[[photo.png]]` and `![img](photo.png)` resolve normally
+- They appear in `file.embeds` when referenced via embed syntax (`![[...]]` or `![](...)`)
+- They do NOT appear in `file.links`, which is reserved for document-to-document links between records
+- Non-markdown files are not assigned types and cannot be validated against type schemas
+
+### File Discovery
+
+- File discovery MUST skip non-markdown files when building the record set
+- File discovery MUST NOT skip non-markdown files during link resolution — links to images, PDFs, and other assets MUST resolve by path
+- Implementations MUST resolve links to non-markdown files by path only (no `id_field` lookup, since non-markdown files are not records and have no frontmatter)
+
+### Example
+
+```
+my-collection/
+├── mdbase.yaml
+├── tasks/
+│   └── task-001.md        # Record (included in queries)
+├── images/
+│   ├── diagram.png        # Not a record, but valid link target
+│   └── screenshot.jpg     # Not a record, but valid link target
+└── attachments/
+    └── report.pdf         # Not a record, but valid link target
+```
+
+In `task-001.md`:
+```yaml
+---
+type: task
+title: Fix the layout
+---
+
+See the [[images/diagram.png]] for reference.
+
+![[images/screenshot.jpg]]
+```
+
+Here, `diagram.png` appears in `file.links` only if it uses non-embed link syntax; `screenshot.jpg` appears in `file.embeds` because it uses embed syntax.

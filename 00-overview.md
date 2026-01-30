@@ -64,6 +64,115 @@ The specification defines the expected behaviour for each of these capabilities,
 
 ---
 
+## How It Works
+
+### A collection is a folder with an `mdbase.yaml` marker
+
+```
+my-project/
+├── mdbase.yaml            # Marks this folder as a collection
+├── _types/                # Type definitions (schemas)
+│   ├── task.md
+│   └── person.md
+├── tasks/
+│   ├── fix-bug.md         # A record of type "task"
+│   └── write-docs.md
+└── people/
+    └── alice.md           # A record of type "person"
+```
+
+The minimal config just declares the spec version:
+
+```yaml
+# mdbase.yaml
+spec_version: "0.1.0"
+```
+
+### Types are defined as markdown files
+
+A type is a schema for a category of files. Types live in the `_types/` folder and are themselves markdown — the frontmatter defines the schema, the body documents it.
+
+```markdown
+---
+name: task
+fields:
+  title:
+    type: string
+    required: true
+  status:
+    type: enum
+    values: [open, in_progress, done]
+    default: open
+  priority:
+    type: integer
+    min: 1
+    max: 5
+  assignee:
+    type: link
+    target: person
+---
+
+# Task
+
+A task represents a unit of work. Set `status` to track progress.
+```
+
+### Records are markdown files with typed frontmatter
+
+A file declares its type and provides field values in frontmatter. The body is free-form markdown.
+
+```markdown
+---
+type: task
+title: Fix the login bug
+status: in_progress
+priority: 4
+assignee: "[[alice]]"
+tags: [bug, auth]
+---
+
+The login form throws a validation error when the email contains a `+` character.
+```
+
+### Queries filter and sort records using expressions
+
+Queries are YAML objects with optional clauses for filtering, sorting, and pagination:
+
+```yaml
+query:
+  types: [task]
+  where:
+    and:
+      - 'status != "done"'
+      - "priority >= 3"
+  order_by:
+    - field: due_date
+      direction: asc
+  limit: 20
+```
+
+The expression language supports field access, comparison, boolean logic, string and list methods, date arithmetic, and link traversal:
+
+```
+status == "open" && tags.contains("urgent")
+due_date < today() + "7d"
+assignee.asFile().team == "engineering"
+```
+
+### Validation is progressive
+
+Collections work with no types at all — every file is an untyped record. Types can be added incrementally, and validation severity is configurable per-collection or per-type (`off`, `warn`, `error`). Strictness controls whether unknown fields are allowed, warned, or rejected.
+
+### Links connect records across the collection
+
+Records can reference each other using wikilinks (`[[alice]]`) or markdown links (`[Alice](../people/alice.md)`). When a file is renamed, conforming tools update all references automatically.
+
+### Conformance is levelled
+
+Implementations don't need to support everything. Six conformance levels let tools start with basic CRUD (Level 1) and progressively add matching, querying, links, reference updates, and caching. See [§14](./14-conformance.md) for details.
+
+---
+
 ## Specification Structure
 
 | Document | Description |

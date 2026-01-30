@@ -17,6 +17,7 @@ This appendix defines standard error codes for validation issues and operation e
 | `unknown_field` | Field not in schema (strict mode) | Unknown field "custom" |
 | `deprecated_field` | Field is marked deprecated | Field "old_name" is deprecated |
 | `duplicate_id` | `id_field` value is not unique in collection | `id: task-001` appears in multiple files |
+| `duplicate_value` | Field value violates cross-file `unique` constraint | `slug: "my-post"` appears in multiple files |
 
 ### List Errors
 
@@ -71,6 +72,7 @@ This appendix defines standard error codes for validation issues and operation e
 | `missing_parent_type` | Parent type doesn't exist | Parent "base" not found |
 | `type_conflict` | Multi-type field incompatibility | "status" defined as string and enum |
 | `invalid_type_definition` | Type file has invalid schema | Missing required "name" field |
+| `circular_computed` | Circular dependency between computed fields | `full_name` depends on `display` depends on `full_name` |
 
 ---
 
@@ -85,6 +87,8 @@ This appendix defines standard error codes for validation issues and operation e
 | `path_required` | Cannot determine file path | No path provided or derivable |
 | `invalid_path` | Path is malformed | Path contains invalid characters |
 | `permission_denied` | Filesystem permission error | Cannot write to file |
+| `concurrent_modification` | File was modified by another process during operation | File mtime changed between read and write |
+| `path_traversal` | Link resolution attempted to escape collection root | `[[../../../etc/passwd]]` escapes root |
 
 ### Rename Operations
 
@@ -112,6 +116,7 @@ This appendix defines standard error codes for validation issues and operation e
 | `unknown_function` | Function doesn't exist | Unknown function "foo" |
 | `wrong_argument_count` | Wrong number of arguments | if() requires 3 arguments |
 | `type_error` | Type error in expression | Cannot add string and number |
+| `expression_depth_exceeded` | Expression traversal exceeded maximum depth | Chained `asFile()` calls exceed 10-hop limit |
 
 ---
 

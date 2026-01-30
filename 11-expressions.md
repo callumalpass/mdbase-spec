@@ -87,6 +87,7 @@ file.ext            // "md"
 file.size           // 1234 (bytes)
 file.ctime          // Created datetime
 file.mtime          // Modified datetime
+file.body           // Raw markdown body content (string)
 ```
 
 ### Formulas

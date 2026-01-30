@@ -403,10 +403,44 @@ mdbase delete --where 'tags.contains("archive")' --confirm
 mdbase move 'tasks/*.md' archive/
 ```
 
-Batch operations SHOULD:
-- Validate all changes before applying any
-- Report per-file success/failure
-- Support dry-run mode
+### Validation Phase
+
+Before applying any changes, implementations MUST validate ALL affected files. If any file fails validation and `default_validation` is `error`, the entire batch MUST be aborted with no files modified.
+
+### Execution Phase
+
+After validation passes, apply changes file by file.
+
+### Partial Failure
+
+If a file write fails during execution (I/O error, concurrent modification):
+
+- Implementations MUST NOT roll back already-written files (filesystem operations are not transactional)
+- Implementations MUST continue processing remaining files (best-effort)
+- Implementations MUST report per-file results: success, failure (with error code), or skipped
+
+### Result Format
+
+```yaml
+batch_result:
+  total: 50
+  succeeded: 47
+  failed: 2
+  skipped: 1
+  details:
+    - path: "tasks/task-001.md"
+      status: "success"
+    - path: "tasks/task-002.md"
+      status: "failed"
+      error: { code: "concurrent_modification", message: "..." }
+    - path: "tasks/task-003.md"
+      status: "skipped"
+      reason: "Depends on failed task-002.md"
+```
+
+### Dry-Run Mode
+
+Batch operations MUST support `--dry-run` which validates all changes and reports what would happen without modifying any files.
 
 ---
 
@@ -452,3 +486,42 @@ Hooks receive operation context and can:
 - Abort operation (before hooks, by throwing)
 
 This is an OPTIONAL feature; implementations need not support hooks.
+
+---
+
+## 12.10 Concurrency
+
+### Read-Modify-Write Cycle
+
+When updating a file, implementations MUST detect concurrent modifications. The recommended approach is optimistic concurrency using file mtime:
+
+1. Read file, record mtime
+2. Apply changes in memory
+3. Before writing, check that file mtime has not changed
+4. If mtime changed, abort with `concurrent_modification` error
+5. Write atomically (temp file + rename)
+
+Implementations MAY use content hashing instead of mtime for more reliable conflict detection.
+
+### Conflict Behavior
+
+On detecting a concurrent modification, implementations MUST abort the operation and report `concurrent_modification`. Implementations MUST NOT silently overwrite concurrent changes.
+
+Implementations MAY offer a retry mechanism (re-read, re-apply, re-check) but MUST NOT retry automatically without user/caller consent.
+
+### Cross-File Operations
+
+Rename with reference updates touches multiple files. These are NOT atomic across files. Implementations MUST:
+
+1. Complete the primary rename first
+2. Update references file by file
+3. Use mtime checking on each referenced file before updating
+4. Report partial failures — which files were updated and which were skipped due to conflicts
+
+### File Locking
+
+Implementations MAY use advisory file locks for write operations. If used:
+
+- Locks MUST be released on operation completion (including error paths)
+- Lock timeouts SHOULD be documented
+- Implementations MUST NOT require locking for read operations

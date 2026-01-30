@@ -279,7 +279,7 @@ Implementations SHOULD ignore tags embedded in URLs (e.g., `https://...#anchor`)
 
 ## 8.7 Link Traversal
 
-Links can be traversed to access properties of the linked file. This is **single-hop traversal only**—not a full relational join.
+Links can be traversed to access properties of the linked file using the `asFile()` method.
 
 ### The `asFile()` Method
 
@@ -295,6 +295,21 @@ formulas:
 ```
 
 If the link cannot be resolved, `asFile()` returns `null`. Subsequent property access on `null` returns `null` (no error).
+
+### Multi-Hop Traversal
+
+`asFile()` MAY be chained to traverse multiple links:
+
+```
+assignee.asFile().manager.asFile().name
+parent.asFile().project.asFile().status
+```
+
+Each `asFile()` call resolves the link field on the current file and returns the target file object.
+
+**Null propagation:** If any hop returns `null`, the entire chain evaluates to `null` (no error).
+
+**Depth limit:** Implementations MUST enforce a maximum traversal depth (default: 10 hops). Exceeding this limit MUST produce an `expression_depth_exceeded` error. Circular traversal (A → B → A) does not cause infinite loops because the depth limit applies.
 
 ### Accessing Linked File Properties
 
@@ -316,10 +331,10 @@ parent.asFile().file.path
 
 ### Performance Considerations
 
-Link traversal requires loading and parsing the target file. Implementations SHOULD:
+Each hop requires loading and parsing the target file. Implementations SHOULD:
 
 - Cache resolved files during query execution
-- Document performance implications
+- Document performance characteristics for multi-hop queries
 - Consider lazy resolution (only resolve when accessed)
 - Warn users about expensive traversals in large collections
 
@@ -353,7 +368,7 @@ filters: "file.hasLink(this.file)"
 
 ---
 
-## 8.8 Link Storage and Round-Tripping
+## 8.9 Link Storage and Round-Tripping
 
 When writing links to frontmatter, implementations SHOULD preserve the original format when possible:
 
@@ -365,7 +380,7 @@ This preserves user intent and keeps files human-readable.
 
 ---
 
-## 8.9 Links in Body Content
+## 8.10 Links in Body Content
 
 While this specification focuses on frontmatter, links also appear in markdown body content. Implementations SHOULD support:
 
@@ -377,7 +392,7 @@ Implementations that do NOT support body link parsing MUST document this limitat
 
 ---
 
-## 8.10 Broken Links
+## 8.11 Broken Links
 
 A "broken link" is a link that cannot be resolved to an existing file. Handling options:
 
@@ -390,7 +405,7 @@ A "broken link" is a link that cannot be resolved to an existing file. Handling 
 
 ---
 
-## 8.11 Link Examples
+## 8.12 Link Examples
 
 ### Simple Task Hierarchy
 
@@ -441,3 +456,26 @@ sibling: "[[./task-002]]"           # projects/alpha/tasks/task-002.md
 global_reference: "[[people/bob]]"  # people/bob.md (from root)
 ---
 ```
+
+---
+
+## 8.13 Path Sandboxing
+
+Link resolution MUST NOT resolve to paths outside the collection root.
+
+### Rules
+
+- After resolving relative paths (applying `../` segments), the resulting absolute path MUST be within the collection root directory
+- If resolution would escape the collection root, the link MUST resolve to `null` and implementations MUST emit a `path_traversal` error
+- This applies to all link formats: wikilinks, markdown links, and bare paths
+- Implementations MUST normalize paths (resolve `.` and `..` segments) before checking containment
+
+### Example
+
+In a collection rooted at `/home/user/notes/`:
+
+| Link | From File | Result |
+|------|-----------|--------|
+| `[[../../../etc/passwd]]` | `notes/daily.md` | `null` + `path_traversal` error |
+| `[[../../secrets/key]]` | `deep/nested/file.md` | `null` + `path_traversal` error |
+| `[[../sibling]]` | `tasks/task-001.md` | Resolves normally (stays within root) |
