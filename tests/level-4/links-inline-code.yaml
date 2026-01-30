@@ -1,0 +1,221 @@
+name: "inline code span link and tag exclusion"
+level: 4
+category: links
+spec_ref: "§8.6"
+
+groups:
+  # =============================================================================
+  # Group 1: Links inside inline code spans MUST be excluded from file.links
+  # =============================================================================
+
+  - name: "inline code span link exclusion"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/inline-code.md: |
+          ---
+          type: note
+          title: "Inline code links"
+          ---
+          Real link: [[real-target]]
+
+          This has `[[inline-excluded]]` in inline code.
+
+          And backtick `[[another-excluded|with alias]]` too.
+
+          End with [[second-real]].
+        notes/real-target.md: |
+          ---
+          type: note
+          title: "Real target"
+          ---
+        notes/second-real.md: |
+          ---
+          type: note
+          title: "Second real"
+          ---
+        notes/inline-excluded.md: |
+          ---
+          type: note
+          title: "Should not be linked"
+          ---
+
+    tests:
+      - name: "file.links excludes wikilinks inside inline code spans"
+        operation: evaluate
+        input:
+          expression: 'file.links.length'
+          context_path: "notes/inline-code.md"
+        expect:
+          result: 2
+
+      - name: "file.hasLink returns false for wikilink in inline code"
+        operation: evaluate
+        input:
+          expression: 'file.hasLink(link("notes/inline-excluded"))'
+          context_path: "notes/inline-code.md"
+        expect:
+          result: false
+
+      - name: "file.hasLink returns true for wikilink outside inline code"
+        operation: evaluate
+        input:
+          expression: 'file.hasLink(link("notes/real-target"))'
+          context_path: "notes/inline-code.md"
+        expect:
+          result: true
+
+  # =============================================================================
+  # Group 2: Markdown links inside inline code spans also excluded
+  # =============================================================================
+
+  - name: "markdown link in inline code excluded"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/md-inline.md: |
+          ---
+          type: note
+          title: "Markdown inline code"
+          ---
+          Real: [click](target.md)
+
+          Code: `[click](excluded.md)` should not count.
+        notes/target.md: |
+          ---
+          type: note
+          title: "Target"
+          ---
+
+    tests:
+      - name: "markdown links inside inline code are excluded"
+        operation: evaluate
+        input:
+          expression: 'file.links.length'
+          context_path: "notes/md-inline.md"
+        expect:
+          result: 1
+
+      - name: "real markdown link outside inline code is included"
+        operation: evaluate
+        input:
+          expression: 'file.hasLink(link("notes/target"))'
+          context_path: "notes/md-inline.md"
+        expect:
+          result: true
+
+  # =============================================================================
+  # Group 3: Embeds inside inline code spans also excluded
+  # =============================================================================
+
+  - name: "embeds in inline code excluded"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/embed-code.md: |
+          ---
+          type: note
+          title: "Embed in inline code"
+          ---
+          Real embed: ![[image.png]]
+
+          Code: `![[excluded-embed.png]]` should not count.
+
+    tests:
+      - name: "embeds inside inline code are excluded from file.embeds"
+        operation: evaluate
+        input:
+          expression: 'file.embeds.length'
+          context_path: "notes/embed-code.md"
+        expect:
+          result: 1
+
+  # =============================================================================
+  # Group 4: Tags inside inline code spans also excluded (explicit hasTag)
+  # =============================================================================
+
+  - name: "tags in inline code excluded with hasTag"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        notes/tag-inline.md: |
+          ---
+          type: note
+          title: "Tags in inline code"
+          ---
+          Real tag: #real-tag
+
+          Code: `#excluded-tag` should not be a tag.
+
+    tests:
+      - name: "file.hasTag returns false for tag in inline code"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("excluded-tag")'
+          context_path: "notes/tag-inline.md"
+        expect:
+          result: false
+
+      - name: "file.hasTag returns true for tag outside inline code"
+        operation: evaluate
+        input:
+          expression: 'file.hasTag("real-tag")'
+          context_path: "notes/tag-inline.md"
+        expect:
+          result: true
+
+      - name: "file.tags count excludes inline code tags"
+        operation: evaluate
+        input:
+          expression: 'file.tags.length'
+          context_path: "notes/tag-inline.md"
+        expect:
+          result: 1

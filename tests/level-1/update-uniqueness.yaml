@@ -1,0 +1,222 @@
+name: "update-time uniqueness enforcement"
+level: 1
+category: validation
+spec_ref: "§9.2.8"
+
+groups:
+  # =============================================================================
+  # Group 1: duplicate_id detected during update operations
+  # =============================================================================
+
+  - name: "duplicate ID on update"
+    spec_ref: "§9.2.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          id: "task-001"
+          title: "First task"
+          ---
+        tasks/t2.md: |
+          ---
+          type: task
+          id: "task-002"
+          title: "Second task"
+          ---
+        tasks/t3.md: |
+          ---
+          type: task
+          id: "task-003"
+          title: "Third task"
+          ---
+
+    tests:
+      - name: "update to duplicate id_field value fails with duplicate_id"
+        operation: update
+        input:
+          path: "tasks/t2.md"
+          frontmatter:
+            id: "task-001"
+        expect:
+          error:
+            code: validation_failed
+          issues:
+            - code: duplicate_id
+              field: id
+
+      - name: "update id to unique value succeeds"
+        operation: update
+        input:
+          path: "tasks/t2.md"
+          frontmatter:
+            id: "task-999"
+        expect:
+          frontmatter:
+            id: "task-999"
+            title: "Second task"
+
+      - name: "update non-id field does not trigger duplicate_id"
+        operation: update
+        input:
+          path: "tasks/t2.md"
+          frontmatter:
+            title: "Updated title"
+        expect:
+          frontmatter:
+            id: "task-002"
+            title: "Updated title"
+
+  # =============================================================================
+  # Group 2: duplicate_value (unique constraint) on update
+  # =============================================================================
+
+  - name: "unique field constraint on update"
+    spec_ref: "§9.2.8, §7.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        article.md: |
+          ---
+          name: article
+          fields:
+            slug:
+              type: string
+              unique: true
+            title:
+              type: string
+          ---
+      files:
+        articles/a1.md: |
+          ---
+          type: article
+          slug: "hello-world"
+          title: "Hello World"
+          ---
+        articles/a2.md: |
+          ---
+          type: article
+          slug: "getting-started"
+          title: "Getting Started"
+          ---
+
+    tests:
+      - name: "update unique field to existing value fails with duplicate_value"
+        operation: update
+        input:
+          path: "articles/a2.md"
+          frontmatter:
+            slug: "hello-world"
+        expect:
+          error:
+            code: validation_failed
+          issues:
+            - code: duplicate_value
+              field: slug
+
+      - name: "update unique field to new value succeeds"
+        operation: update
+        input:
+          path: "articles/a2.md"
+          frontmatter:
+            slug: "new-slug"
+        expect:
+          frontmatter:
+            slug: "new-slug"
+            title: "Getting Started"
+
+      - name: "update keeping same unique value succeeds (self not duplicate)"
+        operation: update
+        input:
+          path: "articles/a1.md"
+          frontmatter:
+            slug: "hello-world"
+            title: "Updated Hello World"
+        expect:
+          frontmatter:
+            slug: "hello-world"
+            title: "Updated Hello World"
+
+  # =============================================================================
+  # Group 3: id uniqueness with null exemption on update
+  # =============================================================================
+
+  - name: "null id exemption on update"
+    spec_ref: "§9.2.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+          default_validation: "error"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            id:
+              type: string
+            name:
+              type: string
+          ---
+      files:
+        items/i1.md: |
+          ---
+          type: item
+          id: "item-001"
+          name: "First"
+          ---
+        items/i2.md: |
+          ---
+          type: item
+          name: "No ID"
+          ---
+
+    tests:
+      - name: "update to null id does not conflict with other null ids"
+        setup:
+          files:
+            items/i3.md: |
+              ---
+              type: item
+              name: "Also no ID"
+              ---
+        operation: update
+        input:
+          path: "items/i2.md"
+          frontmatter:
+            name: "Updated no ID"
+        expect:
+          frontmatter:
+            name: "Updated no ID"
+
+      - name: "update removing id (set to null) does not conflict"
+        operation: update
+        input:
+          path: "items/i1.md"
+          frontmatter:
+            id: null
+        expect:
+          frontmatter:
+            name: "First"

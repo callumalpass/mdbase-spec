@@ -1,0 +1,155 @@
+name: "YAML 1.1 boolean write normalization"
+level: 1
+category: types
+spec_ref: "§7.6"
+
+groups:
+  # =============================================================================
+  # Group 1: YAML 1.1 boolean spellings normalized to true/false on write
+  # =============================================================================
+
+  - name: "boolean write normalization"
+    spec_ref: "§7.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        flag.md: |
+          ---
+          name: flag
+          fields:
+            active:
+              type: boolean
+            enabled:
+              type: boolean
+          ---
+
+    tests:
+      - name: "yes normalized to true on create round-trip"
+        setup:
+          files:
+            flags/yes-flag.md: |
+              ---
+              type: flag
+              active: yes
+              ---
+        operation: read
+        input:
+          path: "flags/yes-flag.md"
+        expect:
+          frontmatter:
+            active: true
+          frontmatter_written:
+            active: true
+
+      - name: "no normalized to false on create round-trip"
+        setup:
+          files:
+            flags/no-flag.md: |
+              ---
+              type: flag
+              active: no
+              ---
+        operation: read
+        input:
+          path: "flags/no-flag.md"
+        expect:
+          frontmatter:
+            active: false
+          frontmatter_written:
+            active: false
+
+      - name: "on normalized to true on create round-trip"
+        setup:
+          files:
+            flags/on-flag.md: |
+              ---
+              type: flag
+              active: on
+              ---
+        operation: read
+        input:
+          path: "flags/on-flag.md"
+        expect:
+          frontmatter:
+            active: true
+          frontmatter_written:
+            active: true
+
+      - name: "off normalized to false on create round-trip"
+        setup:
+          files:
+            flags/off-flag.md: |
+              ---
+              type: flag
+              active: off
+              ---
+        operation: read
+        input:
+          path: "flags/off-flag.md"
+        expect:
+          frontmatter:
+            active: false
+          frontmatter_written:
+            active: false
+
+  # =============================================================================
+  # Group 2: Update with YAML 1.1 booleans normalizes on write
+  # =============================================================================
+
+  - name: "boolean normalization through update"
+    spec_ref: "§7.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        flag.md: |
+          ---
+          name: flag
+          fields:
+            active:
+              type: boolean
+            enabled:
+              type: boolean
+          ---
+      files:
+        flags/updatable.md: |
+          ---
+          type: flag
+          active: true
+          enabled: false
+          ---
+
+    tests:
+      - name: "update preserves normalized true/false form"
+        operation: update
+        input:
+          path: "flags/updatable.md"
+          frontmatter:
+            active: true
+            enabled: true
+        expect:
+          frontmatter:
+            active: true
+            enabled: true
+          frontmatter_written:
+            active: true
+            enabled: true
+
+      - name: "standard true/false values written correctly"
+        operation: create
+        input:
+          path: "flags/standard.md"
+          frontmatter:
+            type: flag
+            active: true
+            enabled: false
+        expect:
+          frontmatter:
+            active: true
+            enabled: false
+          frontmatter_written:
+            active: true
+            enabled: false
