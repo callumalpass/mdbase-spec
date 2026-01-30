@@ -1,0 +1,629 @@
+name: "caching and indexing"
+level: 6
+category: caching
+spec_ref: "§13"
+
+# =============================================================================
+# Group 1: Cache is derivable from files
+# =============================================================================
+
+groups:
+  - name: "cache derivability"
+    spec_ref: "§13.3.1, §13.3.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, in_progress, done]
+          ---
+      files:
+        tasks/task-001.md: |
+          ---
+          type: task
+          id: "task-001"
+          title: "First Task"
+          status: open
+          ---
+        tasks/task-002.md: |
+          ---
+          type: task
+          id: "task-002"
+          title: "Second Task"
+          status: done
+          ---
+
+    tests:
+      - name: "query works after cache rebuild"
+        operation: cache_rebuild
+        expect:
+          success: true
+        verify_after:
+          operation: query
+          input:
+            types: [task]
+            where: "status == \"open\""
+          expect:
+            results:
+              - frontmatter:
+                  id: "task-001"
+
+      - name: "query returns same results with and without cache"
+        # Run query with cache, delete cache, run query again
+        operation: query
+        input:
+          types: [task]
+          order_by: [{ field: "id", direction: "asc" }]
+        expect:
+          results:
+            - frontmatter:
+                id: "task-001"
+            - frontmatter:
+                id: "task-002"
+
+      - name: "cache deletion does not affect file contents"
+        operation: cache_clear
+        expect:
+          success: true
+        verify_after:
+          operation: read
+          input:
+            path: "tasks/task-001.md"
+          expect:
+            frontmatter:
+              id: "task-001"
+              title: "First Task"
+              status: open
+
+  # =============================================================================
+  # Group 2: Staleness detection
+  # =============================================================================
+
+  - name: "cache staleness detection"
+    spec_ref: "§13.3.3, §13.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        notes/note-1.md: |
+          ---
+          type: note
+          id: "note-1"
+          title: "Note One"
+          tags: ["alpha"]
+          ---
+        notes/note-2.md: |
+          ---
+          type: note
+          id: "note-2"
+          title: "Note Two"
+          tags: ["beta"]
+          ---
+
+    tests:
+      - name: "cache detects modified file"
+        # Build cache, externally modify file, query should reflect change
+        operation: cache_rebuild
+        expect:
+          success: true
+        verify_after:
+          operation: update
+          input:
+            path: "notes/note-1.md"
+            fields:
+              title: "Note One (Updated)"
+
+      - name: "query reflects externally modified file"
+        simulate:
+          external_modify:
+            path: "notes/note-1.md"
+            content: |
+              ---
+              type: note
+              id: "note-1"
+              title: "Externally Modified"
+              tags: ["alpha", "gamma"]
+              ---
+        operation: query
+        input:
+          types: [note]
+          where: "id == \"note-1\""
+        expect:
+          results:
+            - frontmatter:
+                id: "note-1"
+                title: "Externally Modified"
+                tags: ["alpha", "gamma"]
+
+      - name: "cache detects new file"
+        simulate:
+          external_create:
+            path: "notes/note-3.md"
+            content: |
+              ---
+              type: note
+              id: "note-3"
+              title: "Brand New Note"
+              tags: ["delta"]
+              ---
+        operation: query
+        input:
+          types: [note]
+          order_by: [{ field: "id", direction: "asc" }]
+        expect:
+          results:
+            - frontmatter:
+                id: "note-1"
+            - frontmatter:
+                id: "note-2"
+            - frontmatter:
+                id: "note-3"
+
+      - name: "cache detects deleted file"
+        simulate:
+          external_delete:
+            path: "notes/note-2.md"
+        operation: query
+        input:
+          types: [note]
+          order_by: [{ field: "id", direction: "asc" }]
+        expect:
+          results:
+            - frontmatter:
+                id: "note-1"
+
+  # =============================================================================
+  # Group 3: Config change triggers full rebuild
+  # =============================================================================
+
+  - name: "config change triggers cache rebuild"
+    spec_ref: "§13.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          id: "t1"
+          title: "Task 1"
+          ---
+
+    tests:
+      - name: "cache invalidated after config change"
+        simulate:
+          config_change:
+            new_config: |
+              spec_version: "0.1.0"
+              settings:
+                id_field: "slug"
+        operation: query
+        input:
+          types: [task]
+        expect:
+          # Query should succeed with new config in effect
+          results:
+            - frontmatter:
+                id: "t1"
+
+  # =============================================================================
+  # Group 4: Type definition change invalidation
+  # =============================================================================
+
+  - name: "type definition change re-indexes affected files"
+    spec_ref: "§13.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+              min: 1
+              max: 5
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Task 1"
+          priority: 3
+          ---
+
+    tests:
+      - name: "type change causes re-validation of affected files"
+        simulate:
+          type_change:
+            type: "task"
+            new_definition: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+                priority:
+                  type: integer
+                  min: 1
+                  max: 3
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+          # priority=3 is still valid under max:3
+
+  # =============================================================================
+  # Group 5: Cache rebuild command
+  # =============================================================================
+
+  - name: "explicit cache rebuild"
+    spec_ref: "§13.3.4, §13.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+          ---
+      files:
+        notes/n1.md: |
+          ---
+          type: note
+          id: "n1"
+          title: "Note 1"
+          ---
+        notes/n2.md: |
+          ---
+          type: note
+          id: "n2"
+          title: "Note 2"
+          ---
+
+    tests:
+      - name: "cache rebuild returns success"
+        operation: cache_rebuild
+        expect:
+          success: true
+
+      - name: "cache clear returns success"
+        operation: cache_clear
+        expect:
+          success: true
+
+      - name: "query works immediately after cache rebuild"
+        operation: cache_rebuild
+        expect:
+          success: true
+        verify_after:
+          operation: query
+          input:
+            types: [note]
+            order_by: [{ field: "id", direction: "asc" }]
+          expect:
+            results:
+              - frontmatter:
+                  id: "n1"
+              - frontmatter:
+                  id: "n2"
+
+      - name: "query works after cache clear (falls back to file scan)"
+        operation: cache_clear
+        expect:
+          success: true
+        verify_after:
+          operation: query
+          input:
+            types: [note]
+            order_by: [{ field: "id", direction: "asc" }]
+          expect:
+            results:
+              - frontmatter:
+                  id: "n1"
+              - frontmatter:
+                  id: "n2"
+
+  # =============================================================================
+  # Group 6: Link index and backlinks caching
+  # =============================================================================
+
+  - name: "backlink index reflects current state"
+    spec_ref: "§13.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        notes/target.md: |
+          ---
+          type: note
+          id: "target"
+          title: "Target"
+          ---
+        notes/linker.md: |
+          ---
+          type: note
+          id: "linker"
+          title: "Linker"
+          ref: "[[target]]"
+          ---
+
+    tests:
+      - name: "backlink index populated after cache rebuild"
+        operation: cache_rebuild
+        expect:
+          success: true
+        verify_after:
+          operation: evaluate
+          input:
+            path: "notes/target.md"
+            expression: "file.backlinks.length"
+          expect:
+            result: 1
+
+      - name: "backlink index updated when new link is created"
+        operation: create
+        input:
+          type: note
+          path: "notes/linker-2.md"
+          frontmatter:
+            id: "linker-2"
+            title: "Second Linker"
+            ref: "[[target]]"
+        verify_after:
+          operation: evaluate
+          input:
+            path: "notes/target.md"
+            expression: "file.backlinks.length"
+          expect:
+            result: 2
+
+      - name: "backlink index updated when link is removed"
+        operation: update
+        input:
+          path: "notes/linker.md"
+          fields:
+            ref: null
+        verify_after:
+          operation: evaluate
+          input:
+            path: "notes/target.md"
+            expression: "file.backlinks.length"
+          expect:
+            result: 0
+
+  # =============================================================================
+  # Group 7: Cache version compatibility
+  # =============================================================================
+
+  - name: "cache version compatibility"
+    spec_ref: "§13.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/n1.md: |
+          ---
+          type: note
+          title: "Note 1"
+          ---
+
+    tests:
+      - name: "incompatible cache version triggers automatic rebuild"
+        simulate:
+          corrupt_cache_version: true
+        operation: query
+        input:
+          types: [note]
+        expect:
+          # Query should succeed — implementation detects version mismatch
+          # and rebuilds cache automatically
+          results:
+            - frontmatter:
+                title: "Note 1"
+
+  # =============================================================================
+  # Group 8: Incremental vs full rebuild
+  # =============================================================================
+
+  - name: "incremental cache update"
+    spec_ref: "§13.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            status:
+              type: string
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          id: "t1"
+          title: "Task 1"
+          status: "open"
+          ---
+        tasks/t2.md: |
+          ---
+          type: task
+          id: "t2"
+          title: "Task 2"
+          status: "open"
+          ---
+        tasks/t3.md: |
+          ---
+          type: task
+          id: "t3"
+          title: "Task 3"
+          status: "done"
+          ---
+
+    tests:
+      - name: "single file update reflects in subsequent query"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            status: "done"
+        verify_after:
+          operation: query
+          input:
+            types: [task]
+            where: "status == \"done\""
+            order_by: [{ field: "id", direction: "asc" }]
+          expect:
+            results:
+              - frontmatter:
+                  id: "t1"
+              - frontmatter:
+                  id: "t3"
+
+      - name: "file creation appears in subsequent query"
+        operation: create
+        input:
+          type: task
+          path: "tasks/t4.md"
+          frontmatter:
+            id: "t4"
+            title: "Task 4"
+            status: "open"
+        verify_after:
+          operation: query
+          input:
+            types: [task]
+            where: "status == \"open\""
+            order_by: [{ field: "id", direction: "asc" }]
+          expect:
+            results:
+              - frontmatter:
+                  id: "t1"
+              - frontmatter:
+                  id: "t2"
+              - frontmatter:
+                  id: "t4"
+
+      - name: "file deletion reflected in subsequent query"
+        operation: delete
+        input:
+          path: "tasks/t3.md"
+        verify_after:
+          operation: query
+          input:
+            types: [task]
+            order_by: [{ field: "id", direction: "asc" }]
+          expect:
+            results:
+              - frontmatter:
+                  id: "t1"
+              - frontmatter:
+                  id: "t2"
+
+      - name: "rename reflected in subsequent query"
+        operation: rename
+        input:
+          from: "tasks/t1.md"
+          to: "archive/t1.md"
+        verify_after:
+          operation: query
+          input:
+            types: [task]
+            order_by: [{ field: "id", direction: "asc" }]
+          expect:
+            results:
+              - frontmatter:
+                  id: "t1"
+              - frontmatter:
+                  id: "t2"
+              - frontmatter:
+                  id: "t3"

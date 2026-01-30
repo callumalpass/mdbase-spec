@@ -1,0 +1,736 @@
+name: "watch mode event delivery"
+level: 6
+category: watching
+spec_ref: "§15"
+
+# =============================================================================
+# Group 1: File created events
+# =============================================================================
+
+groups:
+  - name: "file_created events"
+    spec_ref: "§15.2, §15.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            status:
+              type: string
+              default: "open"
+          ---
+      files: {}
+
+    tests:
+      - name: "new file emits file_created event"
+        operation: watch
+        simulate:
+          external_create:
+            path: "tasks/task-001.md"
+            content: |
+              ---
+              type: task
+              id: "task-001"
+              title: "New Task"
+              ---
+        expect:
+          events:
+            - event: file_created
+              path: "tasks/task-001.md"
+              types: [task]
+              frontmatter:
+                id: "task-001"
+                title: "New Task"
+                status: "open"
+
+      - name: "file_created event contains effective frontmatter with defaults"
+        operation: watch
+        simulate:
+          external_create:
+            path: "tasks/task-002.md"
+            content: |
+              ---
+              type: task
+              id: "task-002"
+              title: "Task Without Status"
+              ---
+        expect:
+          events:
+            - event: file_created
+              path: "tasks/task-002.md"
+              frontmatter:
+                # Default value applied in event payload
+                status: "open"
+
+      - name: "file_created event has timestamp"
+        operation: watch
+        simulate:
+          external_create:
+            path: "tasks/task-003.md"
+            content: |
+              ---
+              type: task
+              id: "task-003"
+              title: "Timestamped"
+              ---
+        expect:
+          events:
+            - event: file_created
+              path: "tasks/task-003.md"
+              timestamp_present: true
+
+  # =============================================================================
+  # Group 2: File modified events
+  # =============================================================================
+
+  - name: "file_modified events"
+    spec_ref: "§15.2, §15.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            status:
+              type: string
+          ---
+      files:
+        tasks/task-001.md: |
+          ---
+          type: task
+          id: "task-001"
+          title: "Existing Task"
+          status: "open"
+          ---
+
+    tests:
+      - name: "modified file emits file_modified event"
+        operation: watch
+        simulate:
+          external_modify:
+            path: "tasks/task-001.md"
+            content: |
+              ---
+              type: task
+              id: "task-001"
+              title: "Existing Task"
+              status: "done"
+              ---
+        expect:
+          events:
+            - event: file_modified
+              path: "tasks/task-001.md"
+              types: [task]
+              frontmatter:
+                id: "task-001"
+                title: "Existing Task"
+                status: "done"
+
+      - name: "file_modified event includes changed_fields"
+        operation: watch
+        simulate:
+          external_modify:
+            path: "tasks/task-001.md"
+            content: |
+              ---
+              type: task
+              id: "task-001"
+              title: "Updated Title"
+              status: "in_progress"
+              ---
+        expect:
+          events:
+            - event: file_modified
+              path: "tasks/task-001.md"
+              changed_fields:
+                - title
+                - status
+
+      - name: "body-only change emits file_modified"
+        operation: watch
+        simulate:
+          external_modify:
+            path: "tasks/task-001.md"
+            content: |
+              ---
+              type: task
+              id: "task-001"
+              title: "Existing Task"
+              status: "open"
+              ---
+              New body content added.
+        expect:
+          events:
+            - event: file_modified
+              path: "tasks/task-001.md"
+              # changed_fields may be empty since frontmatter didn't change
+              changed_fields: []
+
+  # =============================================================================
+  # Group 3: File deleted events
+  # =============================================================================
+
+  - name: "file_deleted events"
+    spec_ref: "§15.2, §15.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+          ---
+      files:
+        tasks/task-001.md: |
+          ---
+          type: task
+          id: "task-001"
+          title: "To Be Deleted"
+          ---
+
+    tests:
+      - name: "deleted file emits file_deleted event"
+        operation: watch
+        simulate:
+          external_delete:
+            path: "tasks/task-001.md"
+        expect:
+          events:
+            - event: file_deleted
+              path: "tasks/task-001.md"
+              last_known_types: [task]
+
+      - name: "file_deleted event includes last_known_types"
+        operation: watch
+        simulate:
+          external_delete:
+            path: "tasks/task-001.md"
+        expect:
+          events:
+            - event: file_deleted
+              path: "tasks/task-001.md"
+              last_known_types: [task]
+
+  # =============================================================================
+  # Group 4: File renamed events
+  # =============================================================================
+
+  - name: "file_renamed events"
+    spec_ref: "§15.2, §15.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/old-name.md: |
+          ---
+          type: note
+          title: "Note to Rename"
+          ---
+
+    tests:
+      - name: "rename detected emits file_renamed event"
+        operation: watch
+        simulate:
+          external_rename:
+            from: "notes/old-name.md"
+            to: "notes/new-name.md"
+        expect:
+          events:
+            - event: file_renamed
+              from: "notes/old-name.md"
+              to: "notes/new-name.md"
+              types: [note]
+
+      - name: "undetected rename emits delete then create"
+        # If rename detection fails, separate events must be emitted
+        operation: watch
+        simulate:
+          external_rename:
+            from: "notes/old-name.md"
+            to: "notes/new-name.md"
+            detection_fails: true
+        expect:
+          events:
+            - event: file_deleted
+              path: "notes/old-name.md"
+            - event: file_created
+              path: "notes/new-name.md"
+
+  # =============================================================================
+  # Group 5: Type and config change events
+  # =============================================================================
+
+  - name: "type_changed and config_changed events"
+    spec_ref: "§15.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Task 1"
+          ---
+        tasks/t2.md: |
+          ---
+          type: task
+          title: "Task 2"
+          ---
+
+    tests:
+      - name: "type definition change emits type_changed event"
+        operation: watch
+        simulate:
+          type_change:
+            type: "task"
+            new_definition: |
+              ---
+              name: task
+              fields:
+                title:
+                  type: string
+                priority:
+                  type: integer
+              ---
+        expect:
+          events:
+            - event: type_changed
+              type_name: "task"
+              affected_files:
+                - "tasks/t1.md"
+                - "tasks/t2.md"
+
+      - name: "config change emits config_changed event"
+        operation: watch
+        simulate:
+          config_change:
+            new_config: |
+              spec_version: "0.1.0"
+              settings:
+                id_field: "slug"
+        expect:
+          events:
+            - event: config_changed
+
+  # =============================================================================
+  # Group 6: Validation error events
+  # =============================================================================
+
+  - name: "validation_error events"
+    spec_ref: "§15.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            priority:
+              type: integer
+              min: 1
+              max: 5
+          ---
+      files:
+        tasks/valid.md: |
+          ---
+          type: task
+          title: "Valid Task"
+          priority: 3
+          ---
+
+    tests:
+      - name: "invalid file change emits validation_error event"
+        operation: watch
+        simulate:
+          external_modify:
+            path: "tasks/valid.md"
+            content: |
+              ---
+              type: task
+              priority: 10
+              ---
+        expect:
+          events:
+            - event: file_modified
+              path: "tasks/valid.md"
+            - event: validation_error
+              path: "tasks/valid.md"
+              issues:
+                - code: missing_required
+                  field: title
+                - code: number_too_large
+                  field: priority
+
+      - name: "creating invalid file emits validation_error"
+        operation: watch
+        simulate:
+          external_create:
+            path: "tasks/bad.md"
+            content: |
+              ---
+              type: task
+              priority: -1
+              ---
+        expect:
+          events:
+            - event: file_created
+              path: "tasks/bad.md"
+            - event: validation_error
+              path: "tasks/bad.md"
+              issues:
+                - code: missing_required
+                  field: title
+                - code: number_too_small
+                  field: priority
+
+  # =============================================================================
+  # Group 7: Debouncing
+  # =============================================================================
+
+  - name: "event debouncing"
+    spec_ref: "§15.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/rapid.md: |
+          ---
+          type: note
+          title: "Rapid Changes"
+          ---
+
+    tests:
+      - name: "multiple rapid changes coalesced into single event"
+        operation: watch
+        simulate:
+          rapid_changes:
+            path: "notes/rapid.md"
+            changes:
+              - content: |
+                  ---
+                  type: note
+                  title: "Change 1"
+                  ---
+              - content: |
+                  ---
+                  type: note
+                  title: "Change 2"
+                  ---
+              - content: |
+                  ---
+                  type: note
+                  title: "Final Change"
+                  ---
+            interval_ms: 50
+        expect:
+          events:
+            # Only one event reflecting the final state
+            - event: file_modified
+              path: "notes/rapid.md"
+              frontmatter:
+                title: "Final Change"
+          max_event_count: 1
+
+      - name: "create then immediate delete produces no event"
+        operation: watch
+        simulate:
+          rapid_changes:
+            steps:
+              - action: create
+                path: "notes/ephemeral.md"
+                content: |
+                  ---
+                  type: note
+                  title: "Gone"
+                  ---
+              - action: delete
+                path: "notes/ephemeral.md"
+            interval_ms: 10
+        expect:
+          events: []
+
+  # =============================================================================
+  # Group 8: Event ordering
+  # =============================================================================
+
+  - name: "event delivery ordering"
+    spec_ref: "§15.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "Note A"
+          ---
+        notes/b.md: |
+          ---
+          type: note
+          title: "Note B"
+          ---
+
+    tests:
+      - name: "events for same file delivered in order"
+        operation: watch
+        simulate:
+          sequential_changes:
+            - action: modify
+              path: "notes/a.md"
+              content: |
+                ---
+                type: note
+                title: "A v2"
+                ---
+            - action: modify
+              path: "notes/a.md"
+              content: |
+                ---
+                type: note
+                title: "A v3"
+                ---
+          interval_ms: 600
+        expect:
+          events_ordered:
+            - event: file_modified
+              path: "notes/a.md"
+              frontmatter:
+                title: "A v2"
+            - event: file_modified
+              path: "notes/a.md"
+              frontmatter:
+                title: "A v3"
+
+  # =============================================================================
+  # Group 9: Error resilience
+  # =============================================================================
+
+  - name: "watcher error resilience"
+    spec_ref: "§15.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "Note A"
+          ---
+        notes/b.md: |
+          ---
+          type: note
+          title: "Note B"
+          ---
+
+    tests:
+      - name: "listener error does not stop the watcher"
+        operation: watch
+        simulate:
+          listener_error_on_event: 1
+          sequential_changes:
+            - action: modify
+              path: "notes/a.md"
+              content: |
+                ---
+                type: note
+                title: "A Updated"
+                ---
+            - action: modify
+              path: "notes/b.md"
+              content: |
+                ---
+                type: note
+                title: "B Updated"
+                ---
+          interval_ms: 600
+        expect:
+          # Even though listener throws on first event, second event is still delivered
+          events_contain:
+            - event: file_modified
+              path: "notes/b.md"
+              frontmatter:
+                title: "B Updated"
+
+  # =============================================================================
+  # Group 10: Cache interaction
+  # =============================================================================
+
+  - name: "watch events trigger cache updates"
+    spec_ref: "§15.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+          ---
+      files:
+        notes/n1.md: |
+          ---
+          type: note
+          id: "n1"
+          title: "Note 1"
+          ---
+
+    tests:
+      - name: "cache updated before event delivery to listener"
+        operation: watch
+        simulate:
+          external_create:
+            path: "notes/n2.md"
+            content: |
+              ---
+              type: note
+              id: "n2"
+              title: "Note 2"
+              ---
+        expect:
+          events:
+            - event: file_created
+              path: "notes/n2.md"
+          # Listener can query and see the new file immediately
+          listener_query:
+            operation: query
+            input:
+              types: [note]
+              order_by: [{ field: "id", direction: "asc" }]
+            expect:
+              results:
+                - frontmatter:
+                    id: "n1"
+                - frontmatter:
+                    id: "n2"
+
+  # =============================================================================
+  # Group 11: Non-markdown files ignored
+  # =============================================================================
+
+  - name: "non-markdown file changes ignored"
+    spec_ref: "§15.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/note.md: |
+          ---
+          type: note
+          title: "A Note"
+          ---
+
+    tests:
+      - name: "non-markdown file creation does not emit event"
+        operation: watch
+        simulate:
+          external_create:
+            path: "notes/image.png"
+            binary: true
+        expect:
+          events: []
+
+      - name: "non-markdown file deletion does not emit event"
+        operation: watch
+        setup:
+          extra_files:
+            notes/data.json: "{}"
+        simulate:
+          external_delete:
+            path: "notes/data.json"
+        expect:
+          events: []

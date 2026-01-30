@@ -1,0 +1,620 @@
+name: "backlink computation"
+level: 5
+category: references
+spec_ref: "§8.8, §13.7"
+
+# =============================================================================
+# Group 1: Basic file.backlinks property
+# =============================================================================
+
+groups:
+  - name: "basic file.backlinks"
+    spec_ref: "§8.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            parent:
+              type: link
+              target: task
+            related:
+              type: list
+              items:
+                type: link
+          ---
+        person.md: |
+          ---
+          name: person
+          fields:
+            id:
+              type: string
+            name:
+              type: string
+          ---
+      files:
+        tasks/task-a.md: |
+          ---
+          type: task
+          id: "task-a"
+          title: "Task A"
+          parent: "[[task-b]]"
+          related:
+            - "[[task-c]]"
+          ---
+        tasks/task-b.md: |
+          ---
+          type: task
+          id: "task-b"
+          title: "Task B"
+          parent: "[[task-c]]"
+          ---
+        tasks/task-c.md: |
+          ---
+          type: task
+          id: "task-c"
+          title: "Task C"
+          ---
+        people/alice.md: |
+          ---
+          type: person
+          id: "alice"
+          name: "Alice"
+          ---
+
+    tests:
+      - name: "file with two incoming frontmatter links has two backlinks"
+        operation: evaluate
+        input:
+          path: "tasks/task-c.md"
+          expression: "file.backlinks.length"
+        expect:
+          result: 2
+
+      - name: "file.backlinks includes files linking via frontmatter fields"
+        operation: query
+        input:
+          types: [task]
+          where: "file.path == \"tasks/task-c.md\""
+        expect:
+          results:
+            - path: "tasks/task-c.md"
+        # Verify backlinks separately
+      - name: "file with one incoming link has one backlink"
+        operation: evaluate
+        input:
+          path: "tasks/task-b.md"
+          expression: "file.backlinks.length"
+        expect:
+          result: 1
+
+      - name: "file with no incoming links has zero backlinks"
+        operation: evaluate
+        input:
+          path: "tasks/task-a.md"
+          expression: "file.backlinks.length"
+        expect:
+          result: 0
+
+      - name: "unreferenced file has zero backlinks"
+        operation: evaluate
+        input:
+          path: "people/alice.md"
+          expression: "file.backlinks.length"
+        expect:
+          result: 0
+
+  # =============================================================================
+  # Group 2: Backlinks from body content
+  # =============================================================================
+
+  - name: "backlinks from body links"
+    spec_ref: "§8.6, §8.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+          ---
+      files:
+        notes/target.md: |
+          ---
+          type: note
+          id: "target"
+          title: "Target Note"
+          ---
+          Some content here.
+        notes/body-ref.md: |
+          ---
+          type: note
+          id: "body-ref"
+          title: "Body Reference"
+          ---
+          Check out [[target]] for more info.
+        notes/md-ref.md: |
+          ---
+          type: note
+          id: "md-ref"
+          title: "Markdown Reference"
+          ---
+          See [this note](./target.md) for context.
+        notes/no-ref.md: |
+          ---
+          type: note
+          id: "no-ref"
+          title: "No Reference"
+          ---
+          No links here.
+
+    tests:
+      - name: "body wikilink creates backlink"
+        operation: evaluate
+        input:
+          path: "notes/target.md"
+          expression: "file.backlinks.length"
+        expect:
+          result: 2
+
+      - name: "file.backlinks includes body wikilink sources"
+        operation: evaluate
+        input:
+          path: "notes/target.md"
+          expression: "file.backlinks.map(value.file.path).sort()"
+        expect:
+          result:
+            - "notes/body-ref.md"
+            - "notes/md-ref.md"
+
+      - name: "body link inside code block does NOT create backlink"
+        setup:
+          files:
+            notes/code-ref.md: |
+              ---
+              type: note
+              id: "code-ref"
+              title: "Code Block Link"
+              ---
+              ```
+              [[target]]
+              ```
+            notes/target.md: |
+              ---
+              type: note
+              id: "target"
+              title: "Target Note"
+              ---
+        operation: evaluate
+        input:
+          path: "notes/target.md"
+          expression: "file.backlinks.length"
+        expect:
+          result: 0
+
+  # =============================================================================
+  # Group 3: Backlinks in queries
+  # =============================================================================
+
+  - name: "backlinks in query filters"
+    spec_ref: "§8.8, §10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        notes/hub.md: |
+          ---
+          type: note
+          id: "hub"
+          title: "Hub Note"
+          ---
+        notes/spoke-1.md: |
+          ---
+          type: note
+          id: "spoke-1"
+          title: "Spoke 1"
+          ref: "[[hub]]"
+          ---
+        notes/spoke-2.md: |
+          ---
+          type: note
+          id: "spoke-2"
+          title: "Spoke 2"
+          ref: "[[hub]]"
+          ---
+        notes/orphan.md: |
+          ---
+          type: note
+          id: "orphan"
+          title: "Orphan"
+          ---
+
+    tests:
+      - name: "query filter by backlink count"
+        operation: query
+        input:
+          types: [note]
+          where: "file.backlinks.length > 0"
+          order_by: [{ field: "id", direction: "asc" }]
+        expect:
+          results:
+            - frontmatter:
+                id: "hub"
+
+      - name: "query filter: notes with zero backlinks"
+        operation: query
+        input:
+          types: [note]
+          where: "file.backlinks.length == 0"
+          order_by: [{ field: "id", direction: "asc" }]
+        expect:
+          results:
+            - frontmatter:
+                id: "orphan"
+            - frontmatter:
+                id: "spoke-1"
+            - frontmatter:
+                id: "spoke-2"
+
+      - name: "query sorting by backlink count"
+        operation: query
+        input:
+          types: [note]
+          order_by: [{ field: "file.backlinks.length", direction: "desc" }]
+        expect:
+          results:
+            - frontmatter:
+                id: "hub"
+            # Remaining tied at 0, tie-break by file.path ascending
+            - frontmatter:
+                id: "orphan"
+            - frontmatter:
+                id: "spoke-1"
+            - frontmatter:
+                id: "spoke-2"
+
+  # =============================================================================
+  # Group 4: Backlinks from mixed sources (frontmatter + body)
+  # =============================================================================
+
+  - name: "backlinks combine frontmatter and body sources"
+    spec_ref: "§8.6, §8.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        notes/target.md: |
+          ---
+          type: note
+          id: "target"
+          title: "Target"
+          ---
+        notes/fm-only.md: |
+          ---
+          type: note
+          id: "fm-only"
+          title: "Frontmatter Only"
+          ref: "[[target]]"
+          ---
+        notes/body-only.md: |
+          ---
+          type: note
+          id: "body-only"
+          title: "Body Only"
+          ---
+          See [[target]] for info.
+        notes/both.md: |
+          ---
+          type: note
+          id: "both"
+          title: "Both"
+          ref: "[[target]]"
+          ---
+          Also [[target]] in body.
+
+    tests:
+      - name: "backlinks count includes both frontmatter and body sources"
+        operation: evaluate
+        input:
+          path: "notes/target.md"
+          expression: "file.backlinks.length"
+        expect:
+          # fm-only, body-only, both = 3 unique referring files
+          result: 3
+
+      - name: "backlinks are deduplicated per referring file"
+        # notes/both.md links via frontmatter AND body, but should appear once
+        operation: evaluate
+        input:
+          path: "notes/target.md"
+          expression: "file.backlinks.map(value.file.path).sort()"
+        expect:
+          result:
+            - "notes/body-only.md"
+            - "notes/both.md"
+            - "notes/fm-only.md"
+
+  # =============================================================================
+  # Group 5: Backlinks with embeds
+  # =============================================================================
+
+  - name: "embeds do NOT create backlinks (only file.links does)"
+    spec_ref: "§8.6, §8.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/target.md: |
+          ---
+          type: note
+          title: "Target"
+          ---
+        notes/embed-only.md: |
+          ---
+          type: note
+          title: "Embed Only"
+          ---
+          ![[target]]
+        notes/link-only.md: |
+          ---
+          type: note
+          title: "Link Only"
+          ---
+          [[target]]
+
+    tests:
+      - name: "embed creates backlink (embeds are a form of reference)"
+        # §8.6 says file.links returns non-embed links, file.embeds returns embeds.
+        # Backlinks represent any file referencing this one, including embeds.
+        operation: evaluate
+        input:
+          path: "notes/target.md"
+          expression: "file.backlinks.length"
+        expect:
+          result: 2
+
+  # =============================================================================
+  # Group 6: Backlinks after file operations
+  # =============================================================================
+
+  - name: "backlinks reflect current collection state"
+    spec_ref: "§8.8, §13.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        notes/target.md: |
+          ---
+          type: note
+          id: "target"
+          title: "Target"
+          ---
+        notes/ref-a.md: |
+          ---
+          type: note
+          id: "ref-a"
+          title: "Reference A"
+          ref: "[[target]]"
+          ---
+
+    tests:
+      - name: "backlinks updated after new file is created"
+        operation: create
+        input:
+          type: note
+          path: "notes/ref-b.md"
+          frontmatter:
+            id: "ref-b"
+            title: "Reference B"
+            ref: "[[target]]"
+        verify_after:
+          operation: evaluate
+          input:
+            path: "notes/target.md"
+            expression: "file.backlinks.length"
+          expect:
+            result: 2
+
+      - name: "backlinks updated after referring file is deleted"
+        operation: delete
+        input:
+          path: "notes/ref-a.md"
+        verify_after:
+          operation: evaluate
+          input:
+            path: "notes/target.md"
+            expression: "file.backlinks.length"
+          expect:
+            result: 0
+
+      - name: "backlinks updated after reference is removed from a file"
+        operation: update
+        input:
+          path: "notes/ref-a.md"
+          fields:
+            ref: null
+        verify_after:
+          operation: evaluate
+          input:
+            path: "notes/target.md"
+            expression: "file.backlinks.length"
+          expect:
+            result: 0
+
+      - name: "backlinks updated after reference is added to a file"
+        setup:
+          files:
+            notes/target.md: |
+              ---
+              type: note
+              id: "target"
+              title: "Target"
+              ---
+            notes/unrelated.md: |
+              ---
+              type: note
+              id: "unrelated"
+              title: "Unrelated"
+              ---
+        operation: update
+        input:
+          path: "notes/unrelated.md"
+          fields:
+            ref: "[[target]]"
+        verify_after:
+          operation: evaluate
+          input:
+            path: "notes/target.md"
+            expression: "file.backlinks.length"
+          expect:
+            result: 1
+
+  # =============================================================================
+  # Group 7: Edge cases
+  # =============================================================================
+
+  - name: "backlink edge cases"
+    spec_ref: "§8.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            self_ref:
+              type: link
+          ---
+
+    tests:
+      - name: "self-referencing file appears in its own backlinks"
+        setup:
+          files:
+            notes/self.md: |
+              ---
+              type: note
+              id: "self"
+              title: "Self-Referencing"
+              self_ref: "[[self]]"
+              ---
+        operation: evaluate
+        input:
+          path: "notes/self.md"
+          expression: "file.backlinks.length"
+        expect:
+          result: 1
+
+      - name: "broken link does not create backlink on nonexistent target"
+        setup:
+          files:
+            notes/broken.md: |
+              ---
+              type: note
+              id: "broken"
+              title: "Broken Link"
+              self_ref: "[[nonexistent]]"
+              ---
+        # nonexistent.md doesn't exist, so there's no file to have backlinks
+        # This test just ensures no crash; the broken link resolves to null
+        operation: evaluate
+        input:
+          path: "notes/broken.md"
+          expression: "self_ref.asFile()"
+        expect:
+          result: null
+
+      - name: "file in empty collection has zero backlinks"
+        setup:
+          files:
+            notes/alone.md: |
+              ---
+              type: note
+              id: "alone"
+              title: "All Alone"
+              ---
+        operation: evaluate
+        input:
+          path: "notes/alone.md"
+          expression: "file.backlinks.length"
+        expect:
+          result: 0

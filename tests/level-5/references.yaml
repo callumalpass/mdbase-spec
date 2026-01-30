@@ -1,0 +1,1023 @@
+name: "rename with reference updates"
+level: 5
+category: references
+spec_ref: "§12.5"
+
+# =============================================================================
+# Group 1: Basic rename with frontmatter reference updates
+# =============================================================================
+
+groups:
+  - name: "frontmatter link updates on rename"
+    spec_ref: "§12.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+          rename_update_refs: true
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            parent:
+              type: link
+              target: task
+            related:
+              type: list
+              items:
+                type: link
+          ---
+        person.md: |
+          ---
+          name: person
+          fields:
+            id:
+              type: string
+            name:
+              type: string
+          ---
+      files:
+        tasks/task-a.md: |
+          ---
+          type: task
+          id: "task-a"
+          title: "Task A"
+          parent: "[[task-b]]"
+          related:
+            - "[[task-c]]"
+          ---
+        tasks/task-b.md: |
+          ---
+          type: task
+          id: "task-b"
+          title: "Task B"
+          ---
+        tasks/task-c.md: |
+          ---
+          type: task
+          id: "task-c"
+          title: "Task C"
+          parent: "[[task-b]]"
+          ---
+        people/alice.md: |
+          ---
+          type: person
+          id: "alice"
+          name: "Alice"
+          ---
+
+    tests:
+      - name: "rename updates wikilink in frontmatter field"
+        operation: rename
+        input:
+          from: "tasks/task-b.md"
+          to: "tasks/task-beta.md"
+          update_refs: true
+        expect:
+          from: "tasks/task-b.md"
+          to: "tasks/task-beta.md"
+          references_updated:
+            - path: "tasks/task-a.md"
+              field: "parent"
+            - path: "tasks/task-c.md"
+              field: "parent"
+        verify_after:
+          operation: read
+          input:
+            path: "tasks/task-a.md"
+          expect:
+            frontmatter:
+              parent: "[[task-beta]]"
+
+      - name: "rename updates wikilink in list of links"
+        operation: rename
+        input:
+          from: "tasks/task-c.md"
+          to: "tasks/task-gamma.md"
+          update_refs: true
+        expect:
+          from: "tasks/task-c.md"
+          to: "tasks/task-gamma.md"
+          references_updated:
+            - path: "tasks/task-a.md"
+              field: "related[0]"
+        verify_after:
+          operation: read
+          input:
+            path: "tasks/task-a.md"
+          expect:
+            frontmatter:
+              related:
+                - "[[task-gamma]]"
+
+      - name: "rename with update_refs false does not update references"
+        operation: rename
+        input:
+          from: "tasks/task-b.md"
+          to: "tasks/task-beta.md"
+          update_refs: false
+        expect:
+          from: "tasks/task-b.md"
+          to: "tasks/task-beta.md"
+        verify_after:
+          operation: read
+          input:
+            path: "tasks/task-a.md"
+          expect:
+            # Reference is NOT updated — still points to old name
+            frontmatter:
+              parent: "[[task-b]]"
+
+      - name: "rename updates multiple referring files"
+        operation: rename
+        input:
+          from: "tasks/task-b.md"
+          to: "archive/task-b.md"
+          update_refs: true
+        expect:
+          from: "tasks/task-b.md"
+          to: "archive/task-b.md"
+          references_updated:
+            - path: "tasks/task-a.md"
+              field: "parent"
+            - path: "tasks/task-c.md"
+              field: "parent"
+
+      - name: "rename a file that nobody references"
+        operation: rename
+        input:
+          from: "people/alice.md"
+          to: "people/alice-smith.md"
+          update_refs: true
+        expect:
+          from: "people/alice.md"
+          to: "people/alice-smith.md"
+          references_updated: []
+
+  # =============================================================================
+  # Group 2: Link style preservation during rename
+  # =============================================================================
+
+  - name: "link style preservation on rename"
+    spec_ref: "§12.5, §8.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+          rename_update_refs: true
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            ref:
+              type: link
+            ref_md:
+              type: link
+            ref_path:
+              type: link
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          id: "source"
+          title: "Source Note"
+          ref: "[[target]]"
+          ref_md: "[Target](./target.md)"
+          ref_path: "./target.md"
+          ---
+        notes/target.md: |
+          ---
+          type: note
+          id: "target"
+          title: "Target Note"
+          ---
+
+    tests:
+      - name: "wikilink stays as wikilink after rename"
+        operation: rename
+        input:
+          from: "notes/target.md"
+          to: "notes/new-target.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/source.md"
+          expect:
+            frontmatter:
+              ref: "[[new-target]]"
+
+      - name: "markdown link stays as markdown link after rename"
+        operation: rename
+        input:
+          from: "notes/target.md"
+          to: "notes/new-target.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/source.md"
+          expect:
+            frontmatter:
+              ref_md: "[Target](./new-target.md)"
+
+      - name: "bare path stays as bare path after rename"
+        operation: rename
+        input:
+          from: "notes/target.md"
+          to: "notes/new-target.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/source.md"
+          expect:
+            frontmatter:
+              ref_path: "./new-target.md"
+
+  # =============================================================================
+  # Group 3: Body link updates on rename
+  # =============================================================================
+
+  - name: "body link updates on rename"
+    spec_ref: "§12.5, §8.10"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+          rename_update_refs: true
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+          ---
+      files:
+        notes/referring.md: |
+          ---
+          type: note
+          id: "referring"
+          title: "Referring Note"
+          ---
+          See [[target-note]] for details.
+          Also check [the note](./target-note.md) inline.
+        notes/target-note.md: |
+          ---
+          type: note
+          id: "target-note"
+          title: "Target Note"
+          ---
+          Some body content here.
+        notes/no-refs.md: |
+          ---
+          type: note
+          id: "no-refs"
+          title: "No References"
+          ---
+          This note has no links.
+
+    tests:
+      - name: "body wikilink updated on rename"
+        operation: rename
+        input:
+          from: "notes/target-note.md"
+          to: "notes/renamed-note.md"
+          update_refs: true
+        expect:
+          from: "notes/target-note.md"
+          to: "notes/renamed-note.md"
+          references_updated:
+            - path: "notes/referring.md"
+              location: "body"
+        verify_after:
+          operation: read
+          input:
+            path: "notes/referring.md"
+          expect:
+            body_contains: "[[renamed-note]]"
+
+      - name: "body markdown link updated on rename"
+        operation: rename
+        input:
+          from: "notes/target-note.md"
+          to: "notes/renamed-note.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/referring.md"
+          expect:
+            body_contains: "[the note](./renamed-note.md)"
+
+      - name: "body links in code blocks are NOT updated"
+        setup:
+          files:
+            notes/referring.md: |
+              ---
+              type: note
+              id: "referring"
+              title: "Referring Note"
+              ---
+              Outside: [[target-note]]
+
+              ```
+              [[target-note]] inside code block
+              ```
+
+              `[[target-note]]` inside inline code
+        operation: rename
+        input:
+          from: "notes/target-note.md"
+          to: "notes/renamed-note.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/referring.md"
+          expect:
+            # The body link outside code blocks is updated
+            body_contains: "Outside: [[renamed-note]]"
+            # Links inside code blocks are preserved as-is
+            body_contains_all:
+              - "[[renamed-note]]"
+              - "[[target-note]] inside code block"
+              - "`[[target-note]]` inside inline code"
+
+  # =============================================================================
+  # Group 4: ID-based links and rename
+  # =============================================================================
+
+  - name: "ID-based link stability on rename"
+    spec_ref: "§12.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+          rename_update_refs: true
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            parent:
+              type: link
+              target: task
+          ---
+      files:
+        tasks/task-a.md: |
+          ---
+          type: task
+          id: "task-a"
+          title: "Task A"
+          parent: "[[task-b]]"
+          ---
+        tasks/task-b.md: |
+          ---
+          type: task
+          id: "task-b"
+          title: "Task B"
+          ---
+
+    tests:
+      - name: "id-based wikilink not rewritten when id_field unchanged"
+        spec_ref: "§12.5"
+        operation: rename
+        input:
+          from: "tasks/task-b.md"
+          to: "tasks/task-b-renamed.md"
+          update_refs: true
+        # The link [[task-b]] resolves via id_field. The id_field value "task-b"
+        # did not change, so the link still resolves. Implementations SHOULD NOT
+        # rewrite the link to avoid unnecessary churn.
+        verify_after:
+          operation: read
+          input:
+            path: "tasks/task-a.md"
+          expect:
+            frontmatter:
+              parent: "[[task-b]]"
+
+      - name: "filename-based wikilink IS rewritten when file renamed"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              rename_update_refs: true
+              # No id_field configured — resolution falls through to filename match
+          types:
+            note.md: |
+              ---
+              name: note
+              fields:
+                title:
+                  type: string
+                see_also:
+                  type: link
+              ---
+          files:
+            notes/alpha.md: |
+              ---
+              type: note
+              title: "Alpha"
+              see_also: "[[beta]]"
+              ---
+            notes/beta.md: |
+              ---
+              type: note
+              title: "Beta"
+              ---
+        operation: rename
+        input:
+          from: "notes/beta.md"
+          to: "notes/beta-new.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/alpha.md"
+          expect:
+            frontmatter:
+              see_also: "[[beta-new]]"
+
+  # =============================================================================
+  # Group 5: Cross-folder rename reference updates
+  # =============================================================================
+
+  - name: "cross-folder rename updates references everywhere"
+    spec_ref: "§12.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          rename_update_refs: true
+      types:
+        doc.md: |
+          ---
+          name: doc
+          fields:
+            title:
+              type: string
+            link:
+              type: link
+          ---
+      files:
+        docs/overview.md: |
+          ---
+          type: doc
+          title: "Overview"
+          link: "[[docs/detail]]"
+          ---
+        docs/detail.md: |
+          ---
+          type: doc
+          title: "Detail"
+          ---
+        notes/meeting.md: |
+          ---
+          type: doc
+          title: "Meeting Notes"
+          link: "[[docs/detail]]"
+          ---
+          Reference: [[docs/detail]]
+
+    tests:
+      - name: "moving file to different folder updates all references"
+        operation: rename
+        input:
+          from: "docs/detail.md"
+          to: "archive/detail.md"
+          update_refs: true
+        expect:
+          from: "docs/detail.md"
+          to: "archive/detail.md"
+          references_updated:
+            - path: "docs/overview.md"
+              field: "link"
+            - path: "notes/meeting.md"
+              field: "link"
+            - path: "notes/meeting.md"
+              location: "body"
+
+      - name: "relative links adjusted for new folder"
+        setup:
+          files:
+            docs/overview.md: |
+              ---
+              type: doc
+              title: "Overview"
+              link: "[Detail](./detail.md)"
+              ---
+            docs/detail.md: |
+              ---
+              type: doc
+              title: "Detail"
+              ---
+        operation: rename
+        input:
+          from: "docs/detail.md"
+          to: "archive/detail.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "docs/overview.md"
+          expect:
+            # Relative link is adjusted to point to the new location
+            frontmatter:
+              link: "[Detail](../archive/detail.md)"
+
+  # =============================================================================
+  # Group 6: Ambiguous link handling during rename
+  # =============================================================================
+
+  - name: "ambiguous link not updated during rename"
+    spec_ref: "§12.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          rename_update_refs: true
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          title: "Source"
+          ref: "[[shared-name]]"
+          ---
+        folder-a/shared-name.md: |
+          ---
+          type: note
+          title: "Version A"
+          ---
+        folder-b/shared-name.md: |
+          ---
+          type: note
+          title: "Version B"
+          ---
+
+    tests:
+      - name: "ambiguous link emits warning and is not updated"
+        operation: rename
+        input:
+          from: "folder-a/shared-name.md"
+          to: "folder-a/renamed.md"
+          update_refs: true
+        expect:
+          from: "folder-a/shared-name.md"
+          to: "folder-a/renamed.md"
+          warnings:
+            - path: "notes/source.md"
+              message_contains: "ambiguous"
+        # The ambiguous link is left unchanged
+        verify_after:
+          operation: read
+          input:
+            path: "notes/source.md"
+          expect:
+            frontmatter:
+              ref: "[[shared-name]]"
+
+  # =============================================================================
+  # Group 7: rename_ref_update_failed error code
+  # =============================================================================
+
+  - name: "rename reference update failure"
+    spec_ref: "§12.5, §12.6, Appendix C.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          rename_update_refs: true
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            parent:
+              type: link
+          ---
+      files:
+        tasks/target.md: |
+          ---
+          type: task
+          title: "Target"
+          ---
+        tasks/referrer.md: |
+          ---
+          type: task
+          title: "Referrer"
+          parent: "[[target]]"
+          ---
+
+    tests:
+      - name: "concurrent modification during ref update emits rename_ref_update_failed"
+        operation: rename
+        input:
+          from: "tasks/target.md"
+          to: "tasks/target-new.md"
+          update_refs: true
+        simulate:
+          # Another process modifies the referrer between the rename and the ref update
+          external_modify:
+            path: "tasks/referrer.md"
+            content: |
+              ---
+              type: task
+              title: "Referrer (modified by someone else)"
+              parent: "[[target]]"
+              ---
+            # The modification happens after the primary rename completes
+            # but before the reference update for this file
+            timing: before_ref_update
+        expect:
+          # The primary rename succeeds
+          from: "tasks/target.md"
+          to: "tasks/target-new.md"
+          # But the reference update for the concurrently modified file fails
+          error:
+            code: rename_ref_update_failed
+          partial_updates:
+            failed:
+              - path: "tasks/referrer.md"
+                reason: concurrent_modification
+
+      - name: "rename completes even when some ref updates fail"
+        spec_ref: "§12.6"
+        operation: rename
+        input:
+          from: "tasks/target.md"
+          to: "tasks/target-new.md"
+          update_refs: true
+        simulate:
+          external_modify:
+            path: "tasks/referrer.md"
+            content: |
+              ---
+              type: task
+              title: "Referrer (modified)"
+              parent: "[[target]]"
+              ---
+            timing: before_ref_update
+        # The renamed file should exist at the new path regardless
+        verify_after:
+          operation: read
+          input:
+            path: "tasks/target-new.md"
+          expect:
+            frontmatter:
+              title: "Target"
+
+  # =============================================================================
+  # Group 8: Wikilink with alias and anchor preservation
+  # =============================================================================
+
+  - name: "alias and anchor preservation on rename"
+    spec_ref: "§12.5, §8.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          rename_update_refs: true
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            ref_alias:
+              type: link
+            ref_anchor:
+              type: link
+            ref_both:
+              type: link
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          title: "Source"
+          ref_alias: "[[target|My Custom Alias]]"
+          ref_anchor: "[[target#section-2]]"
+          ref_both: "[[target#intro|See Intro]]"
+          ---
+        notes/target.md: |
+          ---
+          type: note
+          title: "Target"
+          ---
+
+    tests:
+      - name: "alias preserved after rename"
+        operation: rename
+        input:
+          from: "notes/target.md"
+          to: "notes/new-target.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/source.md"
+          expect:
+            frontmatter:
+              ref_alias: "[[new-target|My Custom Alias]]"
+
+      - name: "anchor preserved after rename"
+        operation: rename
+        input:
+          from: "notes/target.md"
+          to: "notes/new-target.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/source.md"
+          expect:
+            frontmatter:
+              ref_anchor: "[[new-target#section-2]]"
+
+      - name: "both alias and anchor preserved after rename"
+        operation: rename
+        input:
+          from: "notes/target.md"
+          to: "notes/new-target.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/source.md"
+          expect:
+            frontmatter:
+              ref_both: "[[new-target#intro|See Intro]]"
+
+  # =============================================================================
+  # Group 9: Embed link updates on rename
+  # =============================================================================
+
+  - name: "embed link updates on rename"
+    spec_ref: "§12.5, §8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          rename_update_refs: true
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          title: "Source"
+          ---
+          Here is an embed: ![[target-note]]
+          And a markdown embed: ![alt text](./target-note.md)
+        notes/target-note.md: |
+          ---
+          type: note
+          title: "Target"
+          ---
+          Embedded content.
+
+    tests:
+      - name: "wikilink embed updated in body on rename"
+        operation: rename
+        input:
+          from: "notes/target-note.md"
+          to: "notes/renamed-note.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/source.md"
+          expect:
+            body_contains: "![[renamed-note]]"
+
+      - name: "markdown embed updated in body on rename"
+        operation: rename
+        input:
+          from: "notes/target-note.md"
+          to: "notes/renamed-note.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/source.md"
+          expect:
+            body_contains: "![alt text](./renamed-note.md)"
+
+  # =============================================================================
+  # Group 10: Edge cases
+  # =============================================================================
+
+  - name: "rename reference edge cases"
+    spec_ref: "§12.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          rename_update_refs: true
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            self_ref:
+              type: link
+            links:
+              type: list
+              items:
+                type: link
+          ---
+
+    tests:
+      - name: "self-referencing link updated on rename"
+        setup:
+          files:
+            notes/self.md: |
+              ---
+              type: note
+              title: "Self-Referencing"
+              self_ref: "[[self]]"
+              ---
+        operation: rename
+        input:
+          from: "notes/self.md"
+          to: "notes/self-new.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/self-new.md"
+          expect:
+            frontmatter:
+              self_ref: "[[self-new]]"
+
+      - name: "multiple links to same target all updated"
+        setup:
+          files:
+            notes/multi.md: |
+              ---
+              type: note
+              title: "Multi-Ref"
+              links:
+                - "[[target]]"
+                - "[[other]]"
+                - "[[target]]"
+              ---
+              See [[target]] and also [[target]] again.
+            notes/target.md: |
+              ---
+              type: note
+              title: "Target"
+              ---
+            notes/other.md: |
+              ---
+              type: note
+              title: "Other"
+              ---
+        operation: rename
+        input:
+          from: "notes/target.md"
+          to: "notes/new-target.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/multi.md"
+          expect:
+            frontmatter:
+              links:
+                - "[[new-target]]"
+                - "[[other]]"
+                - "[[new-target]]"
+            body_contains_all:
+              - "[[new-target]]"
+
+      - name: "rename to same directory just different name"
+        setup:
+          files:
+            notes/a.md: |
+              ---
+              type: note
+              title: "A"
+              self_ref: "[[b]]"
+              ---
+            notes/b.md: |
+              ---
+              type: note
+              title: "B"
+              ---
+        operation: rename
+        input:
+          from: "notes/b.md"
+          to: "notes/b-2.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/a.md"
+          expect:
+            frontmatter:
+              self_ref: "[[b-2]]"
+
+      - name: "rename file with no frontmatter links still updates body"
+        setup:
+          files:
+            notes/plain.md: |
+              ---
+              type: note
+              title: "Plain"
+              ---
+              Body reference: [[target]]
+            notes/target.md: |
+              ---
+              type: note
+              title: "Target"
+              ---
+        operation: rename
+        input:
+          from: "notes/target.md"
+          to: "notes/target-v2.md"
+          update_refs: true
+        verify_after:
+          operation: read
+          input:
+            path: "notes/plain.md"
+          expect:
+            body_contains: "[[target-v2]]"
+
+      - name: "rename with no references in collection is no-op for updates"
+        setup:
+          files:
+            notes/isolated.md: |
+              ---
+              type: note
+              title: "Isolated"
+              ---
+            notes/other.md: |
+              ---
+              type: note
+              title: "Other"
+              ---
+        operation: rename
+        input:
+          from: "notes/isolated.md"
+          to: "notes/isolated-new.md"
+          update_refs: true
+        expect:
+          from: "notes/isolated.md"
+          to: "notes/isolated-new.md"
+          references_updated: []
