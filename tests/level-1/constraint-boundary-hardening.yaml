@@ -1,0 +1,1171 @@
+name: "constraint boundary values and error code hardening"
+level: 1
+category: validation
+spec_ref: "§7.3, §7.4, §7.5, §7.11, §7.15, §5.4, §9.2.3"
+
+groups:
+  # =============================================================================
+  # Group 1: String constraint boundary values (§7.3)
+  # =============================================================================
+
+  - name: "string constraint boundaries"
+    spec_ref: "§7.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+              min_length: 3
+              max_length: 10
+            code:
+              type: string
+              min_length: 1
+              max_length: 1
+          ---
+
+    tests:
+      - name: "string exactly at min_length passes"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "abc"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+      - name: "string one below min_length fails"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "ab"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: false
+          issues:
+            - code: string_too_short
+              field: title
+
+      - name: "string exactly at max_length passes"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "abcdefghij"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+      - name: "string one above max_length fails"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "abcdefghijk"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: false
+          issues:
+            - code: string_too_long
+              field: title
+
+      - name: "single-character field at min and max boundary"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              code: "X"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+      - name: "empty string fails single-char min_length constraint"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              code: ""
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: false
+          issues:
+            - code: string_too_short
+              field: code
+
+      - name: "two-char string fails single-char max_length constraint"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              code: "XY"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: false
+          issues:
+            - code: string_too_long
+              field: code
+
+      - name: "unicode characters counted by character not bytes"
+        spec_ref: "§7.3"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "日本語"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 2: Integer constraint boundary values (§7.4)
+  # =============================================================================
+
+  - name: "integer constraint boundaries"
+    spec_ref: "§7.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            priority:
+              type: integer
+              min: 1
+              max: 5
+            score:
+              type: integer
+              min: 0
+              max: 0
+          ---
+
+    tests:
+      - name: "integer exactly at min passes"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: 1
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "integer one below min fails"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: 0
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_small
+              field: priority
+
+      - name: "integer exactly at max passes"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: 5
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "integer one above max fails"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: 6
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_large
+              field: priority
+
+      - name: "integer min equals max — only that value passes"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              score: 0
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "integer min equals max — adjacent value fails"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              score: 1
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_large
+              field: score
+
+      - name: "negative integer below zero min fails"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              score: -1
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_small
+              field: score
+
+      - name: "float value for integer field fails with not_integer"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: 3.5
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: not_integer
+              field: priority
+
+      - name: "float with no decimal part coerced to integer"
+        spec_ref: "§7.4, §7.16"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: 3.0
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 3: Number constraint boundary values (§7.5)
+  # =============================================================================
+
+  - name: "number constraint boundaries"
+    spec_ref: "§7.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        metric.md: |
+          ---
+          name: metric
+          fields:
+            rating:
+              type: number
+              min: 0.0
+              max: 5.0
+            temperature:
+              type: number
+              min: -273.15
+          ---
+
+    tests:
+      - name: "number exactly at float min passes"
+        setup:
+          files:
+            metrics/m1.md: |
+              ---
+              type: metric
+              rating: 0.0
+              ---
+        operation: validate
+        input:
+          path: "metrics/m1.md"
+        expect:
+          valid: true
+
+      - name: "number slightly below float min fails"
+        setup:
+          files:
+            metrics/m1.md: |
+              ---
+              type: metric
+              rating: -0.001
+              ---
+        operation: validate
+        input:
+          path: "metrics/m1.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_small
+              field: rating
+
+      - name: "number exactly at float max passes"
+        setup:
+          files:
+            metrics/m1.md: |
+              ---
+              type: metric
+              rating: 5.0
+              ---
+        operation: validate
+        input:
+          path: "metrics/m1.md"
+        expect:
+          valid: true
+
+      - name: "number slightly above float max fails"
+        setup:
+          files:
+            metrics/m1.md: |
+              ---
+              type: metric
+              rating: 5.001
+              ---
+        operation: validate
+        input:
+          path: "metrics/m1.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_large
+              field: rating
+
+      - name: "negative number exactly at min passes"
+        setup:
+          files:
+            metrics/m1.md: |
+              ---
+              type: metric
+              temperature: -273.15
+              ---
+        operation: validate
+        input:
+          path: "metrics/m1.md"
+        expect:
+          valid: true
+
+      - name: "negative number below min fails"
+        setup:
+          files:
+            metrics/m1.md: |
+              ---
+              type: metric
+              temperature: -273.16
+              ---
+        operation: validate
+        input:
+          path: "metrics/m1.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_small
+              field: temperature
+
+  # =============================================================================
+  # Group 4: List constraint boundary values (§7.11)
+  # =============================================================================
+
+  - name: "list constraint boundaries"
+    spec_ref: "§7.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            tags:
+              type: list
+              items:
+                type: string
+              min_items: 2
+              max_items: 4
+            ids:
+              type: list
+              items:
+                type: string
+              unique: true
+            exact:
+              type: list
+              items:
+                type: string
+              min_items: 3
+              max_items: 3
+          ---
+
+    tests:
+      - name: "list exactly at min_items passes"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              tags: ["a", "b"]
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "list one below min_items fails"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              tags: ["a"]
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_too_short
+              field: tags
+
+      - name: "list exactly at max_items passes"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              tags: ["a", "b", "c", "d"]
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "list one above max_items fails"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              tags: ["a", "b", "c", "d", "e"]
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_too_long
+              field: tags
+
+      - name: "list with min_items equals max_items — exact count passes"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              exact: ["x", "y", "z"]
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "list with min_items equals max_items — too few fails"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              exact: ["x", "y"]
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_too_short
+              field: exact
+
+      - name: "list with min_items equals max_items — too many fails"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              exact: ["x", "y", "z", "w"]
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_too_long
+              field: exact
+
+      - name: "list with duplicate values and unique constraint fails"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              ids: ["alpha", "beta", "alpha"]
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: list_duplicate
+              field: ids
+
+      - name: "list with all unique values passes unique constraint"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              ids: ["alpha", "beta", "gamma"]
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "empty list passes when no min_items constraint"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              ids: []
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 5: Combined constraints — multiple violations on same field (§9.2.3)
+  # =============================================================================
+
+  - name: "combined constraints and multiple violations"
+    spec_ref: "§9.2.3, §7.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            slug:
+              type: string
+              min_length: 3
+              max_length: 20
+              pattern: "^[a-z0-9-]+$"
+            priority:
+              type: integer
+              required: true
+              min: 1
+              max: 10
+          ---
+
+    tests:
+      - name: "string satisfying all constraints passes"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: item
+              slug: "my-item-123"
+              priority: 5
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: true
+
+      - name: "string failing pattern but passing length"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: item
+              slug: "UPPERCASE"
+              priority: 5
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: slug
+
+      - name: "string failing min_length but matching pattern"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: item
+              slug: "ab"
+              priority: 5
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: false
+          issues:
+            - code: string_too_short
+              field: slug
+
+      - name: "multiple field errors reported in single validation"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: item
+              slug: "x"
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: false
+          issues:
+            - code: string_too_short
+              field: slug
+            - code: missing_required
+              field: priority
+
+      - name: "constraint_violation for integer exceeding max with required"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: item
+              priority: 15
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_large
+              field: priority
+
+  # =============================================================================
+  # Group 6: Generated field does not trigger when field is present but null (§7.15)
+  # =============================================================================
+
+  - name: "generated field with explicit null on create"
+    spec_ref: "§7.15, §12.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+              generated: ulid
+            title:
+              type: string
+              required: true
+            created_at:
+              type: datetime
+              generated: now
+          ---
+
+    tests:
+      - name: "explicit null for generated ulid field does not trigger generation"
+        operation: create
+        input:
+          type: task
+          path: "tasks/t1.md"
+          frontmatter:
+            title: "Test task"
+            id: null
+        expect:
+          frontmatter:
+            id: null
+            title: "Test task"
+
+      - name: "explicit null for generated now field does not trigger generation"
+        operation: create
+        input:
+          type: task
+          path: "tasks/t2.md"
+          frontmatter:
+            title: "Test task"
+            created_at: null
+        expect:
+          frontmatter:
+            created_at: null
+            title: "Test task"
+
+      - name: "missing generated field triggers generation"
+        operation: create
+        input:
+          type: task
+          path: "tasks/t3.md"
+          frontmatter:
+            title: "Test task"
+        expect:
+          frontmatter:
+            title: "Test task"
+          frontmatter_written:
+            - id
+            - created_at
+
+  # =============================================================================
+  # Group 7: Single inheritance enforcement (§5.4)
+  # =============================================================================
+
+  - name: "single inheritance enforcement"
+    spec_ref: "§5.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+
+    tests:
+      - name: "extends with list value is rejected"
+        setup:
+          types:
+            base.md: |
+              ---
+              name: base
+              fields:
+                id:
+                  type: string
+              ---
+            mixin.md: |
+              ---
+              name: mixin
+              fields:
+                tags:
+                  type: list
+                  items:
+                    type: string
+              ---
+            child.md: |
+              ---
+              name: child
+              extends: [base, mixin]
+              fields:
+                title:
+                  type: string
+              ---
+        operation: validate
+        input:
+          path: "dummy"
+        expect:
+          error:
+            code: invalid_type_definition
+
+      - name: "extends with single string value is accepted"
+        setup:
+          types:
+            base.md: |
+              ---
+              name: base
+              fields:
+                id:
+                  type: string
+              ---
+            child.md: |
+              ---
+              name: child
+              extends: base
+              fields:
+                title:
+                  type: string
+              ---
+          files:
+            items/c1.md: |
+              ---
+              type: child
+              id: "c1"
+              title: "Child item"
+              ---
+        operation: validate
+        input:
+          path: "items/c1.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 8: constraint_violation via number NaN with constraints (§7.5)
+  # =============================================================================
+
+  - name: "constraint_violation scenarios"
+    spec_ref: "§7.5, §9.2.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        metric.md: |
+          ---
+          name: metric
+          fields:
+            score:
+              type: number
+              min: 0
+              max: 100
+            raw:
+              type: number
+          ---
+
+    tests:
+      - name: "Infinity with max constraint fails"
+        setup:
+          files:
+            metrics/m1.md: |
+              ---
+              type: metric
+              score: .inf
+              ---
+        operation: validate
+        input:
+          path: "metrics/m1.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_large
+              field: score
+
+      - name: "negative Infinity with min constraint fails"
+        setup:
+          files:
+            metrics/m1.md: |
+              ---
+              type: metric
+              score: -.inf
+              ---
+        operation: validate
+        input:
+          path: "metrics/m1.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_small
+              field: score
+
+      - name: "NaN with min/max constraint produces constraint_violation"
+        setup:
+          files:
+            metrics/m1.md: |
+              ---
+              type: metric
+              score: .nan
+              ---
+        operation: validate
+        input:
+          path: "metrics/m1.md"
+        expect:
+          valid: false
+          issues:
+            - code: constraint_violation
+              field: score
+
+      - name: "Infinity without constraint passes"
+        setup:
+          files:
+            metrics/m1.md: |
+              ---
+              type: metric
+              raw: .inf
+              ---
+        operation: validate
+        input:
+          path: "metrics/m1.md"
+        expect:
+          valid: true
+
+      - name: "NaN without constraint passes"
+        setup:
+          files:
+            metrics/m1.md: |
+              ---
+              type: metric
+              raw: .nan
+              ---
+        operation: validate
+        input:
+          path: "metrics/m1.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 9: String length counts characters not bytes (§7.3)
+  # =============================================================================
+
+  - name: "string length is character count not byte count"
+    spec_ref: "§7.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            label:
+              type: string
+              max_length: 4
+          ---
+
+    tests:
+      - name: "4 CJK characters at max_length passes"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              label: "日本語文"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+      - name: "5 CJK characters above max_length fails"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              label: "日本語文字"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: false
+          issues:
+            - code: string_too_long
+              field: label
+
+      - name: "4 emoji at max_length passes"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              label: "🎯🎨🎬🎭"
+              ---
+        operation: validate
+        input:
+          path: "notes/n1.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 10: Enum case-sensitive validation (§7.10)
+  # =============================================================================
+
+  - name: "enum case sensitivity"
+    spec_ref: "§7.10"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            status:
+              type: enum
+              values: [open, in_progress, done]
+          ---
+
+    tests:
+      - name: "exact case match passes"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              status: open
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "wrong case fails (Open vs open)"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              status: Open
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_enum
+              field: status
+
+      - name: "all-caps fails (DONE vs done)"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              status: DONE
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_enum
+              field: status
+
+  # =============================================================================
+  # Group 11: now_on_write always updates even when value present (§7.15)
+  # =============================================================================
+
+  - name: "now_on_write behavior on update"
+    spec_ref: "§7.15, §12.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        doc.md: |
+          ---
+          name: doc
+          fields:
+            title:
+              type: string
+            updated_at:
+              type: datetime
+              generated: now_on_write
+          ---
+      files:
+        docs/d1.md: |
+          ---
+          type: doc
+          title: "Original title"
+          updated_at: "2020-01-01T00:00:00Z"
+          ---
+
+    tests:
+      - name: "now_on_write updates field even when value already present"
+        operation: update
+        input:
+          path: "docs/d1.md"
+          frontmatter:
+            title: "Updated title"
+        expect:
+          frontmatter:
+            title: "Updated title"
+          frontmatter_changed:
+            - updated_at
