@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mdbase — Typed Markdown Collections</title>
+  <meta name="description" content="A specification for treating folders of markdown files as typed, queryable data collections. Define schemas as markdown. Query with expressions. No proprietary formats.">
+  <meta property="og:title" content="mdbase — Typed Markdown Collections">
+  <meta property="og:description" content="A specification for treating folders of markdown files as typed, queryable data collections.">
+  <meta property="og:url" content="https://mdbase.dev">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9670;</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="landing-header">
+    <a href="/" class="landing-logo">
+      <span class="dot"></span>
+      mdbase
+    </a>
+    <nav class="landing-nav">
+      <a href="#principles" class="hide-mobile">Principles</a>
+      <a href="#examples" class="hide-mobile">Examples</a>
+      <a href="#spec-sections">Spec</a>
+      <a href="https://github.com/calluma/mdbase-spec" class="hide-mobile">GitHub</a>
+      <a href="spec.html" class="nav-cta">Read the spec</a>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-version">
+      <span class="tag">v0.1.0</span>
+      Draft Specification
+    </div>
+    <h1>Typed Markdown<br><span class="accent">Collections</span></h1>
+    <p class="hero-sub">
+      A specification for treating folders of markdown files as typed, queryable
+      data collections. Define schemas as markdown. Query with expressions.
+      No proprietary formats.
+    </p>
+    <div class="hero-actions">
+      <a href="spec.html" class="btn btn-primary">Read the specification</a>
+      <a href="https://github.com/calluma/mdbase-spec" class="btn btn-ghost">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </section>
+
+  <!-- Principles -->
+  <section class="landing-section" id="principles">
+    <div class="section-label">Design Principles</div>
+    <h2 class="section-title">Built on five commitments</h2>
+
+    <div class="principles">
+      <div class="principle">
+        <div class="principle-num">01</div>
+        <h3>Files are the source of truth</h3>
+        <p>Tools read from and write to the filesystem. Indexes and caches are derived and disposable.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">02</div>
+        <h3>Human-readable first</h3>
+        <p>No proprietary formats. A user with a text editor can read and modify any file.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">03</div>
+        <h3>Progressive strictness</h3>
+        <p>Works with no schema at all. Validation is opt-in and configurable.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">04</div>
+        <h3>Portable</h3>
+        <p>Collections work with any conforming tool. No vendor lock-in.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">05</div>
+        <h3>Git-friendly</h3>
+        <p>All persistent state is text files suitable for version control.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Examples -->
+  <section class="landing-section" id="examples">
+    <div class="section-label">How it works</div>
+    <h2 class="section-title">Schemas, queries, and expressions &mdash; all in plain text</h2>
+
+    <div class="examples-container">
+      <div class="example-tabs" role="tablist">
+        <button class="example-tab active" role="tab" data-panel="ex-structure">Structure</button>
+        <button class="example-tab" role="tab" data-panel="ex-type">Type definition</button>
+        <button class="example-tab" role="tab" data-panel="ex-query">Query</button>
+        <button class="example-tab" role="tab" data-panel="ex-expressions">Expressions</button>
+      </div>
+
+      <div id="ex-structure" class="example-panel active">
+        <pre data-lang="folder"><code>my-project/
+├── mdbase.yaml            <span class="comment"># marks this folder as a collection</span>
+├── _types/                <span class="comment"># type definitions (schemas)</span>
+│   ├── task.md
+│   └── person.md
+├── tasks/
+│   ├── fix-bug.md         <span class="comment"># a record of type "task"</span>
+│   └── write-docs.md
+└── people/
+    └── alice.md           <span class="comment"># a record of type "person"</span></code></pre>
+      </div>
+
+      <div id="ex-type" class="example-panel">
+        <pre data-lang="yaml"><code><span class="comment">---</span>
+<span class="key">name</span>: task
+<span class="key">fields</span>:
+  <span class="key">title</span>:
+    <span class="key">type</span>: <span class="string">string</span>
+    <span class="key">required</span>: <span class="number">true</span>
+  <span class="key">status</span>:
+    <span class="key">type</span>: <span class="string">enum</span>
+    <span class="key">values</span>: [<span class="string">open</span>, <span class="string">in_progress</span>, <span class="string">done</span>]
+    <span class="key">default</span>: <span class="string">open</span>
+  <span class="key">priority</span>:
+    <span class="key">type</span>: <span class="string">integer</span>
+    <span class="key">min</span>: <span class="number">1</span>
+    <span class="key">max</span>: <span class="number">5</span>
+  <span class="key">assignee</span>:
+    <span class="key">type</span>: <span class="string">link</span>
+    <span class="key">target</span>: <span class="string">person</span>
+<span class="comment">---</span></code></pre>
+      </div>
+
+      <div id="ex-query" class="example-panel">
+        <pre data-lang="yaml"><code><span class="key">query</span>:
+  <span class="key">types</span>: [<span class="string">task</span>]
+  <span class="key">where</span>:
+    <span class="key">and</span>:
+      - <span class="string">'status != "done"'</span>
+      - <span class="string">"priority >= 3"</span>
+  <span class="key">order_by</span>:
+    - <span class="key">field</span>: <span class="string">due_date</span>
+      <span class="key">direction</span>: <span class="string">asc</span>
+  <span class="key">limit</span>: <span class="number">20</span></code></pre>
+      </div>
+
+      <div id="ex-expressions" class="example-panel">
+        <pre data-lang="expression"><code><span class="comment"># Filter by status and tags</span>
+status == <span class="string">"open"</span> && tags.contains(<span class="string">"urgent"</span>)
+
+<span class="comment"># Date arithmetic</span>
+due_date < today() + <span class="string">"7d"</span>
+
+<span class="comment"># Link traversal</span>
+assignee.asFile().team == <span class="string">"engineering"</span>
+
+<span class="comment"># Null coalescing</span>
+priority ?? <span class="number">3</span></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Conformance -->
+  <section class="landing-section" id="conformance">
+    <div class="section-label">Conformance</div>
+    <h2 class="section-title">Six levels, from basic to full</h2>
+    <p style="color: var(--text-dim); margin-bottom: 1.5rem;">Implementations claim conformance at the level they support. Each level builds on the last.</p>
+
+    <div class="levels">
+      <div class="level">
+        <span class="level-num">1</span>
+        <span class="level-name">Core</span>
+      </div>
+      <div class="level">
+        <span class="level-num">2</span>
+        <span class="level-name">Matching</span>
+      </div>
+      <div class="level">
+        <span class="level-num">3</span>
+        <span class="level-name">Querying</span>
+      </div>
+      <div class="level">
+        <span class="level-num">4</span>
+        <span class="level-name">Links</span>
+      </div>
+      <div class="level">
+        <span class="level-num">5</span>
+        <span class="level-name">References</span>
+      </div>
+      <div class="level">
+        <span class="level-num">6</span>
+        <span class="level-name">Full</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Spec Sections -->
+  <section class="landing-section" id="spec-sections">
+    <div class="section-label">Specification</div>
+    <h2 class="section-title">Read the full spec</h2>
+
+    <div class="spec-toc">
+      <a class="toc-item" href="spec.html#section-00"><span class="toc-num">00</span> Overview</a>
+      <a class="toc-item" href="spec.html#section-01"><span class="toc-num">01</span> Terminology</a>
+      <a class="toc-item" href="spec.html#section-02"><span class="toc-num">02</span> Collection Layout</a>
+      <a class="toc-item" href="spec.html#section-03"><span class="toc-num">03</span> Frontmatter</a>
+      <a class="toc-item" href="spec.html#section-04"><span class="toc-num">04</span> Configuration</a>
+      <a class="toc-item" href="spec.html#section-05"><span class="toc-num">05</span> Types</a>
+      <a class="toc-item" href="spec.html#section-06"><span class="toc-num">06</span> Matching</a>
+      <a class="toc-item" href="spec.html#section-07"><span class="toc-num">07</span> Field Types</a>
+      <a class="toc-item" href="spec.html#section-08"><span class="toc-num">08</span> Links</a>
+      <a class="toc-item" href="spec.html#section-09"><span class="toc-num">09</span> Validation</a>
+      <a class="toc-item" href="spec.html#section-10"><span class="toc-num">10</span> Querying</a>
+      <a class="toc-item" href="spec.html#section-11"><span class="toc-num">11</span> Expressions</a>
+      <a class="toc-item" href="spec.html#section-12"><span class="toc-num">12</span> Operations</a>
+      <a class="toc-item" href="spec.html#section-13"><span class="toc-num">13</span> Caching</a>
+      <a class="toc-item" href="spec.html#section-14"><span class="toc-num">14</span> Conformance</a>
+      <a class="toc-item" href="spec.html#section-15"><span class="toc-num">15</span> Watching</a>
+      <a class="toc-item" href="spec.html#appendix-a"><span class="toc-num">A</span> Examples</a>
+      <a class="toc-item" href="spec.html#appendix-b"><span class="toc-num">B</span> Expression Grammar</a>
+      <a class="toc-item" href="spec.html#appendix-c"><span class="toc-num">C</span> Error Codes</a>
+      <a class="toc-item" href="spec.html#appendix-d"><span class="toc-num">D</span> Compatibility</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <p>mdbase specification v0.1.0 &middot; <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> &middot; <a href="https://github.com/calluma/mdbase-spec">Source on GitHub</a></p>
+  </footer>
+
+  <script>
+    // Tab switching
+    document.querySelectorAll('.example-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const panelId = tab.dataset.panel;
+        tab.closest('.examples-container').querySelectorAll('.example-tab').forEach(t => t.classList.remove('active'));
+        tab.closest('.examples-container').querySelectorAll('.example-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(panelId).classList.add('active');
+      });
+    });
+  </script>
+
+</body>
+</html>

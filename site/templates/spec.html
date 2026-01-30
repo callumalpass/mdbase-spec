@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Specification — mdbase</title>
+  <meta name="description" content="The full mdbase specification for typed markdown collections.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9670;</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="spec-header">
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <button class="sidebar-toggle" aria-label="Toggle navigation" id="sidebar-toggle">
+        &#9776; Sections
+      </button>
+      <a href="/" class="landing-logo">
+        <span class="dot"></span>
+        mdbase
+      </a>
+      <span style="font-family:var(--mono);font-size:0.72rem;color:var(--text-muted);letter-spacing:0.05em;">SPECIFICATION v0.1.0</span>
+    </div>
+    <nav class="landing-nav">
+      <a href="/">Home</a>
+      <a href="https://github.com/calluma/mdbase-spec">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="spec-layout">
+
+    <!-- Sidebar Navigation -->
+    <nav class="spec-sidebar" id="spec-sidebar">
+      <div class="sidebar-group">
+        <div class="sidebar-group-label">Specification</div>
+        {{SIDEBAR_LINKS}}
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="spec-content">
+      {{SPEC_CONTENT}}
+    </main>
+
+  </div>
+
+  <script>
+    // Sidebar toggle (mobile)
+    const toggle = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('spec-sidebar');
+    toggle.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+
+    // Close sidebar on link click (mobile)
+    sidebar.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+      });
+    });
+
+    // Active section tracking via Intersection Observer
+    const sections = document.querySelectorAll('.spec-section');
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          sidebarLinks.forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+          });
+
+          // Scroll active link into view in sidebar
+          const activeLink = sidebar.querySelector('.sidebar-link.active');
+          if (activeLink) {
+            activeLink.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          }
+        }
+      });
+    }, {
+      rootMargin: '-20% 0px -75% 0px',
+      threshold: 0
+    });
+
+    sections.forEach(section => observer.observe(section));
+  </script>
+
+</body>
+</html>
