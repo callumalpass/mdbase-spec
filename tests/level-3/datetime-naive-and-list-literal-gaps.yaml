@@ -1,0 +1,439 @@
+name: "naive datetime comparison and containsAll/containsAny list literal semantics"
+level: 3
+category: expressions
+spec_ref: "§7.8, §11.6"
+
+groups:
+  # =============================================================================
+  # Group 1: Naive vs offset-aware datetime comparison (§7.8)
+  # =============================================================================
+
+  - name: "naive datetime compared with offset-aware datetime"
+    spec_ref: "§7.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        event.md: |
+          ---
+          name: event
+          fields:
+            title:
+              type: string
+            starts_at:
+              type: datetime
+          ---
+      files:
+        events/naive.md: |
+          ---
+          type: event
+          title: "Naive Event"
+          starts_at: "2024-06-15T12:00:00"
+          ---
+        events/utc.md: |
+          ---
+          type: event
+          title: "UTC Event"
+          starts_at: "2024-06-15T12:00:00Z"
+          ---
+        events/offset.md: |
+          ---
+          type: event
+          title: "Offset Event"
+          starts_at: "2024-06-15T17:00:00+05:00"
+          ---
+
+    tests:
+      - name: "naive datetime interpreted as local time for comparison with offset-aware"
+        spec_ref: "§7.8"
+        operation: evaluate
+        input:
+          # Naive "12:00:00" in local time vs UTC "12:00:00Z":
+          # If local time == UTC, these are equal.
+          # If local time != UTC, naive is interpreted in local TZ first, then compared.
+          # This test verifies the comparison does not error and produces a boolean result.
+          expression: 'datetime("2024-06-15T12:00:00") <= datetime("2024-06-15T12:00:00Z")'
+        expect:
+          # Result depends on implementation's local timezone:
+          # - If local TZ is UTC: 12:00 local == 12:00 UTC → true (equal, so <=)
+          # - If local TZ is east of UTC (e.g., +05:00): 12:00 local = 07:00 UTC < 12:00 UTC → true
+          # - If local TZ is west of UTC (e.g., -05:00): 12:00 local = 17:00 UTC > 12:00 UTC → false
+          # We cannot assert the exact result because it depends on the local timezone.
+          # Instead, verify it returns a boolean (does not error).
+          result_type: boolean
+
+      - name: "naive datetime equality with offset-aware uses absolute time"
+        spec_ref: "§7.8"
+        operation: evaluate
+        input:
+          # Two offset-aware datetimes at the same absolute instant
+          expression: 'datetime("2024-06-15T12:00:00Z") == datetime("2024-06-15T17:00:00+05:00")'
+        expect:
+          result: true
+
+      - name: "naive datetime ordering does not produce error"
+        spec_ref: "§7.8"
+        operation: evaluate
+        input:
+          expression: 'datetime("2024-06-15T12:00:00") < datetime("2024-06-16T00:00:00Z")'
+        expect:
+          result_type: boolean
+
+  # =============================================================================
+  # Group 2: Naive datetime in query context (§7.8, §10.3)
+  # =============================================================================
+
+  - name: "naive datetime in query filters and sorting"
+    spec_ref: "§7.8, §10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        event.md: |
+          ---
+          name: event
+          fields:
+            title:
+              type: string
+            starts_at:
+              type: datetime
+          ---
+      files:
+        events/naive-early.md: |
+          ---
+          type: event
+          title: "Naive Early"
+          starts_at: "2024-01-01T06:00:00"
+          ---
+        events/naive-late.md: |
+          ---
+          type: event
+          title: "Naive Late"
+          starts_at: "2024-12-31T23:00:00"
+          ---
+        events/utc-mid.md: |
+          ---
+          type: event
+          title: "UTC Mid"
+          starts_at: "2024-06-15T12:00:00Z"
+          ---
+
+    tests:
+      - name: "query sorts naive and offset-aware datetimes together"
+        operation: query
+        input:
+          query:
+            types: [event]
+            order_by:
+              - field: starts_at
+                direction: asc
+        expect:
+          meta:
+            total_count: 3
+          # All three files returned; sorting uses absolute time interpretation.
+          # Naive datetimes interpreted as local time for sort ordering.
+          results_count: 3
+
+      - name: "query filter with naive datetime literal against offset-aware field"
+        operation: query
+        input:
+          query:
+            types: [event]
+            where: 'starts_at > datetime("2024-06-15T00:00:00")'
+        expect:
+          # The naive datetime literal is interpreted in local time.
+          # Results depend on local TZ, but the query must not error.
+          meta:
+            total_count_positive: true
+
+  # =============================================================================
+  # Group 3: Naive datetime validation and storage (§7.8)
+  # =============================================================================
+
+  - name: "naive datetime accepted and preserved"
+    spec_ref: "§7.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        event.md: |
+          ---
+          name: event
+          fields:
+            title:
+              type: string
+              required: true
+            starts_at:
+              type: datetime
+              required: true
+          ---
+
+    tests:
+      - name: "naive datetime passes validation"
+        operation: validate
+        input:
+          path: "events/test.md"
+          frontmatter:
+            type: event
+            title: "Test Event"
+            starts_at: "2024-06-15T12:00:00"
+        expect:
+          valid: true
+
+      - name: "naive datetime round-trips without adding offset"
+        operation: create
+        input:
+          type: event
+          path: "events/naive.md"
+          frontmatter:
+            title: "Naive Event"
+            starts_at: "2024-06-15T12:00:00"
+        expect:
+          frontmatter:
+            starts_at: "2024-06-15T12:00:00"
+
+      - name: "offset-aware datetime round-trips preserving offset"
+        operation: create
+        input:
+          type: event
+          path: "events/offset.md"
+          frontmatter:
+            title: "Offset Event"
+            starts_at: "2024-06-15T12:00:00+05:30"
+        expect:
+          frontmatter:
+            starts_at: "2024-06-15T12:00:00+05:30"
+
+  # =============================================================================
+  # Group 4: containsAll with list literal argument (§11.6)
+  # =============================================================================
+
+  - name: "containsAll and containsAny list literal non-expansion"
+    spec_ref: "§11.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+            nested_tags:
+              type: list
+              items:
+                type: list
+                items:
+                  type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Item A"
+          tags: ["alpha", "beta", "gamma"]
+          ---
+        items/b.md: |
+          ---
+          type: item
+          title: "Item B"
+          tags: ["alpha", "delta"]
+          ---
+
+    tests:
+      - name: "containsAll with variadic arguments matches elements"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'tags.containsAll("alpha", "gamma")'
+        expect:
+          meta:
+            total_count: 1
+          results:
+            - frontmatter:
+                title: "Item A"
+
+      - name: "containsAll with list literal treats list as single value — no match"
+        spec_ref: "§11.6"
+        operation: evaluate
+        input:
+          context:
+            tags: ["alpha", "beta", "gamma"]
+          expression: 'tags.containsAll(["alpha", "gamma"])'
+        expect:
+          # ["alpha", "gamma"] is treated as a single value, not expanded.
+          # The list ["alpha", "beta", "gamma"] does not contain the list
+          # ["alpha", "gamma"] as an element, so this returns false.
+          result: false
+
+      - name: "containsAny with variadic arguments matches elements"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'tags.containsAny("delta", "epsilon")'
+        expect:
+          meta:
+            total_count: 1
+          results:
+            - frontmatter:
+                title: "Item B"
+
+      - name: "containsAny with list literal treats list as single value — no match"
+        spec_ref: "§11.6"
+        operation: evaluate
+        input:
+          context:
+            tags: ["alpha", "beta", "gamma"]
+          expression: 'tags.containsAny(["delta", "alpha"])'
+        expect:
+          # ["delta", "alpha"] is a single list value, not expanded.
+          # The outer list does not contain that inner list as an element.
+          result: false
+
+  # =============================================================================
+  # Group 5: containsAll/containsAny variadic vs list in query context (§11.6)
+  # =============================================================================
+
+  - name: "containsAll/containsAny variadic form in query filter"
+    spec_ref: "§11.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            labels:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        tasks/full.md: |
+          ---
+          type: task
+          title: "Full Labels"
+          labels: ["bug", "urgent", "frontend"]
+          ---
+        tasks/partial.md: |
+          ---
+          type: task
+          title: "Partial Labels"
+          labels: ["bug", "backend"]
+          ---
+        tasks/empty.md: |
+          ---
+          type: task
+          title: "No Labels"
+          labels: []
+          ---
+
+    tests:
+      - name: "containsAll variadic matches file with all specified elements"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'labels.containsAll("bug", "urgent")'
+        expect:
+          meta:
+            total_count: 1
+          results:
+            - frontmatter:
+                title: "Full Labels"
+
+      - name: "containsAny variadic matches files with at least one element"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'labels.containsAny("urgent", "backend")'
+        expect:
+          meta:
+            total_count: 2
+
+      - name: "containsAll on empty list returns false"
+        operation: evaluate
+        input:
+          context:
+            labels: []
+          expression: 'labels.containsAll("bug")'
+        expect:
+          result: false
+
+      - name: "containsAny on empty list returns false"
+        operation: evaluate
+        input:
+          context:
+            labels: []
+          expression: 'labels.containsAny("bug")'
+        expect:
+          result: false
+
+  # =============================================================================
+  # Group 6: String containsAll/containsAny with list literal (§11.6)
+  # =============================================================================
+
+  - name: "string containsAll/containsAny list literal non-expansion"
+    spec_ref: "§11.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+
+    tests:
+      - name: "string.containsAll variadic checks all substrings"
+        operation: evaluate
+        input:
+          context:
+            title: "Fix critical bug in login"
+          expression: 'title.containsAll("Fix", "bug")'
+        expect:
+          result: true
+
+      - name: "string.containsAll with list literal does not auto-expand"
+        spec_ref: "§11.6"
+        operation: evaluate
+        input:
+          context:
+            title: "Fix critical bug in login"
+          expression: 'title.containsAll(["Fix", "bug"])'
+        expect:
+          # The list literal is treated as a single argument.
+          # String.containsAll expects string arguments; a list argument
+          # cannot be a substring of a string, so this returns false.
+          result: false
+
+      - name: "string.containsAny variadic checks any substring"
+        operation: evaluate
+        input:
+          context:
+            title: "Deploy to production"
+          expression: 'title.containsAny("Fix", "Deploy")'
+        expect:
+          result: true
+
+      - name: "string.containsAny with list literal does not auto-expand"
+        spec_ref: "§11.6"
+        operation: evaluate
+        input:
+          context:
+            title: "Deploy to production"
+          expression: 'title.containsAny(["Fix", "Deploy"])'
+        expect:
+          result: false

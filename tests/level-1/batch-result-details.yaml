@@ -1,0 +1,282 @@
+name: "batch result per-file details and custom cache folder exclusion"
+level: 1
+category: operations
+spec_ref: "§12.7, §2.2, §13.4"
+
+groups:
+  # =============================================================================
+  # Group 1: Batch result details — success entries (§12.7)
+  # =============================================================================
+
+  - name: "batch result includes per-file success entries"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: string
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Task 1"
+          status: "open"
+          ---
+        tasks/t2.md: |
+          ---
+          type: task
+          title: "Task 2"
+          status: "open"
+          ---
+        tasks/t3.md: |
+          ---
+          type: task
+          title: "Task 3"
+          status: "open"
+          ---
+
+    tests:
+      - name: "all-success batch includes success status for each file"
+        operation: batch_update
+        input:
+          where: 'status == "open"'
+          fields:
+            status: "done"
+        expect:
+          batch_result:
+            total: 3
+            succeeded: 3
+            failed: 0
+            details:
+              - path: "tasks/t1.md"
+                status: "success"
+              - path: "tasks/t2.md"
+                status: "success"
+              - path: "tasks/t3.md"
+                status: "success"
+
+      - name: "partial failure includes both success and failed entries in details"
+        operation: batch_update
+        input:
+          where: 'status == "open"'
+          fields:
+            status: "done"
+          simulate:
+            io_error_on: "tasks/t2.md"
+        expect:
+          batch_result:
+            total: 3
+            succeeded: 2
+            failed: 1
+            details:
+              - path: "tasks/t1.md"
+                status: "success"
+              - path: "tasks/t2.md"
+                status: "failed"
+              - path: "tasks/t3.md"
+                status: "success"
+
+  # =============================================================================
+  # Group 2: Batch result details — skipped entries (§12.7)
+  # =============================================================================
+
+  - name: "batch result includes skipped entries when applicable"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: string
+            depends_on:
+              type: link
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Task A"
+          status: "open"
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          title: "Task B"
+          status: "open"
+          depends_on: "[[Task A]]"
+          ---
+        tasks/c.md: |
+          ---
+          type: task
+          title: "Task C"
+          status: "open"
+          ---
+
+    tests:
+      - name: "skipped entries report status and reason"
+        spec_ref: "§12.7"
+        operation: batch_update
+        input:
+          where: 'status == "open"'
+          fields:
+            status: "done"
+          simulate:
+            io_error_on: "tasks/a.md"
+            skip_dependents: true
+        expect:
+          batch_result:
+            total: 3
+            succeeded: 1
+            failed: 1
+            skipped: 1
+            details:
+              - path: "tasks/a.md"
+                status: "failed"
+              - path: "tasks/b.md"
+                status: "skipped"
+              - path: "tasks/c.md"
+                status: "success"
+
+  # =============================================================================
+  # Group 3: Batch result counts consistency (§12.7)
+  # =============================================================================
+
+  - name: "batch result counts are consistent with details array"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+              required: true
+            tags:
+              type: list
+              items:
+                type: string
+              default: []
+          ---
+      files:
+        notes/n1.md: |
+          ---
+          type: note
+          title: "Note 1"
+          tags: [cleanup]
+          ---
+        notes/n2.md: |
+          ---
+          type: note
+          title: "Note 2"
+          tags: [cleanup]
+          ---
+
+    tests:
+      - name: "batch delete details include success entries for each deleted file"
+        operation: batch_delete
+        input:
+          where: 'tags.contains("cleanup")'
+        expect:
+          batch_result:
+            total: 2
+            succeeded: 2
+            failed: 0
+            details:
+              - path: "notes/n1.md"
+                status: "success"
+              - path: "notes/n2.md"
+                status: "success"
+
+      - name: "batch delete with zero matches has empty details"
+        operation: batch_delete
+        input:
+          where: 'tags.contains("nonexistent")'
+        expect:
+          batch_result:
+            total: 0
+            succeeded: 0
+            failed: 0
+            details: []
+
+  # =============================================================================
+  # Group 4: Custom cache_folder excluded from file scanning (§2.2, §13.4)
+  # =============================================================================
+
+  - name: "custom cache_folder excluded from collection scanning"
+    spec_ref: "§2.2, §13.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          cache_folder: ".custom-cache"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/real.md: |
+          ---
+          type: note
+          title: "Real Note"
+          ---
+        .custom-cache/cached-data.md: |
+          ---
+          type: note
+          title: "Cached Data"
+          ---
+
+    tests:
+      - name: "file inside custom cache folder not returned by query"
+        operation: query
+        input:
+          query:
+            types: [note]
+        expect:
+          meta:
+            total_count: 1
+          results:
+            - frontmatter:
+                title: "Real Note"
+
+      - name: "file inside custom cache folder returns file_not_found on read"
+        operation: read
+        input:
+          path: ".custom-cache/cached-data.md"
+        expect:
+          error:
+            code: file_not_found
+
+      - name: "default .mdbase still excluded alongside custom cache folder"
+        operation: read
+        input:
+          path: ".mdbase/index.md"
+        expect:
+          error:
+            code: file_not_found
