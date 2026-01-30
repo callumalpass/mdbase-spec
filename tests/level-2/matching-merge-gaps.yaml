@@ -1,0 +1,505 @@
+name: "constraint merging completeness"
+level: 2
+category: matching
+spec_ref: "§6.5"
+
+groups:
+  # =============================================================================
+  # Group 1: Required merging — true if EITHER type requires it
+  # =============================================================================
+
+  - name: "required merging"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        base.md: |
+          ---
+          name: base
+          match:
+            path_glob: "items/**/*.md"
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+          ---
+        strict-item.md: |
+          ---
+          name: strict-item
+          match:
+            fields_present: [priority]
+          fields:
+            title:
+              type: string
+              required: true
+            priority:
+              type: integer
+          ---
+
+    tests:
+      - name: "required merged — missing title fails when either type requires it"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              priority: 3
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
+
+      - name: "required merged — present title passes"
+        setup:
+          files:
+            items/i2.md: |
+              ---
+              title: "Valid"
+              priority: 3
+              ---
+        operation: validate
+        input:
+          path: "items/i2.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 2: Pattern merging — must match ALL patterns
+  # =============================================================================
+
+  - name: "pattern merging"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        alpha.md: |
+          ---
+          name: alpha
+          match:
+            path_glob: "docs/**/*.md"
+          fields:
+            code:
+              type: string
+              pattern: "^[A-Z]"
+          ---
+        numeric.md: |
+          ---
+          name: numeric
+          match:
+            path_glob: "docs/**/*.md"
+          fields:
+            code:
+              type: string
+              pattern: "\\d+$"
+          ---
+
+    tests:
+      - name: "pattern merged — must match both patterns"
+        setup:
+          files:
+            docs/d1.md: |
+              ---
+              code: "A123"
+              ---
+        operation: validate
+        input:
+          path: "docs/d1.md"
+        expect:
+          valid: true
+
+      - name: "pattern merged — fails when only first pattern matches"
+        setup:
+          files:
+            docs/d2.md: |
+              ---
+              code: "Abc"
+              ---
+        operation: validate
+        input:
+          path: "docs/d2.md"
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: code
+
+      - name: "pattern merged — fails when only second pattern matches"
+        setup:
+          files:
+            docs/d3.md: |
+              ---
+              code: "abc123"
+              ---
+        operation: validate
+        input:
+          path: "docs/d3.md"
+        expect:
+          valid: false
+          issues:
+            - code: pattern_mismatch
+              field: code
+
+  # =============================================================================
+  # Group 3: Enum intersection with overlapping values
+  # =============================================================================
+
+  - name: "enum intersection with overlap"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        workflow.md: |
+          ---
+          name: workflow
+          match:
+            path_glob: "tasks/**/*.md"
+          fields:
+            status:
+              type: enum
+              values: [draft, review, published, archived]
+          ---
+        active.md: |
+          ---
+          name: active
+          match:
+            fields_present: [status]
+          fields:
+            status:
+              type: enum
+              values: [draft, review, published]
+          ---
+
+    tests:
+      - name: "enum intersection — value in intersection passes"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              status: "review"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "enum intersection — value only in first type fails"
+        setup:
+          files:
+            tasks/t2.md: |
+              ---
+              status: "archived"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t2.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_enum
+              field: status
+
+  # =============================================================================
+  # Group 4: Default conflict detection
+  # =============================================================================
+
+  - name: "conflicting defaults produce error"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        type-a.md: |
+          ---
+          name: type-a
+          match:
+            path_glob: "items/**/*.md"
+          fields:
+            status:
+              type: string
+              default: "open"
+          ---
+        type-b.md: |
+          ---
+          name: type-b
+          match:
+            path_glob: "items/**/*.md"
+          fields:
+            status:
+              type: string
+              default: "pending"
+          ---
+
+    tests:
+      - name: "conflicting defaults produce type_conflict"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_conflict
+              field: status
+
+  # =============================================================================
+  # Group 5: Deprecated merging — true if EITHER marks deprecated
+  # =============================================================================
+
+  - name: "deprecated merging"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        modern.md: |
+          ---
+          name: modern
+          match:
+            path_glob: "items/**/*.md"
+          fields:
+            old_status:
+              type: string
+          ---
+        legacy.md: |
+          ---
+          name: legacy
+          match:
+            path_glob: "items/**/*.md"
+          fields:
+            old_status:
+              type: string
+              deprecated: true
+          ---
+
+    tests:
+      - name: "deprecated merged — using deprecated field produces warning"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              old_status: "active"
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          issues:
+            - code: deprecated_field
+              field: old_status
+              severity: warning
+
+  # =============================================================================
+  # Group 6: Unique merging — true if EITHER type requires it
+  # =============================================================================
+
+  - name: "unique merging"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        type-x.md: |
+          ---
+          name: type-x
+          match:
+            path_glob: "records/**/*.md"
+          fields:
+            email:
+              type: string
+          ---
+        type-y.md: |
+          ---
+          name: type-y
+          match:
+            path_glob: "records/**/*.md"
+          fields:
+            email:
+              type: string
+              unique: true
+          ---
+
+    tests:
+      - name: "unique merged — duplicate value triggers error"
+        setup:
+          files:
+            records/r1.md: |
+              ---
+              email: "dup@example.com"
+              ---
+            records/r2.md: |
+              ---
+              email: "dup@example.com"
+              ---
+        operation: validate
+        input:
+          path: "records/r2.md"
+        expect:
+          valid: false
+          issues:
+            - code: duplicate_value
+              field: email
+
+  # =============================================================================
+  # Group 7: Link constraints merging
+  # =============================================================================
+
+  - name: "link target and validate_exists merging"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        ref-a.md: |
+          ---
+          name: ref-a
+          match:
+            path_glob: "docs/**/*.md"
+          fields:
+            related:
+              type: link
+              target: person
+          ---
+        ref-b.md: |
+          ---
+          name: ref-b
+          match:
+            path_glob: "docs/**/*.md"
+          fields:
+            related:
+              type: link
+              validate_exists: true
+          ---
+
+    tests:
+      - name: "link target preserved in merge"
+        setup:
+          files:
+            docs/d1.md: |
+              ---
+              related: "[[alice]]"
+              ---
+        operation: get_types
+        input:
+          path: "docs/d1.md"
+        expect:
+          types:
+            - ref-a
+            - ref-b
+
+      - name: "conflicting link targets produce type_conflict"
+        setup:
+          types:
+            ref-c.md: |
+              ---
+              name: ref-c
+              match:
+                path_glob: "docs/**/*.md"
+              fields:
+                related:
+                  type: link
+                  target: task
+              ---
+          files:
+            docs/d2.md: |
+              ---
+              related: "[[bob]]"
+              ---
+        operation: validate
+        input:
+          path: "docs/d2.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_conflict
+              field: related
+
+  # =============================================================================
+  # Group 8: Generated strategy merging — identical OK, different is conflict
+  # =============================================================================
+
+  - name: "generated strategy merging"
+    spec_ref: "§6.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        gen-a.md: |
+          ---
+          name: gen-a
+          match:
+            path_glob: "records/**/*.md"
+          fields:
+            updated_at:
+              type: datetime
+              generated: now_on_write
+          ---
+        gen-b.md: |
+          ---
+          name: gen-b
+          match:
+            path_glob: "records/**/*.md"
+          fields:
+            updated_at:
+              type: datetime
+              generated: now_on_write
+          ---
+
+    tests:
+      - name: "identical generated strategies are compatible"
+        setup:
+          files:
+            records/r1.md: |
+              ---
+              ---
+        operation: validate
+        input:
+          path: "records/r1.md"
+        expect:
+          valid: true
+
+      - name: "different generated strategies produce type_conflict"
+        setup:
+          types:
+            gen-c.md: |
+              ---
+              name: gen-c
+              match:
+                path_glob: "records/**/*.md"
+              fields:
+                updated_at:
+                  type: datetime
+                  generated: now
+              ---
+          files:
+            records/r2.md: |
+              ---
+              ---
+        operation: validate
+        input:
+          path: "records/r2.md"
+        expect:
+          valid: false
+          issues:
+            - code: type_conflict
+              field: updated_at

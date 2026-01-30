@@ -1,0 +1,243 @@
+name: "watching event gaps"
+level: 6
+category: watching
+spec_ref: "§15"
+
+groups:
+  # =============================================================================
+  # Group 1: config_changed event payload fields
+  # =============================================================================
+
+  - name: "config_changed event payload"
+    spec_ref: "§15.2, §15.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "config_changed event includes previous_hash and new_hash"
+        operation: watch
+        input:
+          simulate:
+            config_change:
+              new_config: |
+                spec_version: "0.1.0"
+                settings:
+                  default_validation: "warn"
+        expect:
+          events:
+            - event: config_changed
+              has_fields: [previous_hash, new_hash]
+
+  # =============================================================================
+  # Group 2: type_changed event — unaffected files excluded
+  # =============================================================================
+
+  - name: "type_changed scoping"
+    spec_ref: "§15.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/n1.md: |
+          ---
+          type: note
+          title: "Note 1"
+          ---
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Task 1"
+          ---
+
+    tests:
+      - name: "type_changed only lists files of changed type"
+        operation: watch
+        input:
+          simulate:
+            type_change:
+              type: note
+              new_definition: |
+                ---
+                name: note
+                fields:
+                  title:
+                    type: string
+                    required: true
+                ---
+        expect:
+          events:
+            - event: type_changed
+              type: note
+              affected_files:
+                - "notes/n1.md"
+              affected_files_not_contain:
+                - "tasks/t1.md"
+
+  # =============================================================================
+  # Group 3: Cache updated before event delivery — multiple event types
+  # =============================================================================
+
+  - name: "cache consistency for file_modified events"
+    spec_ref: "§15.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/n1.md: |
+          ---
+          type: note
+          title: "Original"
+          ---
+
+    tests:
+      - name: "listener can query updated state after file_modified"
+        operation: watch
+        input:
+          simulate:
+            external_modify:
+              path: "notes/n1.md"
+              content: |
+                ---
+                type: note
+                title: "Modified"
+                ---
+        expect:
+          events:
+            - event: file_modified
+              path: "notes/n1.md"
+          listener_query:
+            operation: read
+            input:
+              path: "notes/n1.md"
+            expect:
+              frontmatter:
+                title: "Modified"
+
+      - name: "listener can query after file_deleted"
+        operation: watch
+        input:
+          simulate:
+            external_delete:
+              path: "notes/n1.md"
+        expect:
+          events:
+            - event: file_deleted
+              path: "notes/n1.md"
+          listener_query:
+            operation: read
+            input:
+              path: "notes/n1.md"
+            expect:
+              error:
+                code: file_not_found
+
+  # =============================================================================
+  # Group 4: Excluded directories not watched
+  # =============================================================================
+
+  - name: "excluded directories not watched"
+    spec_ref: "§15.2, §4.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          exclude:
+            - "drafts/**"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "file created in excluded directory does not emit event"
+        operation: watch
+        input:
+          simulate:
+            external_create:
+              path: "drafts/draft1.md"
+              content: |
+                ---
+                type: note
+                title: "Draft"
+                ---
+        expect:
+          max_event_count: 0
+
+  # =============================================================================
+  # Group 5: Custom extensions watched
+  # =============================================================================
+
+  - name: "custom extensions generate watch events"
+    spec_ref: "§15.2, §4.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          extensions: ["mdx"]
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "mdx file creation emits file_created event"
+        operation: watch
+        input:
+          simulate:
+            external_create:
+              path: "notes/component.mdx"
+              content: |
+                ---
+                type: note
+                title: "MDX Component"
+                ---
+                # Component
+        expect:
+          events:
+            - event: file_created
+              path: "notes/component.mdx"

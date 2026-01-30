@@ -1,0 +1,368 @@
+name: "operation behavior gaps"
+level: 1
+category: operations
+spec_ref: "§12"
+
+groups:
+  # =============================================================================
+  # Group 1: Create — default suppression on disk
+  # =============================================================================
+
+  - name: "create suppresses defaults in persisted output"
+    spec_ref: "§12.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [open, in_progress, done]
+              default: open
+            priority:
+              type: integer
+              default: 3
+          ---
+
+    tests:
+      - name: "default-only fields not persisted to disk"
+        operation: create
+        input:
+          type: task
+          path: "tasks/t1.md"
+          frontmatter:
+            title: "New task"
+        expect:
+          frontmatter:
+            title: "New task"
+            status: "open"
+            priority: 3
+          frontmatter_not_written: [status, priority]
+
+      - name: "explicitly provided values matching defaults ARE persisted"
+        operation: create
+        input:
+          type: task
+          path: "tasks/t2.md"
+          frontmatter:
+            title: "Explicit defaults"
+            status: "open"
+            priority: 3
+        expect:
+          frontmatter_written:
+            status: "open"
+            priority: 3
+
+  # =============================================================================
+  # Group 2: Create — type inference from frontmatter
+  # =============================================================================
+
+  - name: "type inference from frontmatter keys"
+    spec_ref: "§12.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+          ---
+
+    tests:
+      - name: "type inferred from frontmatter type key when not passed as parameter"
+        operation: create
+        input:
+          path: "tasks/t1.md"
+          frontmatter:
+            type: task
+            title: "Inferred type"
+        expect:
+          types: [task]
+          frontmatter:
+            title: "Inferred type"
+
+  # =============================================================================
+  # Group 3: Update — removing field restores default in effective output
+  # =============================================================================
+
+  - name: "update null field restores default in effective"
+    spec_ref: "§12.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          write_nulls: "omit"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: string
+              default: "open"
+          ---
+
+    tests:
+      - name: "setting field to null removes it and default re-applies"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Test"
+              status: "done"
+              ---
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            status: null
+        expect:
+          frontmatter:
+            status: "open"
+          frontmatter_not_written: [status]
+
+  # =============================================================================
+  # Group 4: Delete — check_backlinks behavior
+  # =============================================================================
+
+  - name: "delete with backlink checking"
+    spec_ref: "§12.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            related:
+              type: link
+          ---
+      files:
+        notes/target.md: |
+          ---
+          type: note
+          title: "Target"
+          ---
+        notes/source.md: |
+          ---
+          type: note
+          title: "Source"
+          related: "[[target]]"
+          ---
+
+    tests:
+      - name: "delete with check_backlinks reports broken links"
+        operation: delete
+        input:
+          path: "notes/target.md"
+          check_backlinks: true
+        expect:
+          deleted: true
+          broken_links:
+            - path: "notes/source.md"
+
+      - name: "delete with check_backlinks false suppresses warning"
+        setup:
+          files:
+            notes/target2.md: |
+              ---
+              type: note
+              title: "Target 2"
+              ---
+            notes/source2.md: |
+              ---
+              type: note
+              title: "Source 2"
+              related: "[[target2]]"
+              ---
+        operation: delete
+        input:
+          path: "notes/target2.md"
+          check_backlinks: false
+        expect:
+          deleted: true
+
+  # =============================================================================
+  # Group 5: Batch operations — validate-all-then-execute
+  # =============================================================================
+
+  - name: "batch update with validation"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [open, done]
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Task 1"
+          status: "open"
+          ---
+        tasks/t2.md: |
+          ---
+          type: task
+          title: "Task 2"
+          status: "open"
+          ---
+
+    tests:
+      - name: "batch update succeeds when all files valid"
+        operation: batch_update
+        input:
+          where: 'status == "open"'
+          fields:
+            status: "done"
+        expect:
+          batch_result:
+            total: 2
+            succeeded: 2
+            failed: 0
+
+      - name: "batch update aborted when validation fails on any file"
+        operation: batch_update
+        input:
+          where: 'status == "open"'
+          fields:
+            status: "invalid_value"
+        expect:
+          error:
+            code: validation_failed
+        verify_after:
+          - operation: read
+            input:
+              path: "tasks/t1.md"
+            expect:
+              frontmatter:
+                status: "open"
+
+  # =============================================================================
+  # Group 6: Batch dry-run mode
+  # =============================================================================
+
+  - name: "batch dry-run"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [open, done]
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Task 1"
+          status: "open"
+          ---
+
+    tests:
+      - name: "dry-run reports what would change without modifying files"
+        operation: batch_update
+        input:
+          where: 'status == "open"'
+          fields:
+            status: "done"
+          dry_run: true
+        expect:
+          batch_result:
+            total: 1
+        verify_after:
+          - operation: read
+            input:
+              path: "tasks/t1.md"
+            expect:
+              frontmatter:
+                status: "open"
+
+  # =============================================================================
+  # Group 7: Rename — update_refs defaults from config
+  # =============================================================================
+
+  - name: "rename update_refs config default"
+    spec_ref: "§12.5, §4.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          rename_update_refs: true
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            related:
+              type: link
+          ---
+      files:
+        notes/target.md: |
+          ---
+          type: note
+          title: "Target"
+          ---
+        notes/source.md: |
+          ---
+          type: note
+          title: "Source"
+          related: "[[target]]"
+          ---
+
+    tests:
+      - name: "rename without explicit update_refs uses config default"
+        operation: rename
+        input:
+          from: "notes/target.md"
+          to: "notes/new-target.md"
+        expect:
+          from: "notes/target.md"
+          to: "notes/new-target.md"
+          references_updated:
+            - path: "notes/source.md"

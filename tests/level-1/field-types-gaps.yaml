@@ -1,0 +1,650 @@
+name: "field type and constraint gaps"
+level: 1
+category: types
+spec_ref: "§7"
+
+groups:
+  # =============================================================================
+  # Group 1: IEEE 754 special values
+  # =============================================================================
+
+  - name: "IEEE 754 special values for number type"
+    spec_ref: "§7.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        measurement.md: |
+          ---
+          name: measurement
+          fields:
+            value:
+              type: number
+            bounded:
+              type: number
+              min: 0
+              max: 100
+          ---
+
+    tests:
+      - name: "NaN is valid for unconstrained number"
+        setup:
+          files:
+            data/m1.md: |
+              ---
+              type: measurement
+              value: .nan
+              ---
+        operation: validate
+        input:
+          path: "data/m1.md"
+        expect:
+          valid: true
+
+      - name: "Infinity is valid for unconstrained number"
+        setup:
+          files:
+            data/m2.md: |
+              ---
+              type: measurement
+              value: .inf
+              ---
+        operation: validate
+        input:
+          path: "data/m2.md"
+        expect:
+          valid: true
+
+      - name: "negative infinity is valid for unconstrained number"
+        setup:
+          files:
+            data/m3.md: |
+              ---
+              type: measurement
+              value: -.inf
+              ---
+        operation: validate
+        input:
+          path: "data/m3.md"
+        expect:
+          valid: true
+
+      - name: "Infinity fails min/max constraint"
+        setup:
+          files:
+            data/m4.md: |
+              ---
+              type: measurement
+              bounded: .inf
+              ---
+        operation: validate
+        input:
+          path: "data/m4.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_large
+              field: bounded
+
+      - name: "NaN fails min/max constraint"
+        setup:
+          files:
+            data/m5.md: |
+              ---
+              type: measurement
+              bounded: .nan
+              ---
+        operation: validate
+        input:
+          path: "data/m5.md"
+        expect:
+          valid: false
+          issues:
+            - code: constraint_violation
+              field: bounded
+
+  # =============================================================================
+  # Group 2: Boolean coercion of YAML 1.1 values
+  # =============================================================================
+
+  - name: "YAML 1.1 boolean spellings"
+    spec_ref: "§7.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        flag.md: |
+          ---
+          name: flag
+          fields:
+            active:
+              type: boolean
+          ---
+
+    tests:
+      - name: "yes coerced to true"
+        setup:
+          files:
+            flags/yes.md: |
+              ---
+              type: flag
+              active: yes
+              ---
+        operation: read
+        input:
+          path: "flags/yes.md"
+        expect:
+          frontmatter:
+            active: true
+
+      - name: "no coerced to false"
+        setup:
+          files:
+            flags/no.md: |
+              ---
+              type: flag
+              active: no
+              ---
+        operation: read
+        input:
+          path: "flags/no.md"
+        expect:
+          frontmatter:
+            active: false
+
+      - name: "on coerced to true"
+        setup:
+          files:
+            flags/on.md: |
+              ---
+              type: flag
+              active: on
+              ---
+        operation: read
+        input:
+          path: "flags/on.md"
+        expect:
+          frontmatter:
+            active: true
+
+      - name: "off coerced to false"
+        setup:
+          files:
+            flags/off.md: |
+              ---
+              type: flag
+              active: off
+              ---
+        operation: read
+        input:
+          path: "flags/off.md"
+        expect:
+          frontmatter:
+            active: false
+
+  # =============================================================================
+  # Group 3: Enum values must be strings
+  # =============================================================================
+
+  - name: "enum values validation"
+    spec_ref: "§7.10"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+
+    tests:
+      - name: "enum with non-string values rejects type definition"
+        setup:
+          types:
+            priority-type.md: |
+              ---
+              name: priority-type
+              fields:
+                level:
+                  type: enum
+                  values: [1, 2, 3]
+              ---
+        operation: get_type
+        input:
+          type: priority-type
+        expect:
+          error:
+            code: invalid_type_definition
+
+  # =============================================================================
+  # Group 4: Unique field with null values exempt
+  # =============================================================================
+
+  - name: "unique field null exemption"
+    spec_ref: "§7.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        post.md: |
+          ---
+          name: post
+          fields:
+            title:
+              type: string
+              required: true
+            slug:
+              type: string
+              unique: true
+          ---
+      files:
+        posts/a.md: |
+          ---
+          type: post
+          title: "First"
+          ---
+        posts/b.md: |
+          ---
+          type: post
+          title: "Second"
+          ---
+        posts/c.md: |
+          ---
+          type: post
+          title: "Third"
+          slug: null
+          ---
+
+    tests:
+      - name: "multiple files with missing unique field do not conflict"
+        operation: validate
+        input:
+          path: "posts/a.md"
+        expect:
+          valid: true
+
+      - name: "file with null unique field does not conflict with missing"
+        operation: validate
+        input:
+          path: "posts/c.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 5: Generated field strategies — uuid, lowercase, uppercase
+  # =============================================================================
+
+  - name: "uuid generation strategy"
+    spec_ref: "§7.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            id:
+              type: string
+              generated: uuid
+            title:
+              type: string
+              required: true
+          ---
+
+    tests:
+      - name: "uuid generated on create when field is missing"
+        operation: create
+        input:
+          type: item
+          path: "items/i1.md"
+          frontmatter:
+            title: "New item"
+        expect:
+          frontmatter_written:
+            id: { matches: "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" }
+
+      - name: "uuid not overwritten when user provides value"
+        operation: create
+        input:
+          type: item
+          path: "items/i2.md"
+          frontmatter:
+            title: "Custom ID"
+            id: "my-custom-id"
+        expect:
+          frontmatter:
+            id: "my-custom-id"
+
+  - name: "lowercase and uppercase transforms"
+    spec_ref: "§7.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        article.md: |
+          ---
+          name: article
+          fields:
+            title:
+              type: string
+              required: true
+            title_lower:
+              type: string
+              generated:
+                from: title
+                transform: lowercase
+            title_upper:
+              type: string
+              generated:
+                from: title
+                transform: uppercase
+          ---
+
+    tests:
+      - name: "lowercase transform generates lowercased value"
+        operation: create
+        input:
+          type: article
+          path: "articles/a1.md"
+          frontmatter:
+            title: "Hello World"
+        expect:
+          frontmatter:
+            title_lower: "hello world"
+
+      - name: "uppercase transform generates uppercased value"
+        operation: create
+        input:
+          type: article
+          path: "articles/a2.md"
+          frontmatter:
+            title: "Hello World"
+        expect:
+          frontmatter:
+            title_upper: "HELLO WORLD"
+
+  # =============================================================================
+  # Group 6: Integer coercion edge case — string float "3.0"
+  # =============================================================================
+
+  - name: "integer coercion from string float"
+    spec_ref: "§7.4, §7.16"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            priority:
+              type: integer
+          ---
+
+    tests:
+      - name: "string '3.0' coerced to integer 3"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              priority: "3.0"
+              ---
+        operation: read
+        input:
+          path: "tasks/t1.md"
+        expect:
+          frontmatter:
+            priority: 3
+
+      - name: "string '3.5' fails integer coercion"
+        setup:
+          files:
+            tasks/t2.md: |
+              ---
+              type: task
+              priority: "3.5"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t2.md"
+        expect:
+          valid: false
+          issues:
+            - code: not_integer
+              field: priority
+
+  # =============================================================================
+  # Group 7: Strictness inheritance from parent type
+  # =============================================================================
+
+  - name: "strict mode inherited from parent"
+    spec_ref: "§5.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        base.md: |
+          ---
+          name: base
+          strict: true
+          fields:
+            title:
+              type: string
+          ---
+        child.md: |
+          ---
+          name: child
+          extends: base
+          fields:
+            description:
+              type: string
+          ---
+
+    tests:
+      - name: "child inherits strict from parent — unknown field rejected"
+        setup:
+          files:
+            items/c1.md: |
+              ---
+              type: child
+              title: "Test"
+              description: "A test"
+              unknown_field: "should fail"
+              ---
+        operation: validate
+        input:
+          path: "items/c1.md"
+        expect:
+          valid: false
+          issues:
+            - code: unknown_field
+              field: unknown_field
+
+      - name: "child can override parent strict to false"
+        setup:
+          types:
+            relaxed-child.md: |
+              ---
+              name: relaxed-child
+              extends: base
+              strict: false
+              fields:
+                description:
+                  type: string
+              ---
+          files:
+            items/c2.md: |
+              ---
+              type: relaxed-child
+              title: "Test"
+              description: "A test"
+              extra: "allowed"
+              ---
+        operation: validate
+        input:
+          path: "items/c2.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 8: Datetime timezone preservation on write
+  # =============================================================================
+
+  - name: "datetime timezone preservation"
+    spec_ref: "§7.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        event.md: |
+          ---
+          name: event
+          fields:
+            title:
+              type: string
+              required: true
+            scheduled_at:
+              type: datetime
+          ---
+
+    tests:
+      - name: "timezone offset preserved after update"
+        setup:
+          files:
+            events/e1.md: |
+              ---
+              type: event
+              title: "Meeting"
+              scheduled_at: "2024-03-15T10:00:00+05:30"
+              ---
+        operation: update
+        input:
+          path: "events/e1.md"
+          fields:
+            title: "Updated Meeting"
+        expect:
+          frontmatter:
+            scheduled_at: "2024-03-15T10:00:00+05:30"
+
+      - name: "UTC timezone preserved after update"
+        setup:
+          files:
+            events/e2.md: |
+              ---
+              type: event
+              title: "Call"
+              scheduled_at: "2024-03-15T10:00:00Z"
+              ---
+        operation: update
+        input:
+          path: "events/e2.md"
+          fields:
+            title: "Updated Call"
+        expect:
+          frontmatter:
+            scheduled_at: "2024-03-15T10:00:00Z"
+
+  # =============================================================================
+  # Group 9: Validation warn level behavior
+  # =============================================================================
+
+  - name: "validation warn level"
+    spec_ref: "§9.1, §4.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "warn"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+          ---
+
+    tests:
+      - name: "warn level allows operation to succeed despite validation failure"
+        operation: create
+        input:
+          type: task
+          path: "tasks/t1.md"
+          frontmatter: {}
+        expect:
+          path: "tasks/t1.md"
+          warnings:
+            - code: missing_required
+              field: title
+
+  # =============================================================================
+  # Group 10: default_strict as fallback for types
+  # =============================================================================
+
+  - name: "config default_strict applied to types without explicit strict"
+    spec_ref: "§4.4, §9.2.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_strict: true
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "type without strict inherits default_strict from config"
+        setup:
+          files:
+            items/i1.md: |
+              ---
+              type: item
+              title: "Hello"
+              extra: "not allowed"
+              ---
+        operation: validate
+        input:
+          path: "items/i1.md"
+        expect:
+          valid: false
+          issues:
+            - code: unknown_field
+              field: extra
+
+      - name: "type with explicit strict false overrides default_strict"
+        setup:
+          types:
+            flexible.md: |
+              ---
+              name: flexible
+              strict: false
+              fields:
+                title:
+                  type: string
+              ---
+          files:
+            items/i2.md: |
+              ---
+              type: flexible
+              title: "Hello"
+              extra: "allowed"
+              ---
+        operation: validate
+        input:
+          path: "items/i2.md"
+        expect:
+          valid: true

@@ -1,0 +1,238 @@
+name: "link feature gaps"
+level: 4
+category: links
+spec_ref: "§8, §11.12"
+
+groups:
+  # =============================================================================
+  # Group 1: Link round-trip format preservation
+  # =============================================================================
+
+  - name: "link format preservation on round-trip"
+    spec_ref: "§8.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+              required: true
+            related:
+              type: link
+          ---
+      files:
+        notes/target.md: |
+          ---
+          type: note
+          title: "Target"
+          ---
+
+    tests:
+      - name: "wikilink format preserved on update"
+        setup:
+          files:
+            notes/source-wiki.md: |
+              ---
+              type: note
+              title: "Source Wiki"
+              related: "[[target]]"
+              ---
+        operation: update
+        input:
+          path: "notes/source-wiki.md"
+          fields:
+            title: "Updated Source Wiki"
+        expect:
+          frontmatter:
+            related: "[[target]]"
+
+      - name: "markdown link format preserved on update"
+        setup:
+          files:
+            notes/source-md.md: |
+              ---
+              type: note
+              title: "Source Markdown"
+              related: "[Target](./target.md)"
+              ---
+        operation: update
+        input:
+          path: "notes/source-md.md"
+          fields:
+            title: "Updated Source Markdown"
+        expect:
+          frontmatter:
+            related: "[Target](./target.md)"
+
+      - name: "wikilink alias preserved on update"
+        setup:
+          files:
+            notes/source-alias.md: |
+              ---
+              type: note
+              title: "Source Alias"
+              related: "[[target|My Target]]"
+              ---
+        operation: update
+        input:
+          path: "notes/source-alias.md"
+          fields:
+            title: "Updated Source Alias"
+        expect:
+          frontmatter:
+            related: "[[target|My Target]]"
+
+  # =============================================================================
+  # Group 2: file.hasTag() variadic behavior
+  # =============================================================================
+
+  - name: "file.hasTag variadic"
+    spec_ref: "§11.12, §8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        notes/tagged.md: |
+          ---
+          type: note
+          title: "Tagged Note"
+          tags: ["project", "review"]
+          ---
+        notes/other.md: |
+          ---
+          type: note
+          title: "Other Note"
+          tags: ["archive"]
+          ---
+
+    tests:
+      - name: "hasTag with single argument"
+        operation: evaluate
+        input:
+          path: "notes/tagged.md"
+          expression: 'file.hasTag("project")'
+        expect:
+          result: true
+
+      - name: "hasTag with multiple arguments returns true if any match"
+        operation: evaluate
+        input:
+          path: "notes/tagged.md"
+          expression: 'file.hasTag("archive", "project")'
+        expect:
+          result: true
+
+      - name: "hasTag with multiple arguments returns false if none match"
+        operation: evaluate
+        input:
+          path: "notes/other.md"
+          expression: 'file.hasTag("project", "review")'
+        expect:
+          result: false
+
+  # =============================================================================
+  # Group 3: file.asLink() function
+  # =============================================================================
+
+  - name: "file.asLink function"
+    spec_ref: "§11.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/source.md: |
+          ---
+          type: note
+          title: "Source"
+          ---
+
+    tests:
+      - name: "file.asLink returns a link value"
+        operation: evaluate
+        input:
+          path: "notes/source.md"
+          expression: 'file.asLink()'
+        expect:
+          result_is_link: true
+
+      - name: "file.asLink with display text"
+        operation: evaluate
+        input:
+          path: "notes/source.md"
+          expression: 'file.asLink("My Display")'
+        expect:
+          result_is_link: true
+          result_contains: "My Display"
+
+  # =============================================================================
+  # Group 4: URL fragment exclusion in tag extraction
+  # =============================================================================
+
+  - name: "tag extraction excludes URL fragments"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/urls.md: |
+          ---
+          type: note
+          title: "URL test"
+          ---
+          Check out [link](https://example.com/page#section) and also
+          see "https://example.com/page#fragment" for more info.
+
+          This is a real #tag though.
+
+    tests:
+      - name: "URL fragment hash is not extracted as tag"
+        operation: evaluate
+        input:
+          path: "notes/urls.md"
+          expression: 'file.hasTag("section")'
+        expect:
+          result: false
+
+      - name: "real inline tag is extracted"
+        operation: evaluate
+        input:
+          path: "notes/urls.md"
+          expression: 'file.hasTag("tag")'
+        expect:
+          result: true

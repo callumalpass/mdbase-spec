@@ -1,0 +1,268 @@
+name: "query model gaps"
+level: 3
+category: queries
+spec_ref: "§10"
+
+groups:
+  # =============================================================================
+  # Group 1: Enum field sort order — declaration order, not string order
+  # =============================================================================
+
+  - name: "enum sort by declaration order"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [backlog, todo, in_progress, review, done]
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Task 1"
+          status: "done"
+          ---
+        tasks/t2.md: |
+          ---
+          type: task
+          title: "Task 2"
+          status: "backlog"
+          ---
+        tasks/t3.md: |
+          ---
+          type: task
+          title: "Task 3"
+          status: "in_progress"
+          ---
+        tasks/t4.md: |
+          ---
+          type: task
+          title: "Task 4"
+          status: "todo"
+          ---
+        tasks/t5.md: |
+          ---
+          type: task
+          title: "Task 5"
+          status: "review"
+          ---
+
+    tests:
+      - name: "sorting by enum uses declaration order ascending"
+        operation: query
+        input:
+          types: [task]
+          order_by:
+            - field: status
+              direction: asc
+        expect:
+          results:
+            - path: "tasks/t2.md"
+            - path: "tasks/t4.md"
+            - path: "tasks/t3.md"
+            - path: "tasks/t5.md"
+            - path: "tasks/t1.md"
+
+      - name: "sorting by enum descending reverses declaration order"
+        operation: query
+        input:
+          types: [task]
+          order_by:
+            - field: status
+              direction: desc
+        expect:
+          results:
+            - path: "tasks/t1.md"
+            - path: "tasks/t5.md"
+            - path: "tasks/t3.md"
+            - path: "tasks/t4.md"
+            - path: "tasks/t2.md"
+
+  # =============================================================================
+  # Group 2: Where string expression vs logical object equivalence
+  # =============================================================================
+
+  - name: "where string vs logical object equivalence"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: string
+            priority:
+              type: integer
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "High priority open"
+          status: "open"
+          priority: 5
+          ---
+        tasks/t2.md: |
+          ---
+          type: task
+          title: "Low priority open"
+          status: "open"
+          priority: 1
+          ---
+        tasks/t3.md: |
+          ---
+          type: task
+          title: "High priority done"
+          status: "done"
+          priority: 5
+          ---
+
+    tests:
+      - name: "string expression filter"
+        operation: query
+        input:
+          types: [task]
+          where: 'status == "open" && priority > 3'
+        expect:
+          meta:
+            total_count: 1
+          results:
+            - path: "tasks/t1.md"
+
+      - name: "logical object filter produces same result"
+        operation: query
+        input:
+          types: [task]
+          where:
+            and:
+              - 'status == "open"'
+              - 'priority > 3'
+        expect:
+          meta:
+            total_count: 1
+          results:
+            - path: "tasks/t1.md"
+
+  # =============================================================================
+  # Group 3: file.body filtering without include_body
+  # =============================================================================
+
+  - name: "file.body in filter without include_body"
+    spec_ref: "§10.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+              required: true
+          ---
+      files:
+        notes/n1.md: |
+          ---
+          type: note
+          title: "Note A"
+          ---
+          This note mentions the keyword FINDME in the body.
+        notes/n2.md: |
+          ---
+          type: note
+          title: "Note B"
+          ---
+          This note has different content.
+
+    tests:
+      - name: "file.body.contains works in where without include_body"
+        operation: query
+        input:
+          types: [note]
+          where: 'file.body.contains("FINDME")'
+        expect:
+          meta:
+            total_count: 1
+          results:
+            - path: "notes/n1.md"
+
+  # =============================================================================
+  # Group 4: file.properties and note namespace equivalence
+  # =============================================================================
+
+  - name: "file.properties and note namespace"
+    spec_ref: "§10.5, §11.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: string
+              default: "open"
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Test"
+          ---
+
+    tests:
+      - name: "note.title accesses frontmatter field"
+        operation: evaluate
+        input:
+          path: "tasks/t1.md"
+          expression: 'note.title'
+        expect:
+          result: "Test"
+
+      - name: "file.properties.title returns same as note.title"
+        operation: evaluate
+        input:
+          path: "tasks/t1.md"
+          expression: 'file.properties.title == note.title'
+        expect:
+          result: true
+
+      - name: "file.hasProperty checks raw persisted frontmatter"
+        operation: evaluate
+        input:
+          path: "tasks/t1.md"
+          expression: 'file.hasProperty("title")'
+        expect:
+          result: true
+
+      - name: "file.hasProperty false for field with only default value"
+        operation: evaluate
+        input:
+          path: "tasks/t1.md"
+          expression: 'file.hasProperty("status")'
+        expect:
+          result: false

@@ -1,0 +1,578 @@
+name: "frontmatter parsing and serialization gaps"
+level: 1
+category: validation
+spec_ref: "§3"
+
+groups:
+  # =============================================================================
+  # Group 1: Null vs missing vs empty — exists() and isEmpty() semantics
+  # =============================================================================
+
+  - name: "exists() and isEmpty() with null, missing, and empty fields"
+    spec_ref: "§3.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            status:
+              type: string
+          ---
+      files:
+        notes/all-states.md: |
+          ---
+          type: note
+          title: null
+          ---
+
+    tests:
+      - name: "exists() returns true for null field"
+        operation: evaluate
+        input:
+          path: "notes/all-states.md"
+          expression: 'exists(title)'
+        expect:
+          result: true
+
+      - name: "exists() returns false for missing field"
+        operation: evaluate
+        input:
+          path: "notes/all-states.md"
+          expression: 'exists(status)'
+        expect:
+          result: false
+
+      - name: "isEmpty() returns true for null field"
+        operation: evaluate
+        input:
+          path: "notes/all-states.md"
+          expression: 'title.isEmpty()'
+        expect:
+          result: true
+
+      - name: "isEmpty() returns true for missing field"
+        operation: evaluate
+        input:
+          path: "notes/all-states.md"
+          expression: 'status.isEmpty()'
+        expect:
+          result: true
+
+      - name: "isEmpty() returns false for non-empty string"
+        setup:
+          files:
+            notes/has-title.md: |
+              ---
+              type: note
+              title: "Hello"
+              ---
+        operation: evaluate
+        input:
+          path: "notes/has-title.md"
+          expression: 'title.isEmpty()'
+        expect:
+          result: false
+
+      - name: "isEmpty() returns true for empty string"
+        setup:
+          files:
+            notes/empty-str.md: |
+              ---
+              type: note
+              title: ""
+              ---
+        operation: evaluate
+        input:
+          path: "notes/empty-str.md"
+          expression: 'title.isEmpty()'
+        expect:
+          result: true
+
+  # =============================================================================
+  # Group 2: Non-mapping frontmatter at different validation levels
+  # =============================================================================
+
+  - name: "non-mapping frontmatter at validation level off"
+    spec_ref: "§3.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "off"
+      types: {}
+      files:
+        notes/list-fm.md: |
+          ---
+          - item1
+          - item2
+          ---
+          Body content.
+
+    tests:
+      - name: "list frontmatter at validation off — treated as empty frontmatter"
+        operation: read
+        input:
+          path: "notes/list-fm.md"
+        expect:
+          frontmatter: {}
+
+  - name: "non-mapping frontmatter at validation level warn"
+    spec_ref: "§3.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "warn"
+      types: {}
+      files:
+        notes/scalar-fm.md: |
+          ---
+          just a string
+          ---
+          Body content.
+
+    tests:
+      - name: "scalar frontmatter at validation warn — treated as empty with warning"
+        operation: read
+        input:
+          path: "notes/scalar-fm.md"
+        expect:
+          frontmatter: {}
+          warnings:
+            - code: invalid_frontmatter
+
+  # =============================================================================
+  # Group 3: Write null behavior — never write empty-value form
+  # =============================================================================
+
+  - name: "null writing rules"
+    spec_ref: "§3.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          write_nulls: "explicit"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            status:
+              type: string
+          ---
+
+    tests:
+      - name: "explicit null writes 'field: null' not bare 'field:'"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "Hello"
+              status: "open"
+              ---
+        operation: update
+        input:
+          path: "notes/n1.md"
+          fields:
+            status: null
+        expect:
+          frontmatter_written:
+            status: null
+          frontmatter_not_bare_null: [status]
+
+      - name: "omit mode removes null fields from output"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              write_nulls: "omit"
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "Hello"
+              status: "open"
+              ---
+        operation: update
+        input:
+          path: "notes/n1.md"
+          fields:
+            status: null
+        expect:
+          frontmatter_not_written: [status]
+
+  # =============================================================================
+  # Group 4: Empty string writing with quotes
+  # =============================================================================
+
+  - name: "empty string written with quotes"
+    spec_ref: "§3.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "empty string field is written with explicit quotes"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "Hello"
+              ---
+        operation: update
+        input:
+          path: "notes/n1.md"
+          fields:
+            title: ""
+        expect:
+          frontmatter:
+            title: ""
+          frontmatter_written:
+            title: ""
+
+  # =============================================================================
+  # Group 5: Single-quoted empty string parsed as empty string
+  # =============================================================================
+
+  - name: "single-quoted empty string"
+    spec_ref: "§3.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/sq.md: |
+          ---
+          type: note
+          title: ''
+          ---
+
+    tests:
+      - name: "single-quoted empty string is empty string, not null"
+        operation: read
+        input:
+          path: "notes/sq.md"
+        expect:
+          frontmatter:
+            title: ""
+
+      - name: "single-quoted empty string satisfies required"
+        setup:
+          types:
+            strict-note.md: |
+              ---
+              name: strict-note
+              fields:
+                title:
+                  type: string
+                  required: true
+              ---
+          files:
+            notes/sq-req.md: |
+              ---
+              type: strict-note
+              title: ''
+              ---
+        operation: validate
+        input:
+          path: "notes/sq-req.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 6: Line ending preservation
+  # =============================================================================
+
+  - name: "line ending preservation"
+    spec_ref: "§3.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "body content preserved after frontmatter update"
+        setup:
+          files:
+            notes/body.md: |
+              ---
+              type: note
+              title: "Old title"
+              ---
+              # Heading
+
+              Body paragraph with **bold** text.
+
+              - list item 1
+              - list item 2
+        operation: update
+        input:
+          path: "notes/body.md"
+          fields:
+            title: "New title"
+        expect:
+          body_contains_all:
+            - "# Heading"
+            - "Body paragraph with **bold** text."
+            - "- list item 1"
+            - "- list item 2"
+
+  # =============================================================================
+  # Group 7: Special characters in field names
+  # =============================================================================
+
+  - name: "special characters in field names"
+    spec_ref: "§3.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+      files:
+        notes/special.md: |
+          ---
+          "field-with-dashes": value1
+          "field.with.dots": value2
+          "field:with:colons": value3
+          ---
+
+    tests:
+      - name: "field with dashes is readable"
+        operation: read
+        input:
+          path: "notes/special.md"
+        expect:
+          frontmatter:
+            "field-with-dashes": "value1"
+            "field.with.dots": "value2"
+            "field:with:colons": "value3"
+
+  # =============================================================================
+  # Group 8: Multi-line string formats
+  # =============================================================================
+
+  - name: "multi-line string formats"
+    spec_ref: "§3.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            description:
+              type: string
+          ---
+
+    tests:
+      - name: "literal block string preserves newlines"
+        setup:
+          files:
+            notes/literal.md: |
+              ---
+              type: note
+              description: |
+                Line one.
+                Line two.
+              ---
+        operation: read
+        input:
+          path: "notes/literal.md"
+        expect:
+          frontmatter:
+            description: "Line one.\nLine two.\n"
+
+      - name: "folded block string joins lines"
+        setup:
+          files:
+            notes/folded.md: |
+              ---
+              type: note
+              description: >
+                This is a long
+                folded line.
+              ---
+        operation: read
+        input:
+          path: "notes/folded.md"
+        expect:
+          frontmatter:
+            description: "This is a long folded line.\n"
+
+      - name: "quoted string with escape sequences"
+        setup:
+          files:
+            notes/escaped.md: |
+              ---
+              type: note
+              description: "Line 1\nLine 2"
+              ---
+        operation: read
+        input:
+          path: "notes/escaped.md"
+        expect:
+          frontmatter:
+            description: "Line 1\nLine 2"
+
+  # =============================================================================
+  # Group 9: Default not applied to null on create
+  # =============================================================================
+
+  - name: "default not applied to null on create path"
+    spec_ref: "§3.3, §7.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [open, done]
+              default: open
+          ---
+
+    tests:
+      - name: "create with explicit null does not apply default"
+        operation: create
+        input:
+          type: task
+          path: "tasks/t1.md"
+          frontmatter:
+            title: "Test task"
+            status: null
+        expect:
+          frontmatter:
+            status: null
+
+  # =============================================================================
+  # Group 10: YAML type coercion patterns from §3.8
+  # =============================================================================
+
+  - name: "YAML type coercion edge cases"
+    spec_ref: "§3.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            count:
+              type: integer
+            rating:
+              type: number
+            active:
+              type: boolean
+          ---
+
+    tests:
+      - name: "unquoted integer coerced to string field"
+        setup:
+          files:
+            notes/coerce.md: |
+              ---
+              type: note
+              title: 123
+              ---
+        operation: read
+        input:
+          path: "notes/coerce.md"
+        expect:
+          frontmatter:
+            title: "123"
+
+      - name: "unquoted float coerced to string field"
+        setup:
+          files:
+            notes/coerce-float.md: |
+              ---
+              type: note
+              title: 3.14
+              ---
+        operation: read
+        input:
+          path: "notes/coerce-float.md"
+        expect:
+          frontmatter:
+            title: "3.14"
+
+      - name: "unquoted boolean coerced to string field"
+        setup:
+          files:
+            notes/coerce-bool.md: |
+              ---
+              type: note
+              title: true
+              ---
+        operation: read
+        input:
+          path: "notes/coerce-bool.md"
+        expect:
+          frontmatter:
+            title: "true"
+
+      - name: "hex integer coerced to number"
+        setup:
+          files:
+            notes/hex.md: |
+              ---
+              type: note
+              count: 0x1A
+              ---
+        operation: read
+        input:
+          path: "notes/hex.md"
+        expect:
+          frontmatter:
+            count: 26

@@ -1,0 +1,435 @@
+name: "expression language gaps"
+level: 3
+category: expressions
+spec_ref: "§11"
+
+groups:
+  # =============================================================================
+  # Group 1: Date/time component methods
+  # =============================================================================
+
+  - name: "date component methods"
+    spec_ref: "§11.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        event.md: |
+          ---
+          name: event
+          fields:
+            title:
+              type: string
+            scheduled:
+              type: datetime
+            day:
+              type: date
+          ---
+      files:
+        events/e1.md: |
+          ---
+          type: event
+          title: "Friday Meeting"
+          scheduled: "2024-03-15T14:30:45Z"
+          day: "2024-03-15"
+          ---
+
+    tests:
+      - name: "dayOfWeek returns correct value (0=Sunday)"
+        operation: evaluate
+        input:
+          path: "events/e1.md"
+          expression: 'scheduled.dayOfWeek'
+        expect:
+          result: 5
+
+      - name: "minute returns correct value"
+        operation: evaluate
+        input:
+          path: "events/e1.md"
+          expression: 'scheduled.minute'
+        expect:
+          result: 30
+
+      - name: "second returns correct value"
+        operation: evaluate
+        input:
+          path: "events/e1.md"
+          expression: 'scheduled.second'
+        expect:
+          result: 45
+
+      - name: ".date() extracts date portion from datetime"
+        operation: evaluate
+        input:
+          path: "events/e1.md"
+          expression: 'scheduled.date() == date("2024-03-15")'
+        expect:
+          result: true
+
+      - name: ".time() extracts time portion from datetime"
+        operation: evaluate
+        input:
+          path: "events/e1.md"
+          expression: 'scheduled.time()'
+        expect:
+          result: "14:30:45"
+
+  # =============================================================================
+  # Group 2: Date formatting
+  # =============================================================================
+
+  - name: "date format method"
+    spec_ref: "§11.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        event.md: |
+          ---
+          name: event
+          fields:
+            due:
+              type: date
+            created_at:
+              type: datetime
+          ---
+      files:
+        events/e1.md: |
+          ---
+          type: event
+          due: "2024-03-15"
+          created_at: "2024-03-15T09:05:03Z"
+          ---
+
+    tests:
+      - name: "date format YYYY-MM-DD"
+        operation: evaluate
+        input:
+          path: "events/e1.md"
+          expression: 'due.format("YYYY-MM-DD")'
+        expect:
+          result: "2024-03-15"
+
+      - name: "datetime format with time tokens"
+        operation: evaluate
+        input:
+          path: "events/e1.md"
+          expression: 'created_at.format("YYYY-MM-DD HH:mm:ss")'
+        expect:
+          result: "2024-03-15 09:05:03"
+
+  # =============================================================================
+  # Group 3: Scientific notation and decimal literals
+  # =============================================================================
+
+  - name: "numeric literals in expressions"
+    spec_ref: "§11.2"
+
+    tests:
+      - name: "scientific notation literal"
+        operation: evaluate
+        input:
+          expression: '1e6 == 1000000'
+        expect:
+          result: true
+
+      - name: "negative scientific notation"
+        operation: evaluate
+        input:
+          expression: '1e-3 == 0.001'
+        expect:
+          result: true
+
+      - name: "decimal literal in comparison"
+        operation: evaluate
+        input:
+          expression: '3.14 > 3'
+        expect:
+          result: true
+
+  # =============================================================================
+  # Group 4: List literal in expressions
+  # =============================================================================
+
+  - name: "list literals in expressions"
+    spec_ref: "§11.2"
+
+    tests:
+      - name: "list literal length"
+        operation: evaluate
+        input:
+          expression: '["a", "b", "c"].length'
+        expect:
+          result: 3
+
+      - name: "list literal contains"
+        operation: evaluate
+        input:
+          expression: '[1, 2, 3].contains(2)'
+        expect:
+          result: true
+
+      - name: "list literal index access"
+        operation: evaluate
+        input:
+          expression: '["first", "second", "third"][1]'
+        expect:
+          result: "second"
+
+  # =============================================================================
+  # Group 5: String title() method
+  # =============================================================================
+
+  - name: "string title method"
+    spec_ref: "§11.5"
+
+    tests:
+      - name: "title case conversion"
+        operation: evaluate
+        input:
+          expression: '"hello world".title()'
+        expect:
+          result: "Hello World"
+
+      - name: "title case with mixed input"
+        operation: evaluate
+        input:
+          expression: '"the QUICK brown FOX".title()'
+        expect:
+          result: "The Quick Brown Fox"
+
+  # =============================================================================
+  # Group 6: Type checking — isType for object and date
+  # =============================================================================
+
+  - name: "isType for object and date"
+    spec_ref: "§11.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            metadata:
+              type: object
+              fields:
+                source:
+                  type: string
+            due:
+              type: date
+          ---
+      files:
+        notes/n1.md: |
+          ---
+          type: note
+          metadata:
+            source: "web"
+          due: "2024-06-15"
+          ---
+
+    tests:
+      - name: "isType('object') returns true for object field"
+        operation: evaluate
+        input:
+          path: "notes/n1.md"
+          expression: 'metadata.isType("object")'
+        expect:
+          result: true
+
+      - name: "isType('date') returns true for date field"
+        operation: evaluate
+        input:
+          path: "notes/n1.md"
+          expression: 'due.isType("date")'
+        expect:
+          result: true
+
+      - name: "isType('object') returns false for string"
+        operation: evaluate
+        input:
+          expression: '"hello".isType("object")'
+        expect:
+          result: false
+
+  # =============================================================================
+  # Group 7: Type conversion — number(false), number(date), list()
+  # =============================================================================
+
+  - name: "type conversion functions"
+    spec_ref: "§11.11"
+
+    tests:
+      - name: "number(false) returns 0"
+        operation: evaluate
+        input:
+          expression: 'number(false)'
+        expect:
+          result: 0
+
+      - name: "number(true) returns 1"
+        operation: evaluate
+        input:
+          expression: 'number(true)'
+        expect:
+          result: 1
+
+      - name: "list() wraps scalar in list"
+        operation: evaluate
+        input:
+          expression: 'list("hello").length'
+        expect:
+          result: 1
+
+      - name: "list() on existing list is no-op"
+        operation: evaluate
+        input:
+          expression: 'list(["a", "b"]).length'
+        expect:
+          result: 2
+
+  # =============================================================================
+  # Group 8: Duration long-form aliases
+  # =============================================================================
+
+  - name: "duration long-form aliases"
+    spec_ref: "§11.8"
+
+    tests:
+      - name: "7 days equivalent to 7d"
+        operation: evaluate
+        input:
+          expression: 'date("2024-01-01") + "7 days" == date("2024-01-01") + "7d"'
+        expect:
+          result: true
+
+      - name: "1 week equivalent to 7d"
+        operation: evaluate
+        input:
+          expression: 'date("2024-01-01") + "1 week" == date("2024-01-01") + "7d"'
+        expect:
+          result: true
+
+      - name: "1 month alias"
+        operation: evaluate
+        input:
+          expression: 'date("2024-01-15") + "1 month" == date("2024-02-15")'
+        expect:
+          result: true
+
+      - name: "2 years alias"
+        operation: evaluate
+        input:
+          expression: 'date("2024-03-15") + "2 years" == date("2026-03-15")'
+        expect:
+          result: true
+
+  # =============================================================================
+  # Group 9: Lambda index variable
+  # =============================================================================
+
+  - name: "lambda index variable in map and filter"
+    spec_ref: "§11.16"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            items:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        notes/n1.md: |
+          ---
+          type: note
+          items: ["a", "b", "c"]
+          ---
+
+    tests:
+      - name: "index available in map"
+        operation: evaluate
+        input:
+          path: "notes/n1.md"
+          expression: 'items.map(index)'
+        expect:
+          result: [0, 1, 2]
+
+      - name: "index available in filter"
+        operation: evaluate
+        input:
+          path: "notes/n1.md"
+          expression: 'items.filter(index > 0).length'
+        expect:
+          result: 2
+
+  # =============================================================================
+  # Group 10: Custom function namespacing (ext::)
+  # =============================================================================
+
+  - name: "custom function namespace rules"
+    spec_ref: "§11.19"
+
+    tests:
+      - name: "unknown ext-prefixed function produces evaluation error"
+        operation: evaluate
+        input:
+          expression: 'ext::unknownFunc("test")'
+        expect:
+          error:
+            code: unknown_function
+
+      - name: "ext dot delimiter also accepted"
+        operation: evaluate
+        input:
+          expression: 'ext.unknownFunc("test")'
+        expect:
+          error:
+            code: unknown_function
+
+  # =============================================================================
+  # Group 11: Invalid regex produces evaluation error
+  # =============================================================================
+
+  - name: "invalid regex handling"
+    spec_ref: "§11.18"
+
+    tests:
+      - name: "invalid regex in matches() returns null"
+        operation: evaluate
+        input:
+          expression: '"test".matches("[invalid")'
+        expect:
+          result: null
+
+  # =============================================================================
+  # Group 12: number(date) returns milliseconds since epoch
+  # =============================================================================
+
+  - name: "number(date) conversion"
+    spec_ref: "§11.11"
+
+    tests:
+      - name: "number converts datetime to milliseconds since epoch"
+        operation: evaluate
+        input:
+          expression: 'number(datetime("1970-01-01T00:00:01Z"))'
+        expect:
+          result: 1000
+
+      - name: "number of Unix epoch is 0"
+        operation: evaluate
+        input:
+          expression: 'number(datetime("1970-01-01T00:00:00Z"))'
+        expect:
+          result: 0
