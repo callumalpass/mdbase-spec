@@ -1,0 +1,718 @@
+name: "validation completeness and cross-file checks"
+level: 1
+category: validation
+spec_ref: "§9"
+
+groups:
+  # =============================================================================
+  # Group 1: Duplicate ID detection — cross-file uniqueness
+  # =============================================================================
+
+  - name: "duplicate ID cross-file detection"
+    spec_ref: "§9.2.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "id"
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "unique id values across files are valid"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              id: "task-001"
+              title: "First"
+              ---
+            tasks/t2.md: |
+              ---
+              type: task
+              id: "task-002"
+              title: "Second"
+              ---
+        operation: validate
+        input: {}
+        expect:
+          valid: true
+
+      - name: "duplicate id across different folders is detected"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              id: "shared-id"
+              title: "First"
+              ---
+            archive/t2.md: |
+              ---
+              type: task
+              id: "shared-id"
+              title: "Archived duplicate"
+              ---
+        operation: validate
+        input: {}
+        expect:
+          valid: false
+          issues:
+            - code: duplicate_id
+              field: id
+
+      - name: "three files with same id all reported"
+        setup:
+          files:
+            tasks/a.md: |
+              ---
+              type: task
+              id: "triple"
+              title: "A"
+              ---
+            tasks/b.md: |
+              ---
+              type: task
+              id: "triple"
+              title: "B"
+              ---
+            tasks/c.md: |
+              ---
+              type: task
+              id: "triple"
+              title: "C"
+              ---
+        operation: validate
+        input: {}
+        expect:
+          valid: false
+          issues:
+            - code: duplicate_id
+              field: id
+
+      - name: "files without id field do not trigger duplicate_id"
+        setup:
+          files:
+            tasks/no-id-1.md: |
+              ---
+              type: task
+              title: "No ID 1"
+              ---
+            tasks/no-id-2.md: |
+              ---
+              type: task
+              title: "No ID 2"
+              ---
+        operation: validate
+        input: {}
+        expect:
+          valid: true
+
+      - name: "null id values do not trigger duplicate_id"
+        setup:
+          files:
+            tasks/null-id-1.md: |
+              ---
+              type: task
+              id: null
+              title: "Null ID 1"
+              ---
+            tasks/null-id-2.md: |
+              ---
+              type: task
+              id: null
+              title: "Null ID 2"
+              ---
+        operation: validate
+        input: {}
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 2: Custom id_field configuration
+  # =============================================================================
+
+  - name: "custom id_field uniqueness"
+    spec_ref: "§9.2.8, §4.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          id_field: "uid"
+          default_validation: "error"
+      types:
+        record.md: |
+          ---
+          name: record
+          fields:
+            uid:
+              type: string
+            name:
+              type: string
+          ---
+
+    tests:
+      - name: "custom id_field checked for uniqueness"
+        setup:
+          files:
+            records/r1.md: |
+              ---
+              type: record
+              uid: "rec-001"
+              name: "First"
+              ---
+            records/r2.md: |
+              ---
+              type: record
+              uid: "rec-001"
+              name: "Duplicate"
+              ---
+        operation: validate
+        input: {}
+        expect:
+          valid: false
+          issues:
+            - code: duplicate_id
+              field: uid
+
+  # =============================================================================
+  # Group 3: Duplicate value (unique constraint) — cross-file
+  # =============================================================================
+
+  - name: "unique field cross-file validation"
+    spec_ref: "§7.2, §9.2.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        post.md: |
+          ---
+          name: post
+          fields:
+            title:
+              type: string
+            slug:
+              type: string
+              unique: true
+          ---
+
+    tests:
+      - name: "unique values across files pass validation"
+        setup:
+          files:
+            posts/a.md: |
+              ---
+              type: post
+              title: "First"
+              slug: "first-post"
+              ---
+            posts/b.md: |
+              ---
+              type: post
+              title: "Second"
+              slug: "second-post"
+              ---
+        operation: validate
+        input: {}
+        expect:
+          valid: true
+
+      - name: "duplicate unique values across files fails"
+        setup:
+          files:
+            posts/a.md: |
+              ---
+              type: post
+              title: "First"
+              slug: "my-slug"
+              ---
+            posts/b.md: |
+              ---
+              type: post
+              title: "Second"
+              slug: "my-slug"
+              ---
+        operation: validate
+        input: {}
+        expect:
+          valid: false
+          issues:
+            - code: duplicate_value
+              field: slug
+
+  # =============================================================================
+  # Group 4: Validation issue format completeness
+  # =============================================================================
+
+  - name: "validation issue includes all required fields"
+    spec_ref: "§9.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+          default_strict: true
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            priority:
+              type: integer
+              min: 1
+              max: 5
+            status:
+              type: enum
+              values: [open, in_progress, done]
+          ---
+
+    tests:
+      - name: "missing_required issue has path, field, code, message, severity"
+        setup:
+          files:
+            tasks/missing.md: |
+              ---
+              type: task
+              ---
+        operation: validate
+        input:
+          path: "tasks/missing.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
+              path: "tasks/missing.md"
+              severity: error
+
+      - name: "constraint_violation issue has path, field, code, severity"
+        setup:
+          files:
+            tasks/bad-priority.md: |
+              ---
+              type: task
+              title: "Test"
+              priority: 10
+              ---
+        operation: validate
+        input:
+          path: "tasks/bad-priority.md"
+        expect:
+          valid: false
+          issues:
+            - code: number_too_large
+              field: priority
+              path: "tasks/bad-priority.md"
+              severity: error
+
+      - name: "invalid_enum issue has path, field, code, severity"
+        setup:
+          files:
+            tasks/bad-status.md: |
+              ---
+              type: task
+              title: "Test"
+              status: "pending"
+              ---
+        operation: validate
+        input:
+          path: "tasks/bad-status.md"
+        expect:
+          valid: false
+          issues:
+            - code: invalid_enum
+              field: status
+              path: "tasks/bad-status.md"
+              severity: error
+
+      - name: "unknown_field issue has warning severity in strict mode"
+        setup:
+          files:
+            tasks/extra.md: |
+              ---
+              type: task
+              title: "Test"
+              custom_field: "unexpected"
+              ---
+        operation: validate
+        input:
+          path: "tasks/extra.md"
+        expect:
+          valid: false
+          issues:
+            - code: unknown_field
+              field: custom_field
+              path: "tasks/extra.md"
+
+      - name: "multiple issues reported for same file"
+        setup:
+          files:
+            tasks/multi-error.md: |
+              ---
+              type: task
+              priority: 100
+              status: "invalid"
+              custom: "unknown"
+              ---
+        operation: validate
+        input:
+          path: "tasks/multi-error.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
+            - code: number_too_large
+              field: priority
+            - code: invalid_enum
+              field: status
+            - code: unknown_field
+              field: custom
+
+  # =============================================================================
+  # Group 5: Multi-type validation
+  # =============================================================================
+
+  - name: "file matching multiple types validated against all"
+    spec_ref: "§9.2.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [open, done]
+          ---
+        urgent.md: |
+          ---
+          name: urgent
+          fields:
+            priority:
+              type: integer
+              required: true
+              min: 1
+              max: 5
+          ---
+      files:
+        tasks/multi.md: |
+          ---
+          types: [task, urgent]
+          title: "Critical fix"
+          ---
+
+    tests:
+      - name: "missing required field from second type fails validation"
+        operation: validate
+        input:
+          path: "tasks/multi.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: priority
+
+      - name: "satisfying all types passes validation"
+        setup:
+          files:
+            tasks/valid-multi.md: |
+              ---
+              types: [task, urgent]
+              title: "Valid multi"
+              status: "open"
+              priority: 3
+              ---
+        operation: validate
+        input:
+          path: "tasks/valid-multi.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 6: Validation levels — off, warn, error
+  # =============================================================================
+
+  - name: "all three validation levels"
+    spec_ref: "§9.1"
+
+    setup:
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+          ---
+      files:
+        tasks/invalid.md: |
+          ---
+          type: task
+          ---
+
+    tests:
+      - name: "off level skips validation entirely"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "off"
+        operation: read
+        input:
+          path: "tasks/invalid.md"
+        expect:
+          frontmatter: {}
+
+      - name: "warn level reports issues but read succeeds"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "warn"
+        operation: validate
+        input:
+          path: "tasks/invalid.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: title
+              severity: error
+
+      - name: "error level causes operation failure on create"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              default_validation: "error"
+        operation: create
+        input:
+          type: task
+          path: "tasks/new-invalid.md"
+          frontmatter: {}
+        expect:
+          error:
+            code: validation_failed
+
+  # =============================================================================
+  # Group 7: Required field — effective vs raw frontmatter
+  # =============================================================================
+
+  - name: "required checks effective frontmatter (with defaults)"
+    spec_ref: "§9.2.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: string
+              required: true
+              default: "open"
+          ---
+
+    tests:
+      - name: "required field satisfied by default value"
+        setup:
+          files:
+            tasks/t1.md: |
+              ---
+              type: task
+              title: "Has title"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "required field with explicit null fails even with default"
+        setup:
+          files:
+            tasks/t2.md: |
+              ---
+              type: task
+              title: "Has title"
+              status: null
+              ---
+        operation: validate
+        input:
+          path: "tasks/t2.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: status
+
+  # =============================================================================
+  # Group 8: Strict mode — implicit type keys allowed
+  # =============================================================================
+
+  - name: "strict mode allows implicit type keys"
+    spec_ref: "§9.2.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          strict: true
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Valid strict file"
+          ---
+
+    tests:
+      - name: "type key is implicitly allowed in strict mode"
+        operation: validate
+        input:
+          path: "tasks/t1.md"
+        expect:
+          valid: true
+
+      - name: "unknown field rejected in strict mode"
+        setup:
+          files:
+            tasks/t2.md: |
+              ---
+              type: task
+              title: "Test"
+              extra: "not allowed"
+              ---
+        operation: validate
+        input:
+          path: "tasks/t2.md"
+        expect:
+          valid: false
+          issues:
+            - code: unknown_field
+              field: extra
+
+  # =============================================================================
+  # Group 9: Link existence validation
+  # =============================================================================
+
+  - name: "link validate_exists enforcement"
+    spec_ref: "§9.2.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            parent:
+              type: link
+              validate_exists: true
+            related:
+              type: link
+          ---
+      files:
+        tasks/existing.md: |
+          ---
+          type: task
+          title: "Existing"
+          ---
+
+    tests:
+      - name: "validate_exists passes for existing target"
+        setup:
+          files:
+            tasks/child.md: |
+              ---
+              type: task
+              title: "Child"
+              parent: "[[existing]]"
+              ---
+        operation: validate
+        input:
+          path: "tasks/child.md"
+        expect:
+          valid: true
+
+      - name: "validate_exists fails for missing target"
+        setup:
+          files:
+            tasks/orphan.md: |
+              ---
+              type: task
+              title: "Orphan"
+              parent: "[[nonexistent]]"
+              ---
+        operation: validate
+        input:
+          path: "tasks/orphan.md"
+        expect:
+          valid: false
+          issues:
+            - code: link_not_found
+              field: parent
+
+      - name: "link without validate_exists does not check existence"
+        setup:
+          files:
+            tasks/relaxed.md: |
+              ---
+              type: task
+              title: "Relaxed"
+              related: "[[nonexistent]]"
+              ---
+        operation: validate
+        input:
+          path: "tasks/relaxed.md"
+        expect:
+          valid: true

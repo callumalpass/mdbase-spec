@@ -1,0 +1,632 @@
+name: "encoding and serialization edge cases"
+level: 1
+category: validation
+spec_ref: "§3"
+
+groups:
+  # =============================================================================
+  # Group 1: UTF-8 encoding requirement
+  # =============================================================================
+
+  - name: "UTF-8 encoding"
+    spec_ref: "§3.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "valid UTF-8 file is accepted"
+        setup:
+          files:
+            notes/utf8.md: |
+              ---
+              type: note
+              title: "Héllo wörld — café"
+              ---
+        operation: read
+        input:
+          path: "notes/utf8.md"
+        expect:
+          frontmatter:
+            title: "Héllo wörld — café"
+
+      - name: "file with CJK characters is accepted"
+        setup:
+          files:
+            notes/cjk.md: |
+              ---
+              type: note
+              title: "日本語テスト"
+              ---
+        operation: read
+        input:
+          path: "notes/cjk.md"
+        expect:
+          frontmatter:
+            title: "日本語テスト"
+
+      - name: "file with emoji is accepted"
+        setup:
+          files:
+            notes/emoji.md: |
+              ---
+              type: note
+              title: "Test 🚀 emoji"
+              ---
+        operation: read
+        input:
+          path: "notes/emoji.md"
+        expect:
+          frontmatter:
+            title: "Test 🚀 emoji"
+
+      - name: "invalid UTF-8 sequence is rejected"
+        setup:
+          files:
+            notes/bad-utf8.md:
+              encoding: "latin-1"
+              content: "---\ntype: note\ntitle: \"caf\xe9\"\n---\n"
+        operation: read
+        input:
+          path: "notes/bad-utf8.md"
+        expect:
+          error:
+            code: invalid_frontmatter
+
+  # =============================================================================
+  # Group 2: Line ending preservation
+  # =============================================================================
+
+  - name: "line ending preservation on update"
+    spec_ref: "§3.5, §12.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            status:
+              type: string
+          ---
+
+    tests:
+      - name: "LF line endings preserved through update"
+        setup:
+          files:
+            notes/lf.md:
+              line_endings: "LF"
+              content: "---\ntype: note\ntitle: \"LF file\"\nstatus: \"open\"\n---\n\nBody content.\n"
+        operation: update
+        input:
+          path: "notes/lf.md"
+          fields:
+            status: "done"
+        expect:
+          frontmatter:
+            status: "done"
+          line_endings: "LF"
+
+      - name: "CRLF line endings preserved through update"
+        setup:
+          files:
+            notes/crlf.md:
+              line_endings: "CRLF"
+              content: "---\r\ntype: note\r\ntitle: \"CRLF file\"\r\nstatus: \"open\"\r\n---\r\n\r\nBody content.\r\n"
+        operation: update
+        input:
+          path: "notes/crlf.md"
+          fields:
+            status: "done"
+        expect:
+          frontmatter:
+            status: "done"
+          line_endings: "CRLF"
+
+  # =============================================================================
+  # Group 3: Body content preservation through updates
+  # =============================================================================
+
+  - name: "body preservation with various content types"
+    spec_ref: "§3.5, §12.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            status:
+              type: string
+          ---
+
+    tests:
+      - name: "body with code blocks preserved"
+        setup:
+          files:
+            notes/code.md: |
+              ---
+              type: note
+              title: "Code note"
+              status: "draft"
+              ---
+
+              Here is some code:
+
+              ```python
+              def hello():
+                  print("Hello, world!")
+              ```
+
+              And more text.
+        operation: update
+        input:
+          path: "notes/code.md"
+          fields:
+            status: "published"
+        expect:
+          frontmatter:
+            status: "published"
+          body_contains_all:
+            - "```python"
+            - 'def hello():'
+            - '    print("Hello, world!")'
+            - "```"
+            - "And more text."
+
+      - name: "body with HTML preserved"
+        setup:
+          files:
+            notes/html.md: |
+              ---
+              type: note
+              title: "HTML note"
+              status: "draft"
+              ---
+
+              <div class="container">
+                <p>HTML content</p>
+              </div>
+        operation: update
+        input:
+          path: "notes/html.md"
+          fields:
+            status: "published"
+        expect:
+          frontmatter:
+            status: "published"
+          body_contains_all:
+            - '<div class="container">'
+            - "<p>HTML content</p>"
+            - "</div>"
+
+      - name: "body with frontmatter-like content preserved"
+        setup:
+          files:
+            notes/tricky.md: |
+              ---
+              type: note
+              title: "Tricky note"
+              status: "draft"
+              ---
+
+              Here is a block that looks like frontmatter:
+
+              ---
+              this: is not frontmatter
+              ---
+
+              Still the body.
+        operation: update
+        input:
+          path: "notes/tricky.md"
+          fields:
+            status: "published"
+        expect:
+          frontmatter:
+            status: "published"
+          body_contains_all:
+            - "this: is not frontmatter"
+            - "Still the body."
+
+  # =============================================================================
+  # Group 4: Frontmatter serialization — never write bare nulls
+  # =============================================================================
+
+  - name: "null serialization correctness"
+    spec_ref: "§3.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          write_nulls: "explicit"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            description:
+              type: string
+          ---
+
+    tests:
+      - name: "explicit null written as 'null' keyword not bare empty"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "Test"
+              description: "has value"
+              ---
+        operation: update
+        input:
+          path: "notes/n1.md"
+          fields:
+            description: null
+        expect:
+          frontmatter_not_bare_null: [description]
+
+      - name: "null on create with write_nulls explicit"
+        operation: create
+        input:
+          type: note
+          path: "notes/n2.md"
+          frontmatter:
+            title: "Test"
+            description: null
+        expect:
+          frontmatter_not_bare_null: [description]
+
+  # =============================================================================
+  # Group 5: Null handling with write_nulls: omit
+  # =============================================================================
+
+  - name: "write_nulls omit behavior"
+    spec_ref: "§3.4, §12.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          write_nulls: "omit"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+              required: true
+            tags:
+              type: list
+              items:
+                type: string
+            description:
+              type: string
+          ---
+
+    tests:
+      - name: "null field omitted from disk when write_nulls is omit"
+        setup:
+          files:
+            notes/n1.md: |
+              ---
+              type: note
+              title: "Test"
+              description: "has value"
+              ---
+        operation: update
+        input:
+          path: "notes/n1.md"
+          fields:
+            description: null
+        expect:
+          frontmatter_not_written: [description]
+
+  # =============================================================================
+  # Group 6: Empty string serialization
+  # =============================================================================
+
+  - name: "empty string written with quotes"
+    spec_ref: "§3.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            summary:
+              type: string
+          ---
+
+    tests:
+      - name: "empty string written with explicit quotes on create"
+        operation: create
+        input:
+          type: note
+          path: "notes/n1.md"
+          frontmatter:
+            title: "Test"
+            summary: ""
+        expect:
+          frontmatter_written:
+            summary: ""
+
+      - name: "empty string written with explicit quotes on update"
+        setup:
+          files:
+            notes/n2.md: |
+              ---
+              type: note
+              title: "Test"
+              summary: "original"
+              ---
+        operation: update
+        input:
+          path: "notes/n2.md"
+          fields:
+            summary: ""
+        expect:
+          frontmatter_written:
+            summary: ""
+
+  # =============================================================================
+  # Group 7: Empty list serialization
+  # =============================================================================
+
+  - name: "empty list write behavior"
+    spec_ref: "§3.4"
+
+    tests:
+      - name: "empty list written as [] when write_empty_lists is true"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              write_empty_lists: true
+          types:
+            note.md: |
+              ---
+              name: note
+              fields:
+                title:
+                  type: string
+                tags:
+                  type: list
+                  items:
+                    type: string
+              ---
+        operation: create
+        input:
+          type: note
+          path: "notes/n1.md"
+          frontmatter:
+            title: "Test"
+            tags: []
+        expect:
+          frontmatter_written:
+            tags: []
+
+      - name: "empty list omitted when write_empty_lists is false"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+            settings:
+              write_empty_lists: false
+          types:
+            note.md: |
+              ---
+              name: note
+              fields:
+                title:
+                  type: string
+                tags:
+                  type: list
+                  items:
+                    type: string
+              ---
+        operation: create
+        input:
+          type: note
+          path: "notes/n2.md"
+          frontmatter:
+            title: "Test"
+            tags: []
+        expect:
+          frontmatter_not_written: [tags]
+
+  # =============================================================================
+  # Group 8: Frontmatter opening delimiter rules
+  # =============================================================================
+
+  - name: "frontmatter delimiter rules"
+    spec_ref: "§3.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+
+    tests:
+      - name: "file without frontmatter is treated as empty mapping"
+        setup:
+          files:
+            notes/no-fm.md: |
+              # Just a heading
+
+              No frontmatter here.
+        operation: read
+        input:
+          path: "notes/no-fm.md"
+        expect:
+          frontmatter: {}
+          types: []
+
+      - name: "blank line before dashes means no frontmatter"
+        setup:
+          files:
+            notes/blank-before.md:
+              content: "\n---\ntitle: Not frontmatter\n---\n"
+        operation: read
+        input:
+          path: "notes/blank-before.md"
+        expect:
+          frontmatter: {}
+
+      - name: "whitespace before dashes means no frontmatter"
+        setup:
+          files:
+            notes/space-before.md:
+              content: "  ---\ntitle: Not frontmatter\n---\n"
+        operation: read
+        input:
+          path: "notes/space-before.md"
+        expect:
+          frontmatter: {}
+
+  # =============================================================================
+  # Group 9: Empty frontmatter
+  # =============================================================================
+
+  - name: "empty frontmatter"
+    spec_ref: "§3.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+
+    tests:
+      - name: "empty frontmatter block is valid empty mapping"
+        setup:
+          files:
+            notes/empty.md: |
+              ---
+              ---
+              Body content here.
+        operation: read
+        input:
+          path: "notes/empty.md"
+        expect:
+          frontmatter: {}
+
+      - name: "frontmatter with only comments is empty mapping"
+        setup:
+          files:
+            notes/comments.md: |
+              ---
+              # This is a YAML comment
+              ---
+              Body content here.
+        operation: read
+        input:
+          path: "notes/comments.md"
+        expect:
+          frontmatter: {}
+
+  # =============================================================================
+  # Group 10: Multi-line string serialization
+  # =============================================================================
+
+  - name: "multi-line string round-trip"
+    spec_ref: "§3.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            description:
+              type: string
+          ---
+
+    tests:
+      - name: "literal block string preserved through read"
+        setup:
+          files:
+            notes/literal.md: |
+              ---
+              type: note
+              title: "Literal"
+              description: |
+                Line one.
+                Line two.
+              ---
+        operation: read
+        input:
+          path: "notes/literal.md"
+        expect:
+          frontmatter:
+            description: "Line one.\nLine two.\n"
+
+      - name: "folded block string preserved through read"
+        setup:
+          files:
+            notes/folded.md: |
+              ---
+              type: note
+              title: "Folded"
+              description: >
+                This is a long line
+                that will be folded.
+              ---
+        operation: read
+        input:
+          path: "notes/folded.md"
+        expect:
+          frontmatter:
+            description: "This is a long line that will be folded.\n"
+
+      - name: "quoted escape sequences parsed correctly"
+        setup:
+          files:
+            notes/escaped.md: |
+              ---
+              type: note
+              title: "Escaped"
+              description: "Line 1\nLine 2\tTabbed"
+              ---
+        operation: read
+        input:
+          path: "notes/escaped.md"
+        expect:
+          frontmatter:
+            description: "Line 1\nLine 2\tTabbed"

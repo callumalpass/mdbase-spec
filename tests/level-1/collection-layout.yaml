@@ -1,0 +1,691 @@
+name: "collection layout and file discovery"
+level: 1
+category: config
+spec_ref: "§2"
+
+groups:
+  # =============================================================================
+  # Group 1: Collection identification
+  # =============================================================================
+
+  - name: "collection identification requires mdbase.yaml"
+    spec_ref: "§2.1"
+
+    tests:
+      - name: "directory with mdbase.yaml is recognized as a collection"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          files:
+            hello.md: |
+              ---
+              title: "Hello"
+              ---
+        operation: read
+        input:
+          path: "hello.md"
+        expect:
+          frontmatter:
+            title: "Hello"
+
+      - name: "directory without mdbase.yaml is not a collection"
+        setup:
+          config: null
+          files:
+            hello.md: |
+              ---
+              title: "Hello"
+              ---
+        operation: load_config
+        input: {}
+        expect:
+          error:
+            code: missing_config
+
+  # =============================================================================
+  # Group 2: File discovery — recursive scanning
+  # =============================================================================
+
+  - name: "recursive subdirectory scanning"
+    spec_ref: "§2.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        root.md: |
+          ---
+          type: note
+          title: "Root file"
+          ---
+        sub/level1.md: |
+          ---
+          type: note
+          title: "Level 1"
+          ---
+        sub/deep/level2.md: |
+          ---
+          type: note
+          title: "Level 2"
+          ---
+
+    tests:
+      - name: "files in subdirectories are discovered by default"
+        operation: query
+        input:
+          types: [note]
+          order_by: [{ field: "file.path", direction: "asc" }]
+        expect:
+          results:
+            - path: "root.md"
+              frontmatter:
+                title: "Root file"
+            - path: "sub/deep/level2.md"
+              frontmatter:
+                title: "Level 2"
+            - path: "sub/level1.md"
+              frontmatter:
+                title: "Level 1"
+
+      - name: "deeply nested files are included in scan"
+        operation: read
+        input:
+          path: "sub/deep/level2.md"
+        expect:
+          frontmatter:
+            title: "Level 2"
+
+  # =============================================================================
+  # Group 3: include_subfolders: false
+  # =============================================================================
+
+  - name: "include_subfolders disabled"
+    spec_ref: "§2.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          include_subfolders: false
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        root.md: |
+          ---
+          type: note
+          title: "Root file"
+          ---
+        sub/nested.md: |
+          ---
+          type: note
+          title: "Nested file"
+          ---
+
+    tests:
+      - name: "only root files are discovered when include_subfolders is false"
+        operation: query
+        input:
+          types: [note]
+        expect:
+          results:
+            - path: "root.md"
+              frontmatter:
+                title: "Root file"
+          meta:
+            total_count: 1
+
+      - name: "subdirectory file returns file_not_found when not scanned"
+        operation: read
+        input:
+          path: "sub/nested.md"
+        expect:
+          error:
+            code: file_not_found
+
+  # =============================================================================
+  # Group 4: Excluded paths
+  # =============================================================================
+
+  - name: "excluded paths are not scanned"
+    spec_ref: "§2.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          exclude:
+            - ".git"
+            - "node_modules"
+            - ".mdbase"
+            - "drafts/**"
+            - "*.draft.md"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/visible.md: |
+          ---
+          type: note
+          title: "Visible"
+          ---
+        drafts/hidden.md: |
+          ---
+          type: note
+          title: "Hidden draft"
+          ---
+        notes/wip.draft.md: |
+          ---
+          type: note
+          title: "Draft by extension"
+          ---
+        notes/included.md: |
+          ---
+          type: note
+          title: "Included"
+          ---
+
+    tests:
+      - name: "files matching exclude glob pattern are not found"
+        operation: read
+        input:
+          path: "drafts/hidden.md"
+        expect:
+          error:
+            code: file_not_found
+
+      - name: "files matching exclude wildcard pattern are not found"
+        operation: read
+        input:
+          path: "notes/wip.draft.md"
+        expect:
+          error:
+            code: file_not_found
+
+      - name: "non-excluded files are found"
+        operation: query
+        input:
+          types: [note]
+          order_by: [{ field: "file.path", direction: "asc" }]
+        expect:
+          results:
+            - path: "notes/included.md"
+            - path: "notes/visible.md"
+          meta:
+            total_count: 2
+
+  # =============================================================================
+  # Group 5: Types folder excluded from scan
+  # =============================================================================
+
+  - name: "types folder excluded from regular file scan"
+    spec_ref: "§2.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/real.md: |
+          ---
+          type: note
+          title: "Real note"
+          ---
+
+    tests:
+      - name: "type definition files are not records"
+        operation: query
+        input: {}
+        expect:
+          meta:
+            total_count: 1
+
+      - name: "type file path returns file_not_found as a record"
+        operation: read
+        input:
+          path: "_types/note.md"
+        expect:
+          error:
+            code: file_not_found
+
+  # =============================================================================
+  # Group 6: Custom types folder
+  # =============================================================================
+
+  - name: "custom types folder excluded from scan"
+    spec_ref: "§2.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          types_folder: "schemas"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/real.md: |
+          ---
+          type: note
+          title: "Real note"
+          ---
+
+    tests:
+      - name: "custom types folder is excluded from scan"
+        operation: query
+        input: {}
+        expect:
+          meta:
+            total_count: 1
+
+      - name: "type definitions in custom folder are loaded correctly"
+        operation: validate
+        input:
+          path: "notes/real.md"
+        expect:
+          valid: true
+
+  # =============================================================================
+  # Group 7: Custom extensions
+  # =============================================================================
+
+  - name: "custom file extensions"
+    spec_ref: "§2.2, §4.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          extensions: ["mdx"]
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/standard.md: |
+          ---
+          type: note
+          title: "Standard markdown"
+          ---
+        notes/extended.mdx: |
+          ---
+          type: note
+          title: "MDX file"
+          ---
+        notes/ignored.txt: |
+          ---
+          type: note
+          title: "Text file"
+          ---
+
+    tests:
+      - name: "md files are always included"
+        operation: read
+        input:
+          path: "notes/standard.md"
+        expect:
+          frontmatter:
+            title: "Standard markdown"
+
+      - name: "custom extension files are treated as records"
+        operation: read
+        input:
+          path: "notes/extended.mdx"
+        expect:
+          frontmatter:
+            title: "MDX file"
+
+      - name: "non-markdown non-extension files are not records"
+        operation: read
+        input:
+          path: "notes/ignored.txt"
+        expect:
+          error:
+            code: file_not_found
+
+      - name: "query returns both md and custom extension files"
+        operation: query
+        input:
+          types: [note]
+          order_by: [{ field: "file.path", direction: "asc" }]
+        expect:
+          results:
+            - path: "notes/extended.mdx"
+            - path: "notes/standard.md"
+          meta:
+            total_count: 2
+
+  # =============================================================================
+  # Group 8: Extension normalization (dot prefix)
+  # =============================================================================
+
+  - name: "extension dot normalization"
+    spec_ref: "§4.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          extensions: [".mdx", "markdown"]
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        a.mdx: |
+          ---
+          type: note
+          title: "MDX with dot prefix"
+          ---
+        b.markdown: |
+          ---
+          type: note
+          title: "Markdown extension"
+          ---
+
+    tests:
+      - name: "extension with leading dot is normalized and works"
+        operation: read
+        input:
+          path: "a.mdx"
+        expect:
+          frontmatter:
+            title: "MDX with dot prefix"
+
+      - name: "extension without leading dot works"
+        operation: read
+        input:
+          path: "b.markdown"
+        expect:
+          frontmatter:
+            title: "Markdown extension"
+
+  # =============================================================================
+  # Group 9: Nested collections
+  # =============================================================================
+
+  - name: "nested collection boundary"
+    spec_ref: "§2.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/parent-note.md: |
+          ---
+          type: note
+          title: "Parent collection note"
+          ---
+        sub-project/mdbase.yaml: |
+          spec_version: "0.1.0"
+        sub-project/docs/readme.md: |
+          ---
+          type: note
+          title: "Nested collection doc"
+          ---
+
+    tests:
+      - name: "parent scan does not descend into nested collection"
+        operation: query
+        input:
+          types: [note]
+        expect:
+          results:
+            - path: "notes/parent-note.md"
+              frontmatter:
+                title: "Parent collection note"
+          meta:
+            total_count: 1
+
+      - name: "file in nested collection is not accessible from parent"
+        operation: read
+        input:
+          path: "sub-project/docs/readme.md"
+        expect:
+          error:
+            code: file_not_found
+
+  # =============================================================================
+  # Group 10: Non-markdown files
+  # =============================================================================
+
+  - name: "non-markdown files are not records"
+    spec_ref: "§2.9"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/real.md: |
+          ---
+          type: note
+          title: "A note"
+          ---
+        images/diagram.png: "binary content"
+        attachments/report.pdf: "binary content"
+
+    tests:
+      - name: "non-markdown files are not returned in queries"
+        operation: query
+        input: {}
+        expect:
+          meta:
+            total_count: 1
+
+      - name: "non-markdown file cannot be read as a record"
+        operation: read
+        input:
+          path: "images/diagram.png"
+        expect:
+          error:
+            code: file_not_found
+
+  # =============================================================================
+  # Group 11: Path conventions
+  # =============================================================================
+
+  - name: "paths use forward slashes"
+    spec_ref: "§2.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        sub/folder/note.md: |
+          ---
+          type: note
+          title: "Deep note"
+          ---
+
+    tests:
+      - name: "paths in results use forward slashes"
+        operation: read
+        input:
+          path: "sub/folder/note.md"
+        expect:
+          path: "sub/folder/note.md"
+          frontmatter:
+            title: "Deep note"
+
+      - name: "query result paths use forward slashes"
+        operation: query
+        input:
+          types: [note]
+        expect:
+          results:
+            - path: "sub/folder/note.md"
+
+  # =============================================================================
+  # Group 12: Default exclusions
+  # =============================================================================
+
+  - name: "default exclusions applied"
+    spec_ref: "§2.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/visible.md: |
+          ---
+          type: note
+          title: "Visible"
+          ---
+        .git/HEAD: "ref: refs/heads/main"
+        node_modules/pkg/readme.md: |
+          ---
+          title: "Package readme"
+          ---
+        .mdbase/cache.sqlite: "binary"
+
+    tests:
+      - name: ".git directory excluded by default"
+        operation: query
+        input: {}
+        expect:
+          meta:
+            total_count: 1
+
+      - name: "node_modules excluded by default"
+        operation: read
+        input:
+          path: "node_modules/pkg/readme.md"
+        expect:
+          error:
+            code: file_not_found
+
+      - name: ".mdbase cache folder excluded by default"
+        operation: read
+        input:
+          path: ".mdbase/cache.sqlite"
+        expect:
+          error:
+            code: file_not_found
+
+  # =============================================================================
+  # Group 13: Minimal collection (zero types)
+  # =============================================================================
+
+  - name: "minimal collection with untyped files"
+    spec_ref: "§2.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+      files:
+        hello.md: |
+          ---
+          title: "Hello World"
+          ---
+          This is a minimal collection.
+
+    tests:
+      - name: "untyped file is a valid record"
+        operation: read
+        input:
+          path: "hello.md"
+        expect:
+          frontmatter:
+            title: "Hello World"
+          types: []
+
+      - name: "untyped files appear in unfiltered queries"
+        operation: query
+        input: {}
+        expect:
+          meta:
+            total_count: 1
+          results:
+            - path: "hello.md"
+
+  # =============================================================================
+  # Group 14: Reserved names
+  # =============================================================================
+
+  - name: "reserved names handled correctly"
+    spec_ref: "§2.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types: {}
+
+    tests:
+      - name: "mdbase.yaml is not a record"
+        operation: read
+        input:
+          path: "mdbase.yaml"
+        expect:
+          error:
+            code: file_not_found
