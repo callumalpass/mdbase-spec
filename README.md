@@ -1,6 +1,6 @@
 # mdbase specification
 
-A specification for tools that treat folders of markdown files as typed, queryable data collections.
+A specification for treating a folder of markdown files with YAML frontmatter as a typed, queryable data collection.
 
 Version 0.1.0 (draft).
 
@@ -8,27 +8,15 @@ Version 0.1.0 (draft).
 
 ## Motivation
 
-Markdown files with YAML frontmatter are widely used as structured content. Static site generators (Hugo, Jekyll, Astro), knowledge management tools (Obsidian, Logseq), documentation systems, and AI agent frameworks all read and write markdown files with frontmatter fields like `title`, `date`, `tags`, and `status`.
+If you use Obsidian (or a similar tool) and you've accumulated notes for meetings, contacts, projects, reading, journal entries, and so on, each with frontmatter fields, your vault is functioning as a database. The property system encourages this: you define fields, assign types, and the tool enforces them across files. But the tooling for managing that structure is limited. If you want all your meeting notes to have a `date`, `attendees`, and `status` field---and you want that enforced---your options are a template (which helps at creation time but not after) and perhaps a Linter rule. There is no schema file that lives alongside your notes. There is no file in your vault that says "a meeting note looks like this, with these fields, of these types."
 
-These tools have each developed their own conventions for how frontmatter is interpreted, how files relate to schemas, how queries work, and what happens when a file is created or renamed. The conventions are similar enough to suggest a common model, but different enough that files written for one tool often need adjustment to work with another.
+This means each tool that touches your vault---Obsidian itself, an editor, a templating plugin, an AI agent---has to independently work out what your types are, or you have to tell each one separately. In practice, the same structural assumptions end up encoded in templates, Dataview queries, Linter configs, and agent prompts, and they drift apart.
 
-This spec defines that common model. It covers the full lifecycle: loading type definitions, matching files to types, validating fields, evaluating expressions, executing queries, performing CRUD operations, and maintaining link consistency. The intent is that a CLI tool, an editor plugin, and a programmatic library can all operate on the same collection of files and agree on what the data means.
+mdbase-spec tries to address this. The core idea is that types are defined as files---markdown files in a `_types/` folder, where the frontmatter declares the schema and the body can document the type in prose. A template becomes a consequence of a type definition rather than a substitute for one, and validation can happen at write time rather than only at creation time. Because type definitions are just files in the vault, they are versioned with everything else, human-readable, and editable in any text editor.
 
-Three specific problems motivated the spec:
+The spec defines how those type files, and the collections they describe, should be interpreted, so that different tools can treat them consistently. It covers type definitions and inheritance, file-to-type matching (by explicit declaration, path globs, or field presence), an expression language for filtering and sorting (designed for compatibility with Obsidian Bases syntax), link parsing and resolution, and the semantics of create, read, update, delete, and rename operations.
 
-1. **No shared schema language for frontmatter.** Tools that validate frontmatter each define their own schema formats. A type definition written for one tool cannot be used by another. This spec defines a single schema format (itself markdown with YAML frontmatter) that any conforming tool can read.
-
-2. **No portable query semantics.** Obsidian Dataview, Hugo's `where` function, and various static site generators each have different filtering and sorting syntax. This spec defines an expression language and query model so that a query written once produces the same results in any conforming tool.
-
-3. **AI agents need structured, human-readable storage.** Agents that persist state as markdown files currently rely on ad hoc conventions. This spec gives agents a defined contract for reading, writing, and querying typed markdown, while keeping the files readable and editable by humans.
-
-### Design principles
-
-- **Files are the source of truth.** Indexes and caches are derived and disposable.
-- **Human-readable first.** No proprietary formats. A text editor is sufficient.
-- **Progressive strictness.** Collections work with no schema at all. Validation is opt-in.
-- **Portable.** No vendor lock-in. Collections work with any conforming tool.
-- **Git-friendly.** All persistent state is plain text suitable for version control.
+A spec rather than a library is deliberate. If you can reduce a problem to a spec with a test suite, you can set a coding agent loose on it and get a conforming library in whatever language you need. What is harder, and worth spending time on, is getting the semantics right, because that is what determines whether independently-built tools agree on what a "meeting note" means and how a link is resolved.
 
 ## What this defines
 
