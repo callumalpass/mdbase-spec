@@ -209,4 +209,4 @@ Tools should declare which specification version they implement and should rejec
 
 ## License
 
-This specification is released under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+This specification is released under the [MIT License](https://opensource.org/licenses/MIT).
