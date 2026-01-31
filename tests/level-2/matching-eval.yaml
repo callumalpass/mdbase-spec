@@ -386,7 +386,7 @@ groups:
             items/a.md: |
               ---
               type: tagged
-              tags: [valid, 123, true]
+              scores: [5, "not-a-number", 3]
               ---
         operation: validate
         input:
@@ -395,7 +395,7 @@ groups:
           valid: false
           issues:
             - code: list_item_invalid
-              field: tags
+              field: scores
 
       - name: "list item violating constraint triggers list_item_invalid"
         setup:

@@ -481,8 +481,12 @@ groups:
             succeeded: 2
             failed: 1
             details:
+              - path: "tasks/t1.md"
+                status: "success"
               - path: "tasks/t2.md"
                 status: "failed"
+              - path: "tasks/t3.md"
+                status: "success"
 
       - name: "already-written files not rolled back on partial failure"
         operation: batch_update

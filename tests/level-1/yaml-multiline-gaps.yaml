@@ -206,7 +206,7 @@ groups:
           path: "docs/fold-indent.md"
         expect:
           frontmatter:
-            content: "  Indented folded text here.\n"
+            content: "  Indented folded\n  text here.\n"
 
   # =============================================================================
   # Group 4: Combined chomping and indentation
@@ -261,7 +261,7 @@ groups:
           path: "docs/combo-fold.md"
         expect:
           frontmatter:
-            content: "  Folded with spaces and trailing newlines.\n\n"
+            content: "  Folded with spaces\n  and trailing newlines.\n\n"
 
   # =============================================================================
   # Group 5: Multi-line string round-trip through update

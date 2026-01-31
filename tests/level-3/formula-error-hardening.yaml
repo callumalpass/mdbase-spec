@@ -187,8 +187,14 @@ groups:
             formulas:
               bad: "label + value"
         expect:
-          error:
-            code: formula_evaluation_error
+          # String + number concatenates (coerces number to string)
+          results:
+            - path: tasks/a.md
+              formulas:
+                bad: "alpha0"
+            - path: tasks/b.md
+              formulas:
+                bad: "beta5"
 
       - name: "formula with method on wrong type"
         operation: query
@@ -266,11 +272,11 @@ groups:
                 direction: desc
         expect:
           # optional_score is null for one file; null * 2 produces null
-          # null sorts last in desc (i.e., after non-null values)
+          # null sorts FIRST in desc per §10.3 (LAST in asc, FIRST in desc)
           results:
-            - path: "tasks/with-score.md"
-              formulas:
-                risky: 10
             - path: "tasks/no-score.md"
               formulas:
                 risky: null
+            - path: "tasks/with-score.md"
+              formulas:
+                risky: 10

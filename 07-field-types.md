@@ -179,6 +179,7 @@ rating:
 **Validation:**
 - Value must be numeric (integer or float)
 - IEEE 754 special values (NaN, Infinity) are allowed unless explicitly constrained
+- When `min` or `max` is defined, `NaN` MUST produce `constraint_violation` because `NaN` is not orderable — all comparisons with `NaN` return false per IEEE 754. Infinity values are orderable and compared normally.
 
 ---
 

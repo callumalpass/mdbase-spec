@@ -53,9 +53,10 @@ groups:
         spec_ref: "§11.8"
         operation: evaluate
         input:
+          # 2024-01-01 + 1M = 2024-02-01, + 15d = 2024-02-16
           expression: 'date("2024-01-01") + "1M" + "15d"'
         expect:
-          result: "2024-02-15"
+          result: "2024-02-16"
 
       - name: "chained duration additions on datetime"
         operation: evaluate
@@ -74,9 +75,10 @@ groups:
       - name: "duration subtraction chaining"
         operation: evaluate
         input:
+          # 2024-03-15 - 1M = 2024-02-15, - 15d = 2024-01-31
           expression: 'date("2024-03-15") - "1M" - "15d"'
         expect:
-          result: "2024-01-29"
+          result: "2024-01-31"
 
       - name: "mixed addition and subtraction of durations"
         operation: evaluate

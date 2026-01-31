@@ -15,7 +15,6 @@ groups:
       config: |
         spec_version: "0.1.0"
         settings:
-          id_field: "id"
           rename_update_refs: true
       types:
         task.md: |

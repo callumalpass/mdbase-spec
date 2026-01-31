@@ -158,7 +158,7 @@ groups:
           title: "Readme"
           ---
           Welcome to the project.
-          No API references here.
+          No programming references here.
 
     tests:
       - name: "file.body.matches with regex"

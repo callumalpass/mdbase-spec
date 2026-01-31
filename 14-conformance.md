@@ -182,6 +182,52 @@ tests:
 
 ---
 
+## 14.3.1 Extended Test Format
+
+The conformance test suite uses several extensions beyond the base format shown in §14.3. Test runners MUST support these extensions to execute the full suite.
+
+### Extended Operations
+
+| Operation | Description | Spec Reference |
+|-----------|-------------|----------------|
+| `batch_update` | Bulk update matching files | [§12.7](./12-operations.md) |
+| `batch_delete` | Bulk delete matching files | [§12.7](./12-operations.md) |
+| `create_type` | Create a type definition file | [§5.9](./05-types.md) |
+| `watch` | Start filesystem watcher and simulate events | [§15](./15-watching.md) |
+
+### Extended Input Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `simulate` | object | Injects side-effects between read and write phases (e.g., `external_modify`, `external_create`, `io_error_on`) |
+| `context_file` | string | Path to the file that provides the `this` context for embedded-query expression testing |
+| `dry_run` | boolean | When `true`, validates changes without writing to disk |
+
+### Extended Assertion Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `verify_after` | object | Executes a follow-up operation after the primary test and checks its `expect` block (e.g., verifying atomicity after failure) |
+| `frontmatter_written` | mapping | Asserts exact field values that were persisted to disk (as opposed to effective values with defaults) |
+| `frontmatter_not_written` | list | Asserts that named fields were NOT persisted to disk |
+| `frontmatter_not_bare_null` | list | Asserts that named fields are not written in the bare `field:` form (empty-value null) |
+| `frontmatter_changed` | list | Asserts that listed fields have different values after the operation compared to before |
+| `message_present` | boolean | On a validation issue, asserts that the `message` field exists and is a non-empty string |
+| `mtime_present` | boolean | Asserts that `file.mtime` exists and is a valid datetime |
+| `size_positive` | boolean | Asserts that `file.size` exists and is a positive integer |
+| `ctime_present` | boolean | Asserts that `file.ctime` exists and is a valid datetime |
+| `batch_result` | object | Asserts batch operation outcome with `total`, `succeeded`, `failed` counts |
+
+### Extended Setup Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `encoding` | string | File encoding for setup files (e.g., `"latin-1"`). Default is UTF-8 |
+| `line_endings` | string | Line ending style: `"LF"` or `"CRLF"` |
+| nested collections | — | A `setup.files` entry like `sub-project/mdbase.yaml` creates a nested collection marker that the implementation must detect and exclude |
+
+---
+
 ## 14.4 Required Test Coverage
 
 For each conformance level, implementations MUST pass:

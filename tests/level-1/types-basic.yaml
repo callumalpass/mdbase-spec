@@ -228,9 +228,9 @@ groups:
           config: |
             spec_version: "0.1.0"
           types:
-            aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeefffffffff01234.md: |
+            aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeefffffffff012345.md: |
               ---
-              name: aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeefffffffff01234
+              name: aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeefffffffff012345
               fields:
                 title:
                   type: string

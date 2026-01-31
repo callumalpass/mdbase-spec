@@ -141,7 +141,8 @@ order_by:
 - `asc`: Ascending (A-Z, 1-9, oldest-newest)
 - `desc`: Descending (Z-A, 9-1, newest-oldest)
 
-**Null handling:** Null values sort last by default.
+**Null handling:** Null values sort LAST in ascending order and FIRST in descending order.
+**Non-scalar fields:** If `order_by` references a field whose value is a list, object, or other non-scalar type, implementations MUST sort by a deterministic representation: lists by length, objects by key count. Implementations MAY reject non-scalar sort fields with a warning. This avoids undefined behavior from comparing incomparable types.
 **Tie-breakers:** If all `order_by` fields compare equal, implementations MUST
 apply a stable tie-breaker by ascending `file.path` to ensure deterministic output.
 
@@ -383,7 +384,7 @@ groupBy:
 - Only one `groupBy` property is supported per query.
 - `direction` controls the sort order of groups: `ASC` (default) or `DESC`.
 - Results within each group follow the `order_by` sort.
-- Ungrouped results (null/missing group value) appear in a separate group.
+- Ungrouped results (null/missing group value) appear in a separate group. The null group sorts LAST in `ASC` direction and FIRST in `DESC` direction, consistent with the `order_by` null handling rules (§10.3).
 
 ### `summaries`
 

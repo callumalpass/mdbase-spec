@@ -1013,10 +1013,11 @@ groups:
         input:
           query:
             types: [item]
+            # items/a.md has 3 tags → slice(0,2) gives 2; items/b.md has 1 tag → slice gives 1; items/c.md has 0
             where: "tags.slice(0, 2).length == 2"
         expect:
           meta:
-            total_count: 2
+            total_count: 1
 
       - name: "list.flat"
         spec_ref: "§11.6"
@@ -1620,12 +1621,15 @@ groups:
         input:
           query:
             types: [item]
+            # items/a.md: empty_obj is missing → isEmpty() returns true (§11.5, §11.10)
+            # items/b.md: empty_obj is {} → isEmpty() returns true (§11.13)
             where: "empty_obj.isEmpty()"
         expect:
           results:
+            - path: "items/a.md"
             - path: "items/b.md"
           meta:
-            total_count: 1
+            total_count: 2
 
   # =============================================================================
   # Group 13: Operator precedence
@@ -1843,15 +1847,19 @@ groups:
           error:
             code: wrong_argument_count
 
-      - name: "type error in expression"
+      - name: "type mismatch in where filter returns null and excludes file"
+        spec_ref: "§11.18"
         operation: query
         input:
           query:
             types: [item]
             where: '"hello" + 5'
         expect:
-          error:
-            code: type_error
+          # Type mismatch returns null per §11.18, which is non-truthy,
+          # so all files are excluded from results. The query does NOT abort.
+          results: []
+          meta:
+            total_count: 0
 
   # =============================================================================
   # Group 16: file.hasProperty and file.inFolder
@@ -2027,14 +2035,29 @@ groups:
 
     tests:
       - name: "deeply nested expression exceeds depth limit"
+        spec_ref: "§11.18.1"
         operation: query
         input:
           query:
             types: [item]
-            where: "if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, value, 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0)"
+            # 65 nested if() calls — exceeds the 64-level general nesting limit
+            where: "if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, value, 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0)"
         expect:
           error:
             code: expression_depth_exceeded
+
+      - name: "expression at exactly 64 levels must succeed"
+        spec_ref: "§11.18.1"
+        operation: query
+        input:
+          query:
+            types: [item]
+            # 64 nested if() calls — exactly at the default limit, must not fail
+            where: "if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, if(true, value, 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0), 0)"
+        expect:
+          results:
+            - path: items/a.md
+              value: 1
 
   # =============================================================================
   # Group 19: String method edge cases
@@ -2116,13 +2139,14 @@ groups:
         input:
           query:
             types: [item]
+            # items/a.md csv="one::two::three" → split("::", 2) = ["one", "two"] (length 2)
+            # items/b.md csv="alpha;;beta;;gamma" → split("::", 2) = ["alpha;;beta;;gamma"] (length 1, no :: separator)
             where: 'csv.split("::", 2).length == 2'
         expect:
           results:
             - path: "items/a.md"
-            - path: "items/b.md"
           meta:
-            total_count: 2
+            total_count: 1
 
   # =============================================================================
   # Group 20: Operator precedence — null coalescing vs logical

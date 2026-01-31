@@ -354,12 +354,39 @@ warnings:
     message: "Ambiguous link '[[name]]' not updated"
 ```
 
+### Partial Reference Update Failure
+
+When `update_refs` is enabled and some reference updates fail (e.g., due to concurrent modification or I/O errors on individual files), the rename operation returns a **partial success** response:
+
+```yaml
+from: "tasks/old-name.md"
+to: "tasks/new-name.md"
+references_updated:
+  - path: "tasks/parent.md"
+    field: "subtasks[0]"
+    old_value: "[[old-name]]"
+    new_value: "[[new-name]]"
+ref_update_errors:
+  - path: "notes/meeting.md"
+    code: concurrent_modification
+    message: "File was modified during reference update"
+  - path: "docs/index.md"
+    code: permission_denied
+    message: "Cannot write to file"
+error:
+  code: rename_ref_update_failed
+  message: "Rename succeeded but 2 reference updates failed"
+```
+
+The `rename_ref_update_failed` error code is returned alongside the successful rename result (`from`/`to`). The renamed file is at its new path. The `ref_update_errors` array provides per-file failure details including the file path and error code.
+
 ### Errors
 
 | Code | Description |
 |------|-------------|
 | `file_not_found` | Source file doesn't exist |
 | `path_conflict` | Target path already exists |
+| `rename_ref_update_failed` | Rename succeeded but one or more reference updates failed (see above) |
 
 ### Example
 

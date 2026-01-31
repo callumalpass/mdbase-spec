@@ -153,12 +153,14 @@ Given a link value and the path of the file containing it:
    - **ID match pass**: Search scoped files for `id_field == name`
      - If exactly one match, resolve to it
      - If multiple matches, resolution MUST fail with `ambiguous_link`
-   - **Filename match pass**: If no `id_field` match exists, search scoped files by filename
+   - **Filename match pass**: If no `id_field` match exists, search scoped **markdown files (records)** by filename
    - If multiple filename candidates match, apply tiebreakers in order:
      a. **Same directory**: Prefer a file in the same directory as the referring file
      b. **Shortest path**: Prefer the file with the shortest path (closest to collection root)
      c. **Alphabetical**: Sort candidate paths lexicographically and take the first
    - If multiple candidates remain after all tiebreakers, resolve to `null` and emit an `ambiguous_link` warning
+
+   > **Note:** Non-markdown files are not records and are not candidates for simple name matching (per [§2.9](./02-collection-layout.md)). A wikilink `[[diagram]]` will not match `diagram.png` — only markdown files are searched by `id_field` and filename. Non-markdown files are only resolved when explicitly referenced by path (with extension or relative path).
 
 5. **Extension handling**:
    - If target lacks extension, try configured extensions in order (default: `.md`)
@@ -267,8 +269,10 @@ MUST extract links and tags from both frontmatter and body content using these r
 - Embeds in wikilink form (`![[target]]`) and markdown form (`![alt](path.md)`)
 
 **Excluded:**
-- Links inside fenced code blocks
-- Links inside inline code spans
+- Links inside fenced code blocks (`` ``` `` or `~~~` delimiters)
+- Links inside indented code blocks (4+ spaces or tab-indented lines per CommonMark §4.4)
+- Links inside inline code spans (`` ` `` delimiters)
+- Escaped wikilinks: a backslash immediately before `[[` (i.e., `\[[`) prevents wikilink parsing. The backslash is consumed and the brackets are treated as literal text. This does not apply to markdown links, which follow standard CommonMark escaping rules.
 
 `file.links` returns all non-embed links; `file.embeds` returns only embeds.
 
@@ -281,7 +285,7 @@ MUST extract links and tags from both frontmatter and body content using these r
 Inline tags MUST:
 - Be preceded by whitespace or appear at the start of a line
 - Match the pattern `[A-Za-z0-9_/-]+` after `#` (forward slashes create nested tag hierarchies)
-- Be outside fenced code blocks and inline code spans
+- Be outside fenced code blocks, indented code blocks, and inline code spans
 - Not be preceded by `](` or `](http` patterns (to exclude URL fragments)
 
 Implementations SHOULD ignore `#` fragments in URLs. A simple heuristic is to skip any `#` that is preceded by `)`, `"`, `'`, or appears within a markdown link target (`[text](url#fragment)`).

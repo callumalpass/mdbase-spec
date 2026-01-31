@@ -296,6 +296,8 @@ groups:
     setup:
       config: |
         spec_version: "0.1.0"
+        settings:
+          default_validation: "error"
       types: {}
 
     tests:

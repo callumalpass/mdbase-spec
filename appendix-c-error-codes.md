@@ -85,12 +85,12 @@ This appendix defines standard error codes for validation issues and operation e
 | `file_not_found` | File doesn't exist | tasks/missing.md not found |
 | `path_conflict` | File already exists at target path (on create or rename) | tasks/task.md already exists |
 | `path_required` | Cannot determine file path | No path provided or derivable |
-| `invalid_path` | Path is malformed | Path contains invalid characters |
+| `invalid_path` | Path is malformed (e.g., null bytes, control characters) | Path contains invalid characters |
 | `invalid_frontmatter` | Frontmatter YAML cannot be parsed | YAML syntax error in frontmatter |
 | `validation_failed` | Frontmatter fails validation against type schema(s) | Contains individual validation issues (see §C.1) |
 | `permission_denied` | Filesystem permission error | Cannot write to file |
 | `concurrent_modification` | File was modified by another process during operation | File mtime changed between read and write |
-| `path_traversal` | Link resolution attempted to escape collection root | `[[../../../etc/passwd]]` escapes root |
+| `path_traversal` | Path resolution would escape collection root. Applies to any path resolution — link resolution, operation input paths, computed paths | `[[../../../etc/passwd]]` escapes root |
 
 ### Rename Operations
 
@@ -116,7 +116,7 @@ This appendix defines standard error codes for validation issues and operation e
 | `unknown_function` | Function doesn't exist | Unknown function "foo" |
 | `wrong_argument_count` | Wrong number of arguments | if() requires 3 arguments |
 | `type_error` | Type error in expression | Cannot add string and number |
-| `expression_depth_exceeded` | Expression traversal exceeded maximum depth | Chained `asFile()` calls exceed 10-hop limit |
+| `expression_depth_exceeded` | Expression nesting or traversal exceeded maximum depth | General expression nesting exceeds 64-level limit (see [§11.18.1](./11-expressions.md#11181-general-expression-nesting-limit)), or chained `asFile()` calls exceed 10-hop limit (see [§8.7](./08-links.md)) |
 
 ---
 

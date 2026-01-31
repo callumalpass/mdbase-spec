@@ -1130,9 +1130,10 @@ groups:
             - field: id
               direction: asc
         expect:
+          # task-a (carol, priority 3) and task-c (bob, priority 2) match; asc by id: a < c
           results:
-            - path: "tasks/task-c.md"
             - path: "tasks/task-a.md"
+            - path: "tasks/task-c.md"
 
       - name: "query returns all when traversal is null-safe"
         operation: query

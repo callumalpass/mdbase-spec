@@ -159,7 +159,7 @@ match:
 | Operator | Description | Example |
 |----------|-------------|---------|
 | (direct value) | Exact equality | `status: open` |
-| `exists` | Field is present (true) or missing (false) | `assignee: { exists: true }` |
+| `exists` | Field is present and non-null (true) or missing/null (false) | `assignee: { exists: true }` |
 | `eq` | Equal to | `priority: { eq: 3 }` |
 | `neq` | Not equal to | `status: { neq: "done" }` |
 | `gt` | Greater than | `priority: { gt: 2 }` |
@@ -172,6 +172,8 @@ match:
 | `startsWith` | String starts with | `title: { startsWith: "WIP:" }` |
 | `endsWith` | String ends with | `file: { endsWith: ".draft.md" }` |
 | `matches` | Regex match (see [§4.8](./04-configuration.md#48-security-considerations) for regex flavor) | `title: { matches: "^TASK-\\d+" }` |
+
+> **Note:** `where: { field: { exists: true } }` uses the same semantics as `fields_present`: the key must exist AND the value must be non-null. This keeps the match rule system internally consistent — both mechanisms agree on what "present" means.
 
 ---
 

@@ -164,10 +164,14 @@ value ?? default    // Returns default if value is null
 | `.trim()` | Remove whitespace | `title.trim()` |
 | `.slice(start, end?)` | Extract substring | `id.slice(0, 4)` |
 | `.split(sep, n?)` | Split to list | `tags_str.split(",")` |
-| `.replace(pattern, repl)` | Replace pattern | `title.replace("old", "new")` |
+| `.replace(pattern, repl)` | Replace all occurrences | `title.replace("old", "new")` |
 | `.repeat(count)` | Repeat string | `"-".repeat(3)` |
 | `.reverse()` | Reverse string | `name.reverse()` |
-| `.matches(regex)` | Regex match (see [§4.8](./04-configuration.md#48-security-considerations) for regex flavor) | `title.matches("^TASK-\\d+")` |
+| `.matches(regex)` | Regex match (case-sensitive) | `title.matches("^TASK-\\d+")` |
+
+**`.replace()` semantics:** When `pattern` is a string, `.replace()` replaces **all** occurrences (matching Obsidian Bases behavior). This differs from JavaScript's `String.prototype.replace()` which only replaces the first match. Implementations that support regex literal patterns (e.g., `/pattern/flags`) SHOULD respect the `g` flag to control first-vs-all behavior, but string patterns always replace all.
+
+**`.matches()` semantics:** The `regex` argument is a string containing an ECMAScript regular expression (see [§4.8](./04-configuration.md#48-security-considerations)). Matching is **case-sensitive** by default and tests whether any part of the string matches the pattern (equivalent to a non-anchored search). To match the full string, use anchors: `title.matches("^exact$")`. Implementations that support regex literal syntax (e.g., `/pattern/i`) MAY allow flags such as `i` (case-insensitive) and `m` (multiline).
 
 ---
 
@@ -585,6 +589,22 @@ Expression evaluation errors MUST be handled gracefully and MUST NOT abort the o
 | Type mismatch | Returns null and emits `type_error` |
 
 Implementations SHOULD log evaluation errors and continue processing where possible.
+
+> **Note:** These error-handling rules apply to **all** expression evaluation contexts, including `where` filters in queries and match rules. A type mismatch such as `"hello" + 5` returns `null` and emits `type_error` as a diagnostic — it does **not** abort the query. The file is simply excluded from results because the `where` expression evaluated to a non-truthy value. Only structural errors (`invalid_expression`, `unknown_function`, `wrong_argument_count`) abort the query, because they indicate a malformed query rather than a data-dependent evaluation issue.
+
+### 11.18.1 General Expression Nesting Limit
+
+Independently of the 10-hop `asFile()` traversal limit defined in [§8.7](./08-links.md), implementations MUST enforce a general nesting depth limit for expressions. This prevents stack overflow from deeply nested constructs such as `if(true, if(true, if(true, ...)))`.
+
+| Parameter | Value |
+|-----------|-------|
+| Default limit | 64 levels |
+| Configurable range | 32–256 levels |
+| Error code | `expression_depth_exceeded` |
+
+The nesting depth is incremented for each nested function call, sub-expression grouping, or property chain step. When the limit is exceeded, the expression MUST produce an `expression_depth_exceeded` error.
+
+This limit is distinct from the `asFile()` hop limit: the `asFile()` limit counts link traversal hops (default 10), while the general nesting limit counts expression parse depth (default 64). Both emit `expression_depth_exceeded`.
 
 ---
 
