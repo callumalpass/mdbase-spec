@@ -910,6 +910,19 @@ groups:
         expect:
           types: []
 
+      - name: "string operator on wrong type does not match"
+        setup:
+          files:
+            items/j.md: |
+              ---
+              title: 123
+              ---
+        operation: get_types
+        input:
+          path: "items/j.md"
+        expect:
+          types: []
+
   # =============================================================================
   # Group 7: Combined match conditions (AND logic)
   # =============================================================================

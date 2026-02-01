@@ -1,3 +1,12 @@
+---
+type: chapter
+id: 01-terminology
+title: "Terminology"
+description: "Definitions of key terms used throughout the specification"
+section: 1
+conformance_levels: [1]
+---
+
 # 1. Terminology
 
 This section defines the key terms used throughout the specification. Understanding these definitions is essential for correctly interpreting the requirements.
@@ -29,7 +38,7 @@ The body content begins here.
 ```
 
 **Body**  
-The markdown content following the frontmatter. The body is treated as opaque content by default—this specification primarily concerns itself with frontmatter structure. Implementations MAY support body queries, but this is optional.
+The markdown content following the frontmatter. The body is treated as opaque content by default—this specification primarily concerns itself with frontmatter structure. Body querying is optional unless an implementation claims Level 3+ conformance, in which case `file.body` filtering is required.
 
 **Type**  
 A named schema defining the expected frontmatter fields, their types, constraints, and validation rules for a category of files. Types are themselves defined as markdown files in a designated folder, making them versionable and documentable. A file may be associated with zero, one, or multiple types.

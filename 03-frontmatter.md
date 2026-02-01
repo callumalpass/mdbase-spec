@@ -1,3 +1,15 @@
+---
+type: chapter
+id: 03-frontmatter
+title: "Frontmatter Parsing and Serialization"
+description: "YAML frontmatter parsing, null semantics, and write rules"
+section: 3
+conformance_levels: [1]
+test_categories: [config, validation]
+depends_on:
+  - "[[01-terminology]]"
+---
+
 # 3. Frontmatter Parsing and Serialization
 
 This section defines how frontmatter is parsed from files and how it should be written back. Correct handling of YAML edge cases—especially null values and empty fields—is essential for interoperability.
@@ -21,13 +33,14 @@ Body content begins here.
 
 **Rules:**
 
-1. The opening `---` MUST be the very first line of the file (no leading whitespace or blank lines).
+1. The opening `---` MUST be the very first line of the file (no leading whitespace or blank lines). A UTF-8 BOM, if present, MUST be ignored for this check.
 
 2. The closing `---` MUST be on its own line.
 
 3. The content between the delimiters MUST be valid YAML.
 
 4. If a file does not begin with `---`, it has **no frontmatter**. The entire file is treated as body content, and the record has an empty frontmatter mapping (`{}`).
+5. If additional `---` blocks appear later in the file, they are part of the body and are **not** treated as frontmatter.
 
 **Examples of files without frontmatter:**
 
@@ -220,7 +233,7 @@ Empty lists can be written as `[]` or omitted, controlled by `settings.write_emp
 
 ## 3.5 Formatting Preservation
 
-When updating a file, implementations SHOULD preserve as much of the original formatting as practical:
+When updating a file, implementations SHOULD preserve as much of the original formatting as practical. Preservation applies to **untouched** fields and content; fields explicitly modified by the operation MAY be re-serialized using implementation defaults.
 
 ### SHOULD Preserve
 
@@ -252,6 +265,8 @@ Field names containing special characters MUST be quoted in YAML:
 "field.with.dots": value
 "field:with:colons": value
 ```
+
+Field names that would otherwise parse as non-strings in YAML (e.g., `yes`, `no`, `null`, `true`, `false`) MUST be quoted to ensure they are treated as strings.
 
 In expressions and queries, such fields are accessed with bracket notation:
 

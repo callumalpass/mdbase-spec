@@ -1,0 +1,62 @@
+name: "batch type rename"
+level: 6
+category: operations
+spec_ref: "§5.11, §12.7"
+
+groups:
+  - name: "batch update type declarations"
+    spec_ref: "§5.11, §12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        old.md: |
+          ---
+          name: old
+          fields:
+            title:
+              type: string
+          ---
+        new.md: |
+          ---
+          name: new
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: old
+          title: "A"
+          ---
+        notes/b.md: |
+          ---
+          type: old
+          title: "B"
+          ---
+
+    tests:
+      - name: "batch update rewrites type field"
+        operation: batch_update
+        input:
+          where: 'type == "old"'
+          fields:
+            type: "new"
+        expect:
+          batch_result:
+            total: 2
+            succeeded: 2
+            failed: 0
+        verify_after:
+          operation: query
+          input:
+            types: [new]
+            order_by: [{ field: "title", direction: "asc" }]
+          expect:
+            results:
+              - path: "notes/a.md"
+              - path: "notes/b.md"
+            meta:
+              total_count: 2

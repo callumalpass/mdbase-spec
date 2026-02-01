@@ -386,7 +386,7 @@ groups:
   # Group 5: Backlinks with embeds
   # =============================================================================
 
-  - name: "embeds do NOT create backlinks (only file.links does)"
+  - name: "embeds create backlinks"
     spec_ref: "§8.6, §8.8"
 
     setup:

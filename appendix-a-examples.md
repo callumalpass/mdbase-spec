@@ -1,3 +1,16 @@
+---
+type: appendix
+id: appendix-a-examples
+title: "Complete Examples"
+description: "Working examples of collections, types, queries, and operations"
+letter: a
+normative: false
+depends_on:
+  - "[[04-configuration]]"
+  - "[[05-types]]"
+  - "[[12-operations]]"
+---
+
 # Appendix A: Complete Examples
 
 This appendix provides complete, working examples of collections and their components.

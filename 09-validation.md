@@ -1,3 +1,16 @@
+---
+type: chapter
+id: 09-validation
+title: "Validation"
+description: "Validation levels, field validation rules, and error reporting"
+section: 9
+conformance_levels: [1]
+test_categories: [validation]
+depends_on:
+  - "[[07-field-types]]"
+  - "[[05-types]]"
+---
+
 # 9. Validation
 
 Validation ensures that files conform to their type schemas. This section defines what is validated, when validation occurs, and how errors are reported.
@@ -15,6 +28,8 @@ Implementations MUST support three validation levels:
 | `error` | Validation runs; issues cause operations to fail |
 
 The default level is configured via `settings.default_validation` (default: `"warn"`).
+
+At `warn` level, operations MUST return success and include issues as warnings. For operation outputs that include a `valid` flag, `valid` MUST be `true` even when warnings are present.
 
 Operations MAY override the default level:
 

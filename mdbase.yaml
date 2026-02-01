@@ -1,1 +1,20 @@
-spec_version: 0.1.0
+spec_version: "0.1.0"
+name: "MDBase Specification"
+description: "The MDBase typed markdown collections specification, organized as an MDBase collection"
+
+settings:
+  exclude:
+    - "README.md"
+    - "CHANGELOG.md"
+    - "POST*.md"
+    - "SPEC-*.md"
+    - "PROGRESS.md"
+    - "AGENTS.md"
+    - "PROMPT.md"
+    - "tests"
+    - "site"
+    - "obsidian-api"
+    - "obsidian-help"
+    - "*.mp4"
+    - "*.zip"
+  default_validation: warn

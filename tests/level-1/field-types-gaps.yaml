@@ -440,11 +440,11 @@ groups:
             slug:
               type: string
               generated:
-                from: file.name
+                from: file.basename
           ---
 
     tests:
-      - name: "file.name can be used as generated source on create"
+      - name: "file.basename can be used as generated source on create"
         operation: create
         input:
           type: note
@@ -453,6 +453,45 @@ groups:
         expect:
           frontmatter_written:
             slug: "hello-world"
+
+  - name: "generated field dependency order"
+    spec_ref: "§7.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        article.md: |
+          ---
+          name: article
+          fields:
+            title:
+              type: string
+              required: true
+            slug:
+              type: string
+              generated:
+                from: title
+                transform: slugify
+            slug_upper:
+              type: string
+              generated:
+                from: slug
+                transform: uppercase
+          ---
+
+    tests:
+      - name: "dependent generated field uses generated source"
+        operation: create
+        input:
+          type: article
+          path: "articles/dep.md"
+          frontmatter:
+            title: "Hello World"
+        expect:
+          frontmatter:
+            slug: "hello-world"
+            slug_upper: "HELLO-WORLD"
 
   - name: "lowercase and uppercase transforms"
     spec_ref: "§7.15"

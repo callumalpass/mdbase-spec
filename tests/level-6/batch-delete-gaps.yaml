@@ -1,5 +1,5 @@
 name: "batch delete operations and check_backlinks"
-level: 1
+level: 6
 category: operations
 spec_ref: "§12.4, §12.7"
 

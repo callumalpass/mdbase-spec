@@ -12,6 +12,10 @@ All notable changes to this specification and conformance suite are documented h
 - `init` operation in §12.11 and required meta type creation in the types folder.
 - `match_failed` error code for explicit-type creates that do not satisfy match rules.
 - Conformance tests for path-based type matching on update, explicit type key handling, init, and new generation strategies.
+- Conformance tests for type loading order, types-folder subdirectory scanning, meta type schema, and `reduce()` init requirement.
+- Conformance test rejecting `path_pattern` references to `file.*`-generated fields.
+- `settings.timezone` to control `now()`/`today()` and naive datetime comparisons (defaults to local timezone).
+- Conformance tests for batch dry-run, batch type renames, nested collection boundaries, and mixed-event watch ordering.
 
 ### Changed
 - `filename_pattern` renamed to `path_pattern` (deprecated alias preserved); examples and validation text updated.
@@ -20,7 +24,15 @@ All notable changes to this specification and conformance suite are documented h
 - Create with explicit type now MUST satisfy the type's match rules.
 - Field override rules now explicitly warn that overrides replace all properties (including `generated`).
 - Default materialization behavior updated to be driven by `settings.write_defaults`.
+- `order_by` on non-scalar fields now requires deterministic sorting (with optional warning), not rejection.
+- `reduce()` requires an explicit initial accumulator value; missing `init` is `wrong_argument_count`.
+- Type definitions that reference `file.*`-generated fields in `path_pattern` must be rejected (`invalid_type_definition`).
+- Create match-rule enforcement is now explicitly a Level 2+ requirement; Level 1 may skip.
 
 ### Fixed / Clarified
 - Unresolvable `path_pattern` variables now fail with `path_required`, with type-load warnings for unknown variables.
 - Added tests for `path_pattern` aliasing and generated/default-based path derivation.
+- Missing/null match conditions and match-rule evaluation errors now explicitly result in non-match (no error).
+- Formula runtime errors now yield `formula_evaluation_error` (Appendix C.5).
+- Enum values must be non-empty; integer/number minimum range and precision clarified.
+- Reads respect scanning exclusions; `file.basename` definition aligned across sections.

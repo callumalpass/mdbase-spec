@@ -1,3 +1,16 @@
+---
+type: chapter
+id: 07-field-types
+title: "Field Types and Constraints"
+description: "Data types, constraints, generated fields, and type coercion"
+section: 7
+conformance_levels: [1]
+test_categories: [types, validation]
+depends_on:
+  - "[[05-types]]"
+  - "[[04-configuration]]"
+---
+
 # 7. Field Types and Constraints
 
 This section defines the data types that can be used in type definitions, along with their constraints and validation rules.
@@ -155,6 +168,7 @@ priority:
 **Validation:**
 - Value must be a whole number (no decimal part)
 - YAML integers, strings containing integers, and floats with no decimal part MAY be coerced
+- Implementations MUST support at least the signed 53-bit integer range (−9,007,199,254,740,991 to 9,007,199,254,740,991). Values outside this range MAY be rejected with `constraint_violation`.
 
 ---
 
@@ -178,6 +192,8 @@ rating:
 
 **Validation:**
 - Value must be numeric (integer or float)
+- Implementations MUST support at least IEEE 754 double-precision numbers. Higher-precision support is optional.
+- Floating-point precision and rounding follow IEEE 754 double semantics.
 - IEEE 754 special values (NaN, Infinity) are allowed unless explicitly constrained
 - When `min` or `max` is defined, `NaN` MUST produce `constraint_violation` because `NaN` is not orderable — all comparisons with `NaN` return false per IEEE 754. Infinity values are orderable and compared normally.
 
@@ -216,6 +232,7 @@ due_date:
 **Validation:**
 - Must be a valid date (no February 30th)
 - String format must match ISO 8601
+- Year range MUST be between 0001 and 9999 (inclusive)
 - YAML date scalars MAY be accepted and MUST be normalized to ISO 8601 on write
 
 ---
@@ -241,6 +258,7 @@ created_at:
 
 **Validation:**
 - Must be valid datetime
+- Year range MUST be between 0001 and 9999 (inclusive)
 - Implementations MUST preserve timezone information if present
 - YAML timestamp scalars MAY be accepted and MUST be normalized to ISO 8601 on write
 
@@ -249,8 +267,8 @@ created_at:
 - Datetime values with explicit offsets are compared as absolute instants (convert to a common epoch before comparison)
 - Datetime values WITHOUT offsets (naive) are treated as local time in the implementation's configured timezone
 - Comparing an offset-aware datetime with a naive datetime: the naive datetime is interpreted in local time, then both are compared as absolute instants
-- `now()` returns an offset-aware datetime in the implementation's local timezone
-- `today()` returns a date in the implementation's local timezone
+- `now()` returns an offset-aware datetime in `settings.timezone` if configured; otherwise local timezone
+- `today()` returns a date in `settings.timezone` if configured; otherwise local timezone
 - Date arithmetic preserves offset: `datetime_with_offset + "1d"` keeps the same offset
 - Serialization MUST preserve the original offset if present. `2024-03-15T10:00:00+05:30` MUST NOT be normalized to UTC on write
 - Implementations MAY provide a configuration option for default timezone (not specified in this version — use the local system timezone)
@@ -295,6 +313,7 @@ status:
 - Value must exactly match one of the `values` entries
 - Comparison is case-sensitive
 - Enum values MUST be strings
+- The `values` list MUST be non-empty. Empty lists MUST be rejected with `invalid_type_definition`.
 
 ---
 
@@ -329,6 +348,7 @@ tags:
 **Validation:**
 - Value must be a YAML list
 - Each element is validated against `items`
+- Type coercion rules (§7.16) apply to list elements in the same way they apply to top-level fields
 - If `unique: true`, duplicates cause validation failure
 
 **Nested lists:**
@@ -370,6 +390,8 @@ author:
 - Value must be a YAML mapping
 - Each field is validated according to its definition
 - Unknown fields are handled according to type's strictness
+
+Implementations MAY enforce a maximum nesting depth for object/list schemas to prevent pathological definitions. Implementations MUST support at least 16 levels of nesting; deeper schemas MAY be rejected with `invalid_type_definition`.
 
 ---
 
@@ -478,6 +500,11 @@ fields:
 4. Generated fields can still have `required: true` (they'll satisfy the requirement via generation)
 5. `random` MAY only be used on `string` fields; `sequence` MAY only be used on `integer` fields
 
+**Ordering and dependencies:**
+- Generated fields are resolved in dependency order. A generated field MAY reference another generated field.
+- If a generated field depends on another generated field, the dependency MUST be resolved first.
+- Cycles in generated-field dependencies MUST be rejected with `invalid_type_definition`.
+
 ### Random String Generation
 
 Use `{random: N}` to generate a random string of length `N` using the alphabet `a-z` and `0-9`.
@@ -533,15 +560,16 @@ If `start` is provided, it MUST be an integer. Invalid sequence configuration MU
 The `{from, transform}` strategy MAY reference file metadata using the same `file.*` names defined
 in [§10.5](./10-querying.md):
 
-- `file.name` (filename without extension)
-- `file.basename` (filename with extension)
+- `file.name` (filename with extension)
+- `file.basename` (filename without final extension)
 - `file.ext`
 - `file.path`
 - `file.folder`
 
 On create, these values refer to the final resolved path. On update, they refer to the current
 file path. If a generated field depends on `file.*`, that field MUST NOT be referenced by
-`path_pattern` (to avoid circular dependencies).
+`path_pattern` (to avoid circular dependencies). Implementations MUST reject such type
+definitions with `invalid_type_definition`.
 
 ---
 

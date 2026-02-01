@@ -89,6 +89,14 @@ groups:
           error:
             code: wrong_argument_count
 
+      - name: "reduce() without init is wrong_argument_count"
+        operation: evaluate
+        input:
+          expression: "[1, 2, 3].reduce(acc + value)"
+        expect:
+          error:
+            code: wrong_argument_count
+
   # =============================================================================
   # Group 3: type_error — additional type mismatch cases
   #

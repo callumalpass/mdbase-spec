@@ -1,5 +1,5 @@
 name: "create must satisfy match rules"
-level: 1
+level: 2
 category: operations
 spec_ref: "§12.1, §6.3, §6.4"
 

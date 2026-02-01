@@ -1,3 +1,15 @@
+---
+type: appendix
+id: appendix-d-compatibility
+title: "Compatibility Notes"
+description: "Compatibility with Obsidian Bases, Dataview, and migration paths"
+letter: d
+normative: false
+depends_on:
+  - "[[10-querying]]"
+  - "[[11-expressions]]"
+---
+
 # Appendix D: Compatibility Notes
 
 This appendix describes compatibility with existing tools and migration paths from other systems.

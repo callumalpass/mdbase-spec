@@ -1,3 +1,15 @@
+---
+type: appendix
+id: appendix-c-error-codes
+title: "Error Codes"
+description: "Standard error codes for validation issues and operation errors"
+letter: c
+normative: false
+depends_on:
+  - "[[09-validation]]"
+  - "[[12-operations]]"
+---
+
 # Appendix C: Error Codes
 
 This appendix defines standard error codes for validation issues and operation errors.
@@ -26,7 +38,7 @@ This appendix defines standard error codes for validation issues and operation e
 | `list_too_short` | List has fewer than min_items | Minimum 1 item required |
 | `list_too_long` | List has more than max_items | Maximum 10 items allowed |
 | `list_duplicate` | Duplicate in list with unique=true | Duplicate value "a" |
-| `list_item_invalid` | List item fails validation | Item [2] type mismatch |
+| `list_item_invalid` | List item fails `items` validation (item-level cause may be included) | Item [2] type mismatch |
 
 ### String Errors
 

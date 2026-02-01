@@ -1,0 +1,62 @@
+name: "batch dry-run"
+level: 6
+category: operations
+spec_ref: "§12.7"
+
+groups:
+  - name: "batch dry-run does not modify files"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            status:
+              type: string
+            title:
+              type: string
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "A"
+          status: "open"
+          ---
+        notes/b.md: |
+          ---
+          type: note
+          title: "B"
+          status: "open"
+          ---
+
+    tests:
+      - name: "dry-run reports changes but does not write"
+        operation: batch_update
+        input:
+          where: 'status == "open"'
+          fields:
+            status: "done"
+          dry_run: true
+        expect:
+          batch_result:
+            total: 2
+            succeeded: 2
+            failed: 0
+        verify_after:
+          operation: query
+          input:
+            types: [note]
+            order_by: [{ field: "title", direction: "asc" }]
+          expect:
+            results:
+              - frontmatter:
+                  title: "A"
+                  status: "open"
+              - frontmatter:
+                  title: "B"
+                  status: "open"

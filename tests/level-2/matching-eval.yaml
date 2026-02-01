@@ -185,6 +185,42 @@ groups:
         expect:
           types: [task]
 
+  # =============================================================================
+  # Group X: Match rules cannot reference computed fields
+  # =============================================================================
+
+  - name: "match rule referencing computed field is invalid"
+    spec_ref: "§6.4, §5.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        bad.md: |
+          ---
+          name: bad
+          fields:
+            title:
+              type: string
+            score:
+              type: integer
+              computed: "title.length"
+          match:
+            where:
+              score:
+                gt: 0
+          ---
+      files: {}
+
+    tests:
+      - name: "type definition with computed field in match.where is rejected"
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition
+
       - name: "custom plural type key works"
         setup:
           files:

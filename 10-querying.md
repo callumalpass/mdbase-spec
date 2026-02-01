@@ -1,3 +1,16 @@
+---
+type: chapter
+id: 10-querying
+title: "Query Model"
+description: "Query structure, filters, sorting, pagination, and file metadata"
+section: 10
+conformance_levels: [3]
+test_categories: [queries, body_search]
+depends_on:
+  - "[[11-expressions]]"
+  - "[[05-types]]"
+---
+
 # 10. Query Model
 
 Queries retrieve files from the collection based on filters, with support for sorting, pagination, and computed fields. This section defines the query structure and semantics.
@@ -142,7 +155,7 @@ order_by:
 - `desc`: Descending (Z-A, 9-1, newest-oldest)
 
 **Null handling:** Null values sort LAST in ascending order and FIRST in descending order.
-**Non-scalar fields:** If `order_by` references a field whose value is a list, object, or other non-scalar type, implementations MUST sort by a deterministic representation: lists by length, objects by key count. Implementations MAY reject non-scalar sort fields with a warning. This avoids undefined behavior from comparing incomparable types.
+**Non-scalar fields:** If `order_by` references a field whose value is a list, object, or other non-scalar type, implementations MUST sort by a deterministic representation: lists by length, objects by key count. Implementations SHOULD emit a warning when a non-scalar sort key is used, since it is often unintentional. This avoids undefined behavior from comparing incomparable types.
 **Tie-breakers:** If all `order_by` fields compare equal, implementations MUST
 apply a stable tie-breaker by ascending `file.path` to ensure deterministic output.
 
@@ -251,6 +264,8 @@ In query expressions, properties are accessed through namespaces:
 | `file.tags` | list | All tags (raw frontmatter `tags` + inline `#tags`, including nested) |
 | `file.properties` | object | Raw persisted frontmatter properties only (no computed fields, no applied defaults). This is equivalent to `note.` |
 | `file.embeds` | list | All embed links in the file body |
+
+Bare properties (no namespace) are evaluated against **effective** frontmatter, which includes defaults and type coercion per the matched schema. The `note.`/`file.properties` namespaces expose raw persisted values without coercion.
 
 `file.display_name` is derived from the matched type's `display_name_key` (see [§5.13](./05-types.md)).
 If multiple matched types define `display_name_key`, implementations SHOULD use the first type in the
@@ -376,6 +391,8 @@ formulas:
 ```
 
 Formulas are accessible via the `formula.` namespace in subsequent expressions and in results.
+
+**Formula error handling:** Invalid formula syntax MUST produce `invalid_formula`. Circular references MUST produce `circular_formula`. Runtime evaluation errors inside formulas (including type mismatches, division by zero, invalid method calls, and invalid regex) MUST produce `formula_evaluation_error` (not `type_error`) as defined in Appendix C.5.
 
 ### `groupBy`
 

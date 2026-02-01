@@ -1,3 +1,16 @@
+---
+type: chapter
+id: 15-watching
+title: "Watching"
+description: "Watch mode event model for monitoring collection changes"
+section: 15
+conformance_levels: [6]
+test_categories: [watching]
+depends_on:
+  - "[[13-caching]]"
+  - "[[12-operations]]"
+---
+
 # 15. Watching
 
 This section defines the watch mode event model for monitoring a collection for changes. Watch mode is a required capability for Level 6 conformance.
@@ -85,6 +98,8 @@ types: [task]
 ## 15.4 Debouncing
 
 Implementations MUST debounce filesystem events — multiple rapid changes to the same file MUST be coalesced into a single event.
+
+**Batch operations:** Batch updates/deletes MAY emit multiple per-file events as each file is written. No aggregate batch event is required. Event ordering guarantees still apply per file.
 
 - Recommended debounce window: 100–500ms (implementation-defined)
 - After the debounce window, the implementation reads the file's current state and emits one event reflecting the net change

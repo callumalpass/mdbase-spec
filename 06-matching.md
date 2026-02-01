@@ -1,3 +1,15 @@
+---
+type: chapter
+id: 06-matching
+title: "Type Matching"
+description: "How files are associated with types via explicit declaration or match rules"
+section: 6
+conformance_levels: [2]
+test_categories: [matching]
+depends_on:
+  - "[[05-types]]"
+---
+
 # 6. Type Matching
 
 This section defines how files are associated with types. Unlike traditional schemas where each record belongs to exactly one table, this specification supports **multi-type matching**: a file may match zero, one, or multiple types simultaneously.
@@ -29,6 +41,9 @@ normalized to lowercase for matching; non-canonical casing SHOULD emit a warning
 If you want to use a field like `type` as ordinary data, remove it from
 `settings.explicit_type_keys` and use different keys (e.g., `kind`, `kinds`) for
 type declarations.
+
+**Custom keys replace the defaults.** When `settings.explicit_type_keys` is non-empty, the
+default keys `type` and `types` have no special meaning and are treated as ordinary fields.
 
 ### Single Type
 
@@ -175,6 +190,10 @@ match:
 
 > **Note:** `where: { field: { exists: true } }` uses the same semantics as `fields_present`: the key must exist AND the value must be non-null. This keeps the match rule system internally consistent — both mechanisms agree on what "present" means.
 
+**Missing/null behavior:** For all `where` operators, if the field is missing or null, the condition evaluates to **false** (no match). This is a silent non-match, not an error.
+
+**Evaluation errors:** If a `where` condition triggers an evaluation error (e.g., type mismatch on a method call), the condition evaluates to **false** and the type does not match. Implementations MUST NOT error or warn during match evaluation.
+
 ---
 
 ### Match `where` vs Query `where`
@@ -197,6 +216,8 @@ where: 'status != "done"'
 ```
 
 These are two distinct syntaxes. Match rules use the structured form because they are evaluated during type matching (before the expression engine is available). Query where clauses use expression strings for greater flexibility.
+
+Match rules are evaluated against **effective frontmatter** (defaults applied, computed excluded). Computed fields are not available during matching. Type definitions that reference computed fields in `match.where` MUST be rejected with `invalid_type_definition`.
 
 ---
 

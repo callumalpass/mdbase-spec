@@ -626,6 +626,51 @@ groups:
               title:
                 type: string
 
+  # =============================================================================
+  # Group 5: Type loading order
+  # =============================================================================
+
+  - name: "type loading order resolves parents after scan"
+    spec_ref: "§5.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        a-child.md: |
+          ---
+          name: child
+          extends: parent
+          fields:
+            child_field:
+              type: string
+          ---
+        z-parent.md: |
+          ---
+          name: parent
+          fields:
+            parent_required:
+              type: string
+              required: true
+          ---
+      files:
+        notes/child.md: |
+          ---
+          type: child
+          child_field: "present"
+          ---
+
+    tests:
+      - name: "parent fields apply even when parent file appears after child"
+        operation: validate
+        input:
+          path: "notes/child.md"
+        expect:
+          valid: false
+          issues:
+            - code: missing_required
+              field: parent_required
+
   - name: "type inheritance - errors"
     spec_ref: "§5.4"
 
@@ -1625,6 +1670,24 @@ groups:
           ---
 
     tests:
+      - name: "empty enum values list rejects type definition"
+        setup:
+          types:
+            bad-enum.md: |
+              ---
+              name: bad-enum
+              fields:
+                status:
+                  type: enum
+                  values: []
+              ---
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition
+
       - name: "valid enum value"
         setup:
           files:

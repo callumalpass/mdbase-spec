@@ -1,5 +1,5 @@
 name: "batch result per-file details and custom cache folder exclusion"
-level: 1
+level: 6
 category: operations
 spec_ref: "§12.7, §2.2, §13.4"
 

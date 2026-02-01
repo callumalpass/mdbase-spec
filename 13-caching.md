@@ -1,3 +1,15 @@
+---
+type: chapter
+id: 13-caching
+title: "Caching and Indexing"
+description: "Optional caching, staleness detection, and index invalidation"
+section: 13
+conformance_levels: [6]
+test_categories: [caching]
+depends_on:
+  - "[[12-operations]]"
+---
+
 # 13. Caching and Indexing
 
 Caching and indexing are optional features that accelerate queries on large collections. This section defines cache behavior and requirements.

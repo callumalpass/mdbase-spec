@@ -843,6 +843,45 @@ groups:
   # OR are rejected with an error. Silent incorrect behavior is a failure.
   # =============================================================================
 
+  - name: "path_pattern cannot reference file.*-generated fields"
+    spec_ref: "§7.15, §5.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          path_pattern: "{slug}.md"
+          fields:
+            slug:
+              type: string
+              generated:
+                from: file.name
+          ---
+      files: {}
+
+    tests:
+      - name: "type definition is rejected to avoid circular dependency"
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition
+
+  # =============================================================================
+  # Group 10: Regex optional features (§4.8)
+  #
+  # §4.8: "Implementations that do not support optional features MUST reject
+  # patterns using those features with a clear error rather than silently
+  # ignoring them."
+  #
+  # These tests verify that lookbehind and named groups either work correctly
+  # OR are rejected with an error. Silent incorrect behavior is a failure.
+  # =============================================================================
+
   - name: "regex optional features — lookbehind and named groups"
     spec_ref: "§4.8"
 
@@ -932,7 +971,7 @@ groups:
                 code: invalid_type_definition
 
   # =============================================================================
-  # Group 10: Validation issue format completeness (§9.3)
+  # Group 11: Validation issue format completeness (§9.3)
   #
   # Strengthens validation issue format testing — every issue MUST include
   # path, field, code, message, and severity.

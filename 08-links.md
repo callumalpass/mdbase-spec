@@ -1,3 +1,16 @@
+---
+type: chapter
+id: 08-links
+title: "Links"
+description: "Link syntax, parsing, resolution, traversal, and backlinks"
+section: 8
+conformance_levels: [4]
+test_categories: [links]
+depends_on:
+  - "[[07-field-types]]"
+  - "[[02-collection-layout]]"
+---
+
 # 8. Links
 
 Links are references from one file to another. They are a first-class concept in this specification due to their prevalence in markdown-based knowledge systems. This section defines link syntax, parsing, resolution, and traversal.
@@ -319,6 +332,8 @@ formulas:
 
 If the link cannot be resolved, `asFile()` returns `null`. Subsequent property access on `null` returns `null` (no error).
 
+Self-referential links (a file linking to itself) are allowed. `asFile()` resolves to the same file, and the traversal depth limit prevents infinite loops when chained.
+
 ### Multi-Hop Traversal
 
 `asFile()` MAY be chained to traverse multiple links:
@@ -377,7 +392,8 @@ The following functions operate on links and files in expressions:
 
 ### Backlinks
 
-`file.backlinks` returns files that link TO the current file. This requires either:
+`file.backlinks` returns files that link **or embed** the current file (frontmatter link fields,
+body wikilinks/markdown links, and embeds). This requires either:
 
 - A full scan of all files (slow without cache)
 - A pre-computed reverse index (requires cache)

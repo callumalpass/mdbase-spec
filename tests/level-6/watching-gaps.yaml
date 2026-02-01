@@ -167,7 +167,63 @@ groups:
                 code: file_not_found
 
   # =============================================================================
-  # Group 4: Excluded directories not watched
+  # Group 4: Ordered delivery across mixed event types
+  # =============================================================================
+
+  - name: "mixed event ordering for same file"
+    spec_ref: "§15.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/mixed.md: |
+          ---
+          type: note
+          title: "Mixed"
+          ---
+
+    tests:
+      - name: "events for same file delivered in order across types"
+        operation: watch
+        simulate:
+          sequential_changes:
+            - action: modify
+              path: "notes/mixed.md"
+              content: |
+                ---
+                type: note
+                title: "Mixed v2"
+                ---
+            - action: delete
+              path: "notes/mixed.md"
+            - action: create
+              path: "notes/mixed.md"
+              content: |
+                ---
+                type: note
+                title: "Mixed v3"
+                ---
+          interval_ms: 600
+        expect:
+          events_ordered:
+            - event: file_modified
+              path: "notes/mixed.md"
+            - event: file_deleted
+              path: "notes/mixed.md"
+            - event: file_created
+              path: "notes/mixed.md"
+
+  # =============================================================================
+  # Group 5: Excluded directories not watched
   # =============================================================================
 
   - name: "excluded directories not watched"
@@ -204,7 +260,7 @@ groups:
           max_event_count: 0
 
   # =============================================================================
-  # Group 5: Custom extensions watched
+  # Group 6: Custom extensions watched
   # =============================================================================
 
   - name: "custom extensions generate watch events"

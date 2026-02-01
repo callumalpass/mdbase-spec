@@ -1,3 +1,12 @@
+---
+type: chapter
+id: 00-overview
+title: "Overview"
+description: "Abstract, motivation, design principles, and specification structure"
+section: 0
+normative: false
+---
+
 # Typed Markdown Collections Specification
 
 **Version:** 0.1.0  

@@ -1,3 +1,12 @@
+---
+type: chapter
+id: 14-conformance
+title: "Conformance"
+description: "Conformance levels, test suite structure, and implementation requirements"
+section: 14
+normative: false
+---
+
 # 14. Conformance
 
 This section defines conformance levels and testing requirements for implementations.
@@ -186,6 +195,18 @@ tests:
 
 The conformance test suite uses several extensions beyond the base format shown in §14.3. Test runners MUST support these extensions to execute the full suite.
 
+### Query Usage at Lower Levels
+
+Some Level 1–2 tests use `operation: query` as test infrastructure for collection scanning and path discovery. Implementations claiming Level 1–2 conformance MUST support a **minimal query subset** sufficient for these tests:
+
+- `types` filtering
+- `folder` filtering
+- `order_by` with `file.path`
+- `limit` and `offset`
+- `meta.total_count` and `meta.has_more`
+
+This subset does **not** require expression evaluation, computed fields, or body search. Full query semantics remain a Level 3 requirement.
+
 ### Extended Operations
 
 | Operation | Description | Spec Reference |
@@ -241,6 +262,10 @@ For each conformance level, implementations MUST pass:
 | 4 | + links |
 | 5 | + references |
 | 6 | + caching, watching |
+
+### Out-of-Scope Checks
+
+Some MUST-level behaviors are difficult to test portably (e.g., OS-level `permission_denied` errors, or logging requirements such as “do not log expanded environment variable values”). These behaviors remain normative, but the conformance suite does not currently enforce them. Implementations SHOULD document compliance for these items.
 
 ---
 

@@ -614,6 +614,13 @@ groups:
             title: "Hello World"
         expect:
           path_contains: "notes/notes/hello-world.md"
+        verify_after:
+          operation: read
+          input:
+            path: "notes/notes/hello-world.md"
+          expect:
+            frontmatter:
+              title: "Hello World"
 
   - name: "filename_pattern alias"
     spec_ref: "§5.6"

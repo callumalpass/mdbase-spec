@@ -1,0 +1,88 @@
+name: "expression matches() regex features"
+level: 3
+category: expressions
+spec_ref: "§4.8, §11.5"
+
+groups:
+  - name: "regex in expression matches() method"
+    spec_ref: "§4.8, §11.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "TASK-0001 Fix login bug"
+          ---
+        items/b.md: |
+          ---
+          type: item
+          title: "Update README"
+          ---
+        items/c.md: |
+          ---
+          type: item
+          title: "BUG-1234 Crash on startup"
+          ---
+
+    tests:
+      - name: "matches() with character class and quantifier"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.matches("^[A-Z]+-\\d+ ")'
+        expect:
+          results:
+            - path: "items/a.md"
+            - path: "items/c.md"
+          meta:
+            total_count: 2
+
+      - name: "matches() with alternation"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.matches("^(TASK|BUG)-")'
+        expect:
+          results:
+            - path: "items/a.md"
+            - path: "items/c.md"
+          meta:
+            total_count: 2
+
+      - name: "matches() with non-capturing group"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.matches("(?:Fix|Update)")'
+        expect:
+          results:
+            - path: "items/a.md"
+            - path: "items/b.md"
+          meta:
+            total_count: 2
+
+      - name: "matches() with word boundary \\b"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.matches("\\bFix\\b")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1

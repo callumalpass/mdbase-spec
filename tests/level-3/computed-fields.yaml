@@ -458,6 +458,25 @@ groups:
           error:
             code: invalid_type_definition
 
+      - name: "path_pattern referencing computed field is rejected"
+        setup:
+          types:
+            bad.md: |
+              ---
+              name: bad
+              path_pattern: "{slug}.md"
+              fields:
+                title:
+                  type: string
+                slug:
+                  type: string
+                  computed: "title.lower()"
+              ---
+        operation: load_types
+        expect:
+          error:
+            code: invalid_type_definition
+
   # =============================================================================
   # Group 8: Computed fields with inheritance
   # =============================================================================
@@ -549,6 +568,12 @@ groups:
               type: integer
             b:
               type: integer
+            c:
+              type: integer
+              default: 2
+            c_plus:
+              type: integer
+              computed: "c + 1"
             sum:
               type: integer
               computed: "(a ?? 0) + (b ?? 0)"
@@ -577,6 +602,14 @@ groups:
         expect:
           frontmatter:
             sum: 7
+
+      - name: "computed field sees default-applied inputs"
+        operation: read
+        input:
+          path: "items/partial.md"
+        expect:
+          frontmatter:
+            c_plus: 3
 
       - name: "computed field with null coalescing handles missing input"
         operation: read

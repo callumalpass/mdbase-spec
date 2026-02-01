@@ -1,3 +1,14 @@
+---
+type: appendix
+id: appendix-b-expression-grammar
+title: "Expression Grammar"
+description: "Formal EBNF grammar for the expression language"
+letter: b
+normative: false
+depends_on:
+  - "[[11-expressions]]"
+---
+
 # Appendix B: Expression Grammar
 
 This appendix provides a formal grammar for the expression language used in filters, match conditions, and formulas.

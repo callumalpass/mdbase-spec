@@ -274,7 +274,49 @@ groups:
             code: file_not_found
 
   # =============================================================================
-  # Group 6: Custom types folder
+  # Group 6: Types folder subdirectories are scanned for type definitions
+  # =============================================================================
+
+  - name: "types folder subdirectories are scanned"
+    spec_ref: "§2.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        subdir/widget.md: |
+          ---
+          name: widget
+          fields:
+            title:
+              type: string
+              required: true
+          ---
+      files:
+        widgets/w1.md: |
+          ---
+          type: widget
+          title: "Widget One"
+          ---
+
+    tests:
+      - name: "type definition in subdir is loaded"
+        operation: validate
+        input:
+          path: "widgets/w1.md"
+        expect:
+          valid: true
+
+      - name: "type file in subdir is not a record"
+        operation: read
+        input:
+          path: "_types/subdir/widget.md"
+        expect:
+          error:
+            code: file_not_found
+
+  # =============================================================================
+  # Group 7: Custom types folder
   # =============================================================================
 
   - name: "custom types folder excluded from scan"
@@ -316,7 +358,7 @@ groups:
           valid: true
 
   # =============================================================================
-  # Group 7: Custom extensions
+  # Group 8: Custom extensions
   # =============================================================================
 
   - name: "custom file extensions"
@@ -439,60 +481,7 @@ groups:
             title: "Markdown extension"
 
   # =============================================================================
-  # Group 9: Nested collections
-  # =============================================================================
-
-  - name: "nested collection boundary"
-    spec_ref: "§2.8"
-
-    setup:
-      config: |
-        spec_version: "0.1.0"
-      types:
-        note.md: |
-          ---
-          name: note
-          fields:
-            title:
-              type: string
-          ---
-      files:
-        notes/parent-note.md: |
-          ---
-          type: note
-          title: "Parent collection note"
-          ---
-        sub-project/mdbase.yaml: |
-          spec_version: "0.1.0"
-        sub-project/docs/readme.md: |
-          ---
-          type: note
-          title: "Nested collection doc"
-          ---
-
-    tests:
-      - name: "parent scan does not descend into nested collection"
-        operation: query
-        input:
-          types: [note]
-        expect:
-          results:
-            - path: "notes/parent-note.md"
-              frontmatter:
-                title: "Parent collection note"
-          meta:
-            total_count: 1
-
-      - name: "file in nested collection is not accessible from parent"
-        operation: read
-        input:
-          path: "sub-project/docs/readme.md"
-        expect:
-          error:
-            code: file_not_found
-
-  # =============================================================================
-  # Group 10: Non-markdown files
+  # Group 9: Non-markdown files
   # =============================================================================
 
   - name: "non-markdown files are not records"

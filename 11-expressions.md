@@ -1,3 +1,16 @@
+---
+type: chapter
+id: 11-expressions
+title: "Expression Language"
+description: "Expression syntax, operators, functions, and methods for filters and formulas"
+section: 11
+conformance_levels: [3]
+test_categories: [expressions]
+depends_on:
+  - "[[07-field-types]]"
+  - "[[08-links]]"
+---
+
 # 11. Expression Language
 
 Expressions are strings that evaluate to values. They are used in query filters, match conditions, and computed formulas. This section defines the expression syntax and available functions.
@@ -199,6 +212,8 @@ In `filter()`, `map()`, and `reduce()`, the implicit variables `value` and `inde
 
 `containsAll()` and `containsAny()` are variadic; passing a list literal counts as a single value and does not auto-expand.
 
+**`reduce()` requires an initial accumulator value.** If `reduce()` is called without the `init` argument, implementations MUST treat it as a structural error and abort evaluation with `wrong_argument_count`. This avoids underspecified behavior on empty lists and keeps evaluation deterministic.
+
 ---
 
 ## 11.7 Date/Time Functions
@@ -211,7 +226,7 @@ In `filter()`, `map()`, and `reduce()`, the implicit variables `value` and `inde
 | `today()` | date | Current date (no time) |
 
 **Timezone semantics:**
-- `now()` and `today()` use the implementation's local timezone unless otherwise configured.
+- `now()` and `today()` use `settings.timezone` if configured; otherwise they use the implementation's local timezone.
 - Date-only values (`date` type) are interpreted in the local timezone for comparisons.
 - Datetime values with explicit offsets MUST be compared in absolute time.
 
@@ -274,6 +289,8 @@ file.mtime > now() - "24h"  // Modified in last 24 hours
 | `h` | `hour`, `hours` |
 | `m` | `minute`, `minutes` |
 | `s` | `second`, `seconds` |
+
+**Unit case sensitivity:** Duration units are case-sensitive. `M` is months and `m` is minutes.
 
 **Duration string format:**
 
@@ -405,6 +422,8 @@ list(value)                // Wrap in list if not already a list
 | `file.hasProperty(name)` | Raw persisted frontmatter has the key | `file.hasProperty("status")` |
 | `file.inFolder(path)` | File is in folder (or subfolder) | `file.inFolder("archive")` |
 | `file.asLink(display?)` | Convert file to link | `file.asLink("display text")` |
+
+`file.asLink(display?)` returns a **link value** equivalent to `link(file.path)`. The default format is a wikilink (`[[path]]`). If `display` is provided, it is used as the link alias (e.g., `[[path|display]]`).
 
 ---
 

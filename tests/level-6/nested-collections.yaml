@@ -1,0 +1,54 @@
+name: "nested collection boundaries"
+level: 6
+category: config
+spec_ref: "§2.8"
+
+groups:
+  - name: "nested collection boundary"
+    spec_ref: "§2.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/parent-note.md: |
+          ---
+          type: note
+          title: "Parent collection note"
+          ---
+        sub-project/mdbase.yaml: |
+          spec_version: "0.1.0"
+        sub-project/docs/readme.md: |
+          ---
+          type: note
+          title: "Nested collection doc"
+          ---
+
+    tests:
+      - name: "parent scan does not descend into nested collection"
+        operation: query
+        input:
+          types: [note]
+        expect:
+          results:
+            - path: "notes/parent-note.md"
+              frontmatter:
+                title: "Parent collection note"
+          meta:
+            total_count: 1
+
+      - name: "file in nested collection is not accessible from parent"
+        operation: read
+        input:
+          path: "sub-project/docs/readme.md"
+        expect:
+          error:
+            code: file_not_found

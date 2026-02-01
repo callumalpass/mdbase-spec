@@ -1,3 +1,17 @@
+---
+type: chapter
+id: 12-operations
+title: "Operations"
+description: "Create, Read, Update, Delete, Rename, batch operations, and initialization"
+section: 12
+conformance_levels: [1, 5]
+test_categories: [operations, references, concurrency]
+depends_on:
+  - "[[09-validation]]"
+  - "[[03-frontmatter]]"
+  - "[[05-types]]"
+---
+
 # 12. Operations
 
 This section defines the behavior of Create, Read, Update, Delete, and Rename operations on collection files.
@@ -43,10 +57,11 @@ Creates a new file in the collection.
    - Otherwise, require explicit path
    - If any pattern variable is unresolved (null/undefined/empty), fail with `path_required`
 
-6. **Check match rules** (explicit type only):
-   - If the type was specified explicitly (via input `type` or explicit type keys), the final record MUST satisfy that type's match rules (§6.3–§6.4)
+6. **Check match rules** (explicit type only, Level 2+):
+   - If the type was specified explicitly (via input `type` or explicit type keys), the final record MUST satisfy that type's match rules (§6.3–§6.4) **when match rules are supported**
    - This check uses the **effective** frontmatter and the final path
    - If the record does not satisfy the match rules, abort with `match_failed`
+   - Level 1 implementations MAY skip this step because match rule evaluation is a Level 2 capability
 
 7. **Check existence**: If file already exists at path, abort with error
 
@@ -56,6 +71,7 @@ Creates a new file in the collection.
    - If `settings.explicit_type_keys` is empty, implementations MUST NOT write any type declaration field
    - MUST include all explicitly provided fields and all generated fields
    - MUST write fields filled solely by defaults when `settings.write_defaults` is true (default); SHOULD omit them when `settings.write_defaults` is false
+   - Ensure parent directories exist for the final path (create as needed)
    - Combine with body
    - Write atomically (temp file + rename)
 
@@ -109,12 +125,13 @@ Reads a file and returns its parsed content.
 ### Behavior
 
 1. **Load file**: Read from filesystem
+   - Reads respect collection scanning rules (`settings.include_subfolders`, `settings.exclude`, and `settings.types_folder`). If a path is excluded from the record set, read MUST return `file_not_found`.
 
 2. **Parse frontmatter**: Extract YAML frontmatter and body
 
 3. **Determine types**:
    - Check for explicit `type`/`types` field
-   - Evaluate match rules for all types
+   - If match rules are supported (Level 2+), evaluate match rules for all types
    - Collect matched types
 
 4. **Validate** (if enabled):
@@ -176,8 +193,10 @@ Modifies an existing file's frontmatter and/or body.
    - New fields are added
    - Existing fields are replaced
    - Explicit null removes the field (if `write_nulls: omit`) or writes null
+   - If a required field is removed via null, validation MUST treat it as missing
 
 3. **Determine types**: Use explicit type keys (per `settings.explicit_type_keys`) and match rules, including path-based matching
+   - Updates MAY change match-relevant fields; reclassification is allowed and MUST NOT be treated as an error
 
 4. **Update generated fields**: For fields with `generated: now_on_write`, update to current time
 
@@ -597,6 +616,10 @@ If `config` is omitted, implementations MUST write a minimal configuration conta
 1. Create `mdbase.yaml` at the collection root
 2. Create the types folder (`settings.types_folder`, default `_types/`)
 3. Create the meta type file in the types folder (see [§5.8](./05-types.md))
+
+Init MUST be atomic with respect to other init operations. If another process has already initialized
+the collection (or does so concurrently), init MUST fail with `path_conflict` rather than partially
+overwriting existing files.
 
 ### Output
 

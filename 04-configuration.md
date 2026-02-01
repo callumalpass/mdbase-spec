@@ -1,3 +1,15 @@
+---
+type: chapter
+id: 04-configuration
+title: "Configuration"
+description: "The mdbase.yaml configuration file structure and semantics"
+section: 4
+conformance_levels: [1]
+test_categories: [config]
+depends_on:
+  - "[[03-frontmatter]]"
+---
+
 # 4. Configuration
 
 This section defines the structure and semantics of the `mdbase.yaml` configuration file that identifies and configures a collection.
@@ -12,7 +24,7 @@ The `mdbase.yaml` configuration file and all type definition files MUST be encod
 
 ## 4.1 File Location and Format
 
-The configuration file MUST be named `mdbase.yaml` and MUST be located at the collection root. This file:
+The configuration file MUST be named `mdbase.yaml` and MUST be located at the collection root. `mdbase.yml` is NOT supported. This file:
 
 - Identifies the directory as a collection
 - Specifies the schema version
@@ -115,6 +127,15 @@ settings:
   # "warn": Extra fields allowed but emit warning
   # Default: false
   default_strict: false
+
+  # ---------------------------------------------------------------------------
+  # Time
+  # ---------------------------------------------------------------------------
+
+  # Timezone for now()/today() and naive date comparisons
+  # Use an IANA timezone name (e.g., "UTC", "America/New_York")
+  # Default: local system timezone
+  timezone: "UTC"
   
   # ---------------------------------------------------------------------------
   # Link Resolution
@@ -295,6 +316,14 @@ Default strictness mode for types that don't declare their own.
 
 **Default:** `false`
 
+### `settings.timezone`
+
+Timezone for date/time functions (`now()`, `today()`) and naive datetime comparisons.
+
+**Default:** local system timezone
+
+**Format:** IANA timezone name (e.g., `"UTC"`, `"America/New_York"`)
+
 ### `settings.id_field`
 
 The field name used as a unique identifier for link resolution. When a link is a simple name (not a path), implementations search for files where this field matches.
@@ -407,6 +436,8 @@ settings:
 
 This feature is OPTIONAL. If not supported, implementations MUST treat `${...}` as literal strings. If `${VAR:-default}` is not supported, implementations MUST treat the entire string literally (no partial expansion).
 
+If supported, substitution is a pure string-to-string transform applied to **all string scalars** in the configuration tree (including nested objects and list values). If a placeholder is unsupported or malformed, implementations MUST leave the **entire string** unchanged (no partial expansion). If a variable is referenced without a default and is undefined, implementations MUST substitute the empty string.
+
 ---
 
 ## 4.8 Security Considerations
@@ -437,6 +468,8 @@ Match rules, field constraints (`pattern`), and expressions (the `matches` opera
 | Named groups | `(?<name>...)` | Supported in ES2018 but not in RE2-based engines |
 
 Implementations that do not support optional features MUST reject patterns using those features with a clear error rather than silently ignoring them.
+
+Invalid regex patterns in type definitions MUST be rejected at type load time with `invalid_type_definition`.
 
 **ReDoS mitigations:** Implementations SHOULD guard against [Regular Expression Denial of Service (ReDoS)](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS) by:
 

@@ -1,3 +1,15 @@
+---
+type: chapter
+id: 05-types
+title: "Types"
+description: "Type definitions as markdown files, inheritance, schema evolution"
+section: 5
+conformance_levels: [1]
+test_categories: [types, computed_fields]
+depends_on:
+  - "[[04-configuration]]"
+---
+
 # 5. Types
 
 This section defines how types (schemas) are created, structured, and interpreted. In this specification, **types are markdown files**—they live in a designated folder, have frontmatter that defines the schema, and body content that provides documentation.
@@ -108,7 +120,7 @@ name: task
 description: "A task or todo item"
 
 # Field to use as a human-readable display name for records of this type
-# If missing or empty on a record, implementations SHOULD fall back to file.basename
+# If missing or empty on a record, implementations MUST fall back to file.basename
 display_name_key: title
 
 # Type to inherit fields from
@@ -171,6 +183,7 @@ Names MUST:
 - Consist of lowercase letters, numbers, hyphens, and underscores
 - Start with a letter
 - Not exceed 64 characters
+- Be non-empty
 
 Type names are canonicalized to lowercase. Implementations SHOULD treat
 type names case-insensitively when reading frontmatter (`type`/`types`)
@@ -285,12 +298,6 @@ For backward compatibility, `filename_pattern` is accepted as a deprecated alias
 `path_pattern`. If both are present, `path_pattern` takes precedence and implementations SHOULD
 emit a warning.
 
-The optional `path_pattern` defines expected filename structure:
-
-```yaml
-path_pattern: "{id}-{slug}.md"
-```
-
 Patterns use `{}` to reference field values. Common placeholders:
 - `{id}`: The id field value
 - `{slug}`: A URL-safe slug (implementations should slugify automatically)
@@ -311,8 +318,11 @@ Patterns use `{}` to reference field values. Common placeholders:
 **Unresolvable variables:**
 - If a `{variable}` refers to a field that has no value (null/undefined/empty string), path derivation MUST fail with `path_required`.
 - If a `{variable}` refers to a field that is not defined in the type schema, type loading SHOULD emit a warning and path derivation MUST fail with `path_required`.
+- If a `{variable}` refers to a **computed** field, the type definition MUST be rejected with `invalid_type_definition` (computed fields are evaluated at read time and cannot be used for path derivation).
 
 **Path safety:** The resolved path MUST be a valid relative path and MUST NOT contain path traversal (`..`) or invalid characters. Invalid paths MUST fail with `invalid_path`.
+
+**Generated field restriction:** If `path_pattern` references a generated field that depends on `file.*` metadata, implementations MUST reject the type definition with `invalid_type_definition` to avoid circular dependencies (see [§7.15](./07-field-types.md)).
 
 ---
 
@@ -378,6 +388,8 @@ fields:
 
 Implementations MUST adjust `match.path_glob` to the configured types folder if `settings.types_folder`
 is customized. The `fields` property uses type `any` because field definitions are polymorphic.
+The `strict` field is modeled as a string enum because the type system does not support union
+types; YAML booleans are coerced to strings via §7.16.
 
 Implementations MAY also provide **starter templates** for common types (task, note, person, etc.) that users can copy into their types folder and customize.
 
@@ -437,6 +449,8 @@ When a type definition changes, existing files are NOT automatically migrated �
 
 **Type renamed:** Existing files with `type: old_name` fail type matching. Implementations MUST provide a batch update command to update type declarations across files.
 
+**Type removed:** Existing files with an explicit type that no longer exists MUST report `unknown_type` during validation. Implementations SHOULD NOT delete or rewrite files automatically.
+
 **Inheritance changed:** The effective schema is recomputed. Fields gained from a new parent apply the same rules as "field added." Fields lost apply the same rules as "field removed."
 
 **Materializing defaults:** Defaults are persisted based on `settings.write_defaults` (see [§4](./04-configuration.md)). If a default is written, it MUST equal the declared default at the time of the write.
@@ -465,6 +479,7 @@ fields:
 - They are available in queries, formulas, and expressions like any other field
 - Computed fields MUST NOT be `required` (they are always derived)
 - Computed fields MUST NOT have `default` or `generated` — these are mutually exclusive mechanisms
+- Computed fields evaluate against **effective** frontmatter (defaults applied, computed excluded)
 - If a file contains a frontmatter key matching a computed field name, the persisted value is ignored and the computed value takes precedence. Implementations SHOULD emit a warning
 - If a type definition has both `computed` and `required: true` on a field, implementations MUST reject the type definition with an `invalid_type_definition` error
 

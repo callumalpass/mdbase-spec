@@ -1,3 +1,15 @@
+---
+type: chapter
+id: 02-collection-layout
+title: "Collection Layout"
+description: "How collections are identified, how files are discovered, and overall structure"
+section: 2
+conformance_levels: [1]
+test_categories: [config]
+depends_on:
+  - "[[01-terminology]]"
+---
+
 # 2. Collection Layout
 
 This section defines how collections are identified, how files are discovered, and the overall structure of a compliant collection.
@@ -52,6 +64,12 @@ Default exclusions (applied unless overridden):
 - `.git`
 - `node_modules`
 - `.mdbase`
+
+### Symlinks
+
+Implementations MAY follow symlinks during scanning, but MUST prevent the resolved path from
+escaping the collection root. Symlinks that resolve outside the collection MUST be ignored
+with a warning.
 
 ### Subdirectory Scanning
 
