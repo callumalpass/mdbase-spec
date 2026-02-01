@@ -39,6 +39,7 @@ groups:
           type: task
           title: "Explicit status"
           status: done
+          priority: 5
           ---
         tasks/b.md: |
           ---

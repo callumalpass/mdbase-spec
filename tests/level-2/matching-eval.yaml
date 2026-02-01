@@ -185,6 +185,35 @@ groups:
         expect:
           types: [task]
 
+      - name: "custom plural type key works"
+        setup:
+          files:
+            items/b.md: |
+              ---
+              kinds: [task, note]
+              title: "Custom plural key"
+              content: "Also a note"
+              ---
+        operation: get_types
+        input:
+          path: "items/b.md"
+        expect:
+          types: [task, note]
+
+      - name: "default type key is not recognized when custom keys configured"
+        setup:
+          files:
+            notes/c.md: |
+              ---
+              type: task
+              title: "Default key ignored"
+              ---
+        operation: get_types
+        input:
+          path: "notes/c.md"
+        expect:
+          types: [note]
+
   # =============================================================================
   # Group X: Match rules cannot reference computed fields
   # =============================================================================
@@ -220,35 +249,6 @@ groups:
           valid: false
           error:
             code: invalid_type_definition
-
-      - name: "custom plural type key works"
-        setup:
-          files:
-            items/b.md: |
-              ---
-              kinds: [task, note]
-              title: "Custom plural key"
-              content: "Also a note"
-              ---
-        operation: get_types
-        input:
-          path: "items/b.md"
-        expect:
-          types: [task, note]
-
-      - name: "default type key is not recognized when custom keys configured"
-        setup:
-          files:
-            notes/c.md: |
-              ---
-              type: task
-              title: "Default key ignored"
-              ---
-        operation: get_types
-        input:
-          path: "notes/c.md"
-        expect:
-          types: [note]
 
   # =============================================================================
   # Group 4: type_conflict error
