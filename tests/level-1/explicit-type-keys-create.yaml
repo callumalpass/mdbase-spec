@@ -1,0 +1,92 @@
+name: "explicit type keys on create"
+level: 1
+category: operations
+spec_ref: "§6.2, §12.1"
+
+groups:
+  - name: "explicit_type_keys empty"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          explicit_type_keys: []
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+          ---
+      files: {}
+
+    tests:
+      - name: "create does not write type field when explicit_type_keys is empty"
+        operation: create
+        input:
+          type: task
+          path: "tasks/t1.md"
+          frontmatter:
+            title: "No explicit type key"
+        expect:
+          frontmatter:
+            title: "No explicit type key"
+          frontmatter_not_written: [type, types]
+
+  - name: "explicit_type_keys custom"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          explicit_type_keys: ["kind"]
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+          ---
+      files: {}
+
+    tests:
+      - name: "create writes custom explicit type key"
+        operation: create
+        input:
+          type: task
+          path: "tasks/t1.md"
+          frontmatter:
+            title: "Custom key"
+        expect:
+          frontmatter_written:
+            kind: task
+          frontmatter_not_written: [type]
+
+  - name: "explicit_type_keys default"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+          ---
+      files: {}
+
+    tests:
+      - name: "create writes type field by default"
+        operation: create
+        input:
+          type: task
+          path: "tasks/t1.md"
+          frontmatter:
+            title: "Default key"
+        expect:
+          frontmatter_written:
+            type: task

@@ -1,0 +1,293 @@
+name: "rename with ID-based link preservation"
+level: 5
+category: references
+spec_ref: "§12.5"
+
+# §12.5: "If a simple-name link ([[name]]) resolves via id_field and the target
+# file's id_field value did not change, implementations SHOULD NOT rewrite the
+# link during rename (to avoid unnecessary churn)."
+
+groups:
+  # =============================================================================
+  # Group 1: ID-based links preserved during rename
+  # =============================================================================
+
+  - name: "id-based links not rewritten when id unchanged"
+    spec_ref: "§12.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        id_field: id
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            id:
+              type: string
+            title:
+              type: string
+            parent:
+              type: link
+          ---
+      files:
+        tasks/task-001.md: |
+          ---
+          type: task
+          id: "TASK-001"
+          title: "Parent task"
+          ---
+        tasks/task-002.md: |
+          ---
+          type: task
+          id: "TASK-002"
+          title: "Child task"
+          parent: "[[TASK-001]]"
+          ---
+          See [[TASK-001]] for details.
+        tasks/task-003.md: |
+          ---
+          type: task
+          id: "TASK-003"
+          title: "Another child"
+          parent: "[[TASK-001]]"
+          ---
+
+    tests:
+      - name: "renaming file with stable id does not rewrite id-based links"
+        operation: rename
+        input:
+          from: "tasks/task-001.md"
+          to: "tasks/parent-task.md"
+          update_refs: true
+        expect:
+          from: "tasks/task-001.md"
+          to: "tasks/parent-task.md"
+        verify_after:
+          - operation: read
+            input:
+              path: "tasks/task-002.md"
+            expect:
+              frontmatter:
+                parent: "[[TASK-001]]"
+
+      - name: "body id-based links also preserved"
+        operation: rename
+        input:
+          from: "tasks/task-001.md"
+          to: "tasks/renamed-parent.md"
+          update_refs: true
+        verify_after:
+          - operation: read
+            input:
+              path: "tasks/task-002.md"
+              include_body: true
+            expect:
+              body_contains: "[[TASK-001]]"
+
+  # =============================================================================
+  # Group 2: Path-based links ARE rewritten during rename
+  # =============================================================================
+
+  - name: "path-based links rewritten during rename"
+    spec_ref: "§12.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            parent:
+              type: link
+          ---
+      files:
+        tasks/old-name.md: |
+          ---
+          type: task
+          title: "Target"
+          ---
+        tasks/referrer.md: |
+          ---
+          type: task
+          title: "Referrer"
+          parent: "[[tasks/old-name]]"
+          ---
+          See [[tasks/old-name]] for details.
+
+    tests:
+      - name: "path-based wikilink rewritten on rename"
+        operation: rename
+        input:
+          from: "tasks/old-name.md"
+          to: "tasks/new-name.md"
+          update_refs: true
+        expect:
+          from: "tasks/old-name.md"
+          to: "tasks/new-name.md"
+        verify_after:
+          - operation: read
+            input:
+              path: "tasks/referrer.md"
+            expect:
+              frontmatter:
+                parent: "[[tasks/new-name]]"
+
+  # =============================================================================
+  # Group 3: Simple-name links resolved by filename ARE rewritten
+  # =============================================================================
+
+  - name: "filename-resolved simple links rewritten on rename"
+    spec_ref: "§12.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        tasks/old-name.md: |
+          ---
+          type: task
+          title: "Target"
+          ---
+        tasks/referrer.md: |
+          ---
+          type: task
+          title: "Referrer"
+          ref: "[[old-name]]"
+          ---
+
+    tests:
+      - name: "simple-name link resolved by filename is rewritten"
+        operation: rename
+        input:
+          from: "tasks/old-name.md"
+          to: "tasks/new-name.md"
+          update_refs: true
+        verify_after:
+          - operation: read
+            input:
+              path: "tasks/referrer.md"
+            expect:
+              frontmatter:
+                ref: "[[new-name]]"
+
+  # =============================================================================
+  # Group 4: Rename preserves link style
+  # =============================================================================
+
+  - name: "rename preserves original link style"
+    spec_ref: "§12.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            wiki_ref:
+              type: link
+            md_ref:
+              type: link
+            path_ref:
+              type: link
+          ---
+      files:
+        tasks/old-name.md: |
+          ---
+          type: task
+          title: "Target"
+          ---
+        tasks/referrer.md: |
+          ---
+          type: task
+          title: "Referrer"
+          wiki_ref: "[[old-name]]"
+          md_ref: "[link](./old-name.md)"
+          path_ref: "./old-name.md"
+          ---
+
+    tests:
+      - name: "wikilink style preserved after rename"
+        operation: rename
+        input:
+          from: "tasks/old-name.md"
+          to: "tasks/new-name.md"
+          update_refs: true
+        verify_after:
+          - operation: read
+            input:
+              path: "tasks/referrer.md"
+            expect:
+              frontmatter:
+                wiki_ref: "[[new-name]]"
+                md_ref: "[link](./new-name.md)"
+                path_ref: "./new-name.md"
+
+  # =============================================================================
+  # Group 5: Partial reference update failure
+  # =============================================================================
+
+  - name: "rename reports partial reference update failure"
+    spec_ref: "§12.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        tasks/target.md: |
+          ---
+          type: task
+          title: "Target"
+          ---
+        tasks/referrer-a.md: |
+          ---
+          type: task
+          title: "Referrer A"
+          ref: "[[target]]"
+          ---
+        tasks/referrer-b.md: |
+          ---
+          type: task
+          title: "Referrer B"
+          ref: "[[target]]"
+          ---
+
+    tests:
+      - name: "successful rename updates references"
+        operation: rename
+        input:
+          from: "tasks/target.md"
+          to: "tasks/new-target.md"
+          update_refs: true
+        expect:
+          from: "tasks/target.md"
+          to: "tasks/new-target.md"

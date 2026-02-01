@@ -1,0 +1,400 @@
+name: "batch operation validation and partial failure"
+level: 6
+category: operations
+spec_ref: "§12.7"
+
+# §12.7: "Before applying any changes, implementations MUST validate ALL affected
+# files. If any file fails validation and default_validation is error, the entire
+# batch MUST be aborted with no files modified."
+# §12.7: "If a file write fails during execution (I/O error, concurrent modification):
+# Implementations MUST NOT roll back already-written files...
+# Implementations MUST continue processing remaining files (best-effort)
+# Implementations MUST report per-file results"
+
+groups:
+  # =============================================================================
+  # Group 1: Batch update validation abort
+  # =============================================================================
+
+  - name: "batch update aborted when validation fails with error level"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        default_validation: error
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: enum
+              values: [open, in_progress, done]
+              required: true
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Task A"
+          status: open
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          title: "Task B"
+          status: in_progress
+          ---
+
+    tests:
+      - name: "batch update with invalid value aborts entire batch"
+        operation: batch_update
+        input:
+          query:
+            types: [task]
+          fields:
+            status: "invalid_status"
+        expect:
+          error:
+            code: validation_failed
+        verify_after:
+          - operation: read
+            input:
+              path: "tasks/a.md"
+            expect:
+              frontmatter:
+                status: open
+          - operation: read
+            input:
+              path: "tasks/b.md"
+            expect:
+              frontmatter:
+                status: in_progress
+
+  # =============================================================================
+  # Group 2: Batch update succeeds when validation passes
+  # =============================================================================
+
+  - name: "batch update applies changes when all valid"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        default_validation: error
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, in_progress, done]
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Task A"
+          status: open
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          title: "Task B"
+          status: open
+          ---
+        tasks/c.md: |
+          ---
+          type: task
+          title: "Task C"
+          status: in_progress
+          ---
+
+    tests:
+      - name: "batch update applies to all matching files"
+        operation: batch_update
+        input:
+          query:
+            types: [task]
+            where: 'status == "open"'
+          fields:
+            status: done
+        expect:
+          batch_result:
+            total: 2
+            succeeded: 2
+            failed: 0
+        verify_after:
+          - operation: read
+            input:
+              path: "tasks/a.md"
+            expect:
+              frontmatter:
+                status: done
+          - operation: read
+            input:
+              path: "tasks/b.md"
+            expect:
+              frontmatter:
+                status: done
+          - operation: read
+            input:
+              path: "tasks/c.md"
+            expect:
+              frontmatter:
+                status: in_progress
+
+  # =============================================================================
+  # Group 3: Batch delete validation
+  # =============================================================================
+
+  - name: "batch delete with query"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, done, archived]
+          ---
+      files:
+        tasks/keep-a.md: |
+          ---
+          type: task
+          title: "Keep A"
+          status: open
+          ---
+        tasks/keep-b.md: |
+          ---
+          type: task
+          title: "Keep B"
+          status: done
+          ---
+        tasks/delete-a.md: |
+          ---
+          type: task
+          title: "Delete A"
+          status: archived
+          ---
+        tasks/delete-b.md: |
+          ---
+          type: task
+          title: "Delete B"
+          status: archived
+          ---
+
+    tests:
+      - name: "batch delete removes only matching files"
+        operation: batch_delete
+        input:
+          query:
+            types: [task]
+            where: 'status == "archived"'
+        expect:
+          batch_result:
+            total: 2
+            succeeded: 2
+            failed: 0
+        verify_after:
+          - operation: read
+            input:
+              path: "tasks/keep-a.md"
+            expect:
+              frontmatter:
+                title: "Keep A"
+          - operation: read
+            input:
+              path: "tasks/keep-b.md"
+            expect:
+              frontmatter:
+                title: "Keep B"
+          - operation: read
+            input:
+              path: "tasks/delete-a.md"
+            expect:
+              error:
+                code: file_not_found
+          - operation: read
+            input:
+              path: "tasks/delete-b.md"
+            expect:
+              error:
+                code: file_not_found
+
+  # =============================================================================
+  # Group 4: Batch result format
+  # =============================================================================
+
+  - name: "batch result includes correct counts"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Task A"
+          priority: 1
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          title: "Task B"
+          priority: 2
+          ---
+        tasks/c.md: |
+          ---
+          type: task
+          title: "Task C"
+          priority: 3
+          ---
+
+    tests:
+      - name: "batch update returns total and succeeded counts"
+        operation: batch_update
+        input:
+          query:
+            types: [task]
+            where: "priority >= 2"
+          fields:
+            priority: 10
+        expect:
+          batch_result:
+            total: 2
+            succeeded: 2
+            failed: 0
+
+  # =============================================================================
+  # Group 5: Batch with warn validation continues
+  # =============================================================================
+
+  - name: "batch update with warn validation level continues despite issues"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        default_validation: warn
+      types:
+        task.md: |
+          ---
+          name: task
+          strict: false
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, done]
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Task A"
+          status: open
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          title: "Task B"
+          status: open
+          ---
+
+    tests:
+      - name: "batch update succeeds with valid values at warn level"
+        operation: batch_update
+        input:
+          query:
+            types: [task]
+          fields:
+            status: done
+        expect:
+          batch_result:
+            total: 2
+            succeeded: 2
+            failed: 0
+        verify_after:
+          - operation: read
+            input:
+              path: "tasks/a.md"
+            expect:
+              frontmatter:
+                status: done
+          - operation: read
+            input:
+              path: "tasks/b.md"
+            expect:
+              frontmatter:
+                status: done
+
+  # =============================================================================
+  # Group 6: Batch update with empty query result
+  # =============================================================================
+
+  - name: "batch update with no matching files"
+    spec_ref: "§12.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, done]
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Task A"
+          status: open
+          ---
+
+    tests:
+      - name: "batch update with no matches returns zero counts"
+        operation: batch_update
+        input:
+          query:
+            types: [task]
+            where: 'status == "done"'
+          fields:
+            status: open
+        expect:
+          batch_result:
+            total: 0
+            succeeded: 0
+            failed: 0

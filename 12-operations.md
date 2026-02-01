@@ -19,13 +19,17 @@ Creates a new file in the collection.
 
 ### Behavior
 
-1. **Determine type(s)**: Use provided type, or infer from frontmatter if `type`/`types` key present
+1. **Determine type(s)**: Use provided type, or infer from frontmatter if explicit type keys are present
+   - Explicit type keys are defined by `settings.explicit_type_keys`
+   - If `settings.explicit_type_keys` is empty, type inference relies solely on match rules
 
 2. **Apply defaults**: For each missing field with a `default` value, apply the default to the **effective** record used for validation and output
 
 3. **Generate values**: For fields with `generated` strategy:
    - `ulid`: Generate ULID
    - `uuid`: Generate UUID v4
+   - `{random: N}`: Generate random string
+   - `sequence`: Generate auto-incrementing integer
    - `now`: Set to current datetime
    - `{from, transform}`: Derive from source field
 
@@ -35,19 +39,29 @@ Creates a new file in the collection.
 
 5. **Determine path**:
    - If `path` provided, use it
-   - If type has `filename_pattern`, derive from field values
+   - If type has `path_pattern` (or `filename_pattern` alias), derive from the **effective** frontmatter (including defaults and generated values)
    - Otherwise, require explicit path
+   - If any pattern variable is unresolved (null/undefined/empty), fail with `path_required`
 
-6. **Check existence**: If file already exists at path, abort with error
+6. **Check match rules** (explicit type only):
+   - If the type was specified explicitly (via input `type` or explicit type keys), the final record MUST satisfy that type's match rules (§6.3–§6.4)
+   - This check uses the **effective** frontmatter and the final path
+   - If the record does not satisfy the match rules, abort with `match_failed`
 
-7. **Write file**:
+7. **Check existence**: If file already exists at path, abort with error
+
+8. **Write file**:
    - Serialize frontmatter to YAML
+   - If `settings.explicit_type_keys` is non-empty and no explicit type key is present in the frontmatter, implementations MUST write the type using the first key in `settings.explicit_type_keys`
+   - If `settings.explicit_type_keys` is empty, implementations MUST NOT write any type declaration field
    - MUST include all explicitly provided fields and all generated fields
-   - SHOULD omit fields that were filled solely by defaults, unless the caller explicitly requests default materialization
+   - MUST write fields filled solely by defaults when `settings.write_defaults` is true (default); SHOULD omit them when `settings.write_defaults` is false
    - Combine with body
    - Write atomically (temp file + rename)
 
 ### Output
+
+The output MUST include the `path` field containing the final file path relative to the collection root.
 
 ```yaml
 path: "tasks/task-001.md"
@@ -67,6 +81,7 @@ frontmatter:
 | `validation_failed` | Validation errors (with details) |
 | `path_conflict` | File already exists at target path |
 | `path_required` | Cannot determine path |
+| `match_failed` | Created record does not satisfy the specified type's match rules |
 
 ### Example
 
@@ -123,6 +138,7 @@ frontmatter:
 file:
   name: "task-001.md"
   folder: "tasks"
+  display_name: "Fix the bug"
   mtime: "2024-03-15T10:30:00Z"
   size: 1234
 body: "## Description\n\nThe login form..."
@@ -161,13 +177,15 @@ Modifies an existing file's frontmatter and/or body.
    - Existing fields are replaced
    - Explicit null removes the field (if `write_nulls: omit`) or writes null
 
-3. **Update generated fields**: For fields with `generated: now_on_write`, update to current time
+3. **Determine types**: Use explicit type keys (per `settings.explicit_type_keys`) and match rules, including path-based matching
 
-4. **Apply defaults**: For each missing field with a `default`, apply the default to the **effective** record used for validation and output
+4. **Update generated fields**: For fields with `generated: now_on_write`, update to current time
 
-5. **Validate**: If enabled, validate merged frontmatter (using effective values for required checks)
+5. **Apply defaults**: For each missing field with a `default`, apply the default to the **effective** record used for validation and output
 
-6. **Write file**:
+6. **Validate**: If enabled, validate merged frontmatter (using effective values for required checks)
+
+7. **Write file**:
    - Preserve field order where possible
    - Preserve body if not provided
    - Write atomically
@@ -558,3 +576,40 @@ Implementations MAY use advisory file locks for write operations. If used:
 - Locks MUST be released on operation completion (including error paths)
 - Lock timeouts SHOULD be documented
 - Implementations MUST NOT require locking for read operations
+
+---
+
+## 12.11 Init
+
+Initializes a new collection in a directory.
+
+### Input
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `path` | No | Directory to initialize (default: current working directory) |
+| `config` | No | Configuration object or YAML string to write as `mdbase.yaml` |
+
+If `config` is omitted, implementations MUST write a minimal configuration containing only `spec_version`.
+
+### Behavior
+
+1. Create `mdbase.yaml` at the collection root
+2. Create the types folder (`settings.types_folder`, default `_types/`)
+3. Create the meta type file in the types folder (see [§5.8](./05-types.md))
+
+### Output
+
+```yaml
+path: "/path/to/collection"
+config_path: "mdbase.yaml"
+types_folder: "_types"
+meta_type_path: "_types/meta.md"
+```
+
+### Errors
+
+| Code | Description |
+|------|-------------|
+| `path_conflict` | Collection already exists at target path |
+| `invalid_path` | Path is malformed |

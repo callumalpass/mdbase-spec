@@ -248,6 +248,52 @@ groups:
           error:
             code: path_required
 
+      - name: "create with path_pattern missing field is path_required"
+        setup:
+          types:
+            note.md: |
+              ---
+              name: note
+              path_pattern: "{id}.md"
+              fields:
+                id:
+                  type: string
+                title:
+                  type: string
+              ---
+        operation: create
+        input:
+          type: note
+          frontmatter:
+            title: "Missing id"
+        expect:
+          error:
+            code: path_required
+
+      - name: "create with path_pattern derived field missing source is path_required"
+        setup:
+          types:
+            note.md: |
+              ---
+              name: note
+              path_pattern: "{slug}.md"
+              fields:
+                title:
+                  type: string
+                slug:
+                  type: string
+                  generated:
+                    from: title
+                    transform: slugify
+              ---
+        operation: create
+        input:
+          type: note
+          frontmatter: {}
+        expect:
+          error:
+            code: path_required
+
       - name: "rename with no new_path is path_required"
         operation: rename
         input:

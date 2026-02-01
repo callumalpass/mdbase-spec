@@ -8,12 +8,14 @@ groups:
   # Group 1: Create — default suppression on disk
   # =============================================================================
 
-  - name: "create suppresses defaults in persisted output"
+  - name: "create suppresses defaults in persisted output when write_defaults is false"
     spec_ref: "§12.1"
 
     setup:
       config: |
         spec_version: "0.1.0"
+        settings:
+          write_defaults: false
       types:
         task.md: |
           ---
@@ -97,7 +99,7 @@ groups:
   # Group 3: Update — removing field restores default in effective output
   # =============================================================================
 
-  - name: "update null field restores default in effective"
+  - name: "update null field restores default in effective when write_defaults is false"
     spec_ref: "§12.3"
 
     setup:
@@ -105,6 +107,7 @@ groups:
         spec_version: "0.1.0"
         settings:
           write_nulls: "omit"
+          write_defaults: false
       types:
         task.md: |
           ---
@@ -137,6 +140,61 @@ groups:
           frontmatter:
             status: "open"
           frontmatter_not_written: [status]
+
+  # =============================================================================
+  # Group 3b: Defaults written when write_defaults is true (default)
+  # =============================================================================
+
+  - name: "defaults are written to disk by default"
+    spec_ref: "§12.1, §4.4"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: string
+              default: "open"
+            priority:
+              type: integer
+              default: 3
+          ---
+      files:
+        tasks/t1.md: |
+          ---
+          type: task
+          title: "Existing"
+          ---
+
+    tests:
+      - name: "create writes default-only fields to disk"
+        operation: create
+        input:
+          type: task
+          path: "tasks/t2.md"
+          frontmatter:
+            title: "New task"
+        expect:
+          frontmatter_written:
+            status: "open"
+            priority: 3
+
+      - name: "update materializes defaults when missing"
+        operation: update
+        input:
+          path: "tasks/t1.md"
+          fields:
+            title: "Existing updated"
+        expect:
+          frontmatter_written:
+            status: "open"
 
   # =============================================================================
   # Group 4: Delete — check_backlinks behavior

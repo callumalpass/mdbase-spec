@@ -107,6 +107,10 @@ name: task
 # Human-readable description
 description: "A task or todo item"
 
+# Field to use as a human-readable display name for records of this type
+# If missing or empty on a record, implementations SHOULD fall back to file.basename
+display_name_key: title
+
 # Type to inherit fields from
 extends: base
 
@@ -131,12 +135,12 @@ match:
       contains: "task"
 
 # =============================================================================
-# OPTIONAL: Filename Pattern
+# OPTIONAL: Path Pattern
 # =============================================================================
 
 # Pattern for validating/generating filenames
 # Variables in {} reference field values
-filename_pattern: "{id}.md"
+path_pattern: "{id}.md"
 
 # =============================================================================
 # REQUIRED (unless extends provides all fields)
@@ -249,6 +253,11 @@ fields:
 
 The child completely replaces the parent's field definition; constraints are not merged.
 
+**Important:** Complete replacement includes **all** field properties (`generated`, `default`,
+`required`, `unique`, `deprecated`, and constraints). If a child redefines a field and omits a
+property that existed on the parent, that property is **lost**. Implementations SHOULD warn if a
+child override removes a `generated` strategy from a parent field.
+
 ---
 
 ## 5.5 Strictness
@@ -267,12 +276,19 @@ The `strict` field controls how unknown fields are handled during validation:
 
 ---
 
-## 5.6 Filename Patterns
+## 5.6 Path Patterns
 
-The optional `filename_pattern` defines expected filename structure:
+The optional `path_pattern` defines expected **relative paths** for a type, not just filenames.
+It may include subdirectories (e.g., `people/{slug}.md`).
+
+For backward compatibility, `filename_pattern` is accepted as a deprecated alias for
+`path_pattern`. If both are present, `path_pattern` takes precedence and implementations SHOULD
+emit a warning.
+
+The optional `path_pattern` defines expected filename structure:
 
 ```yaml
-filename_pattern: "{id}-{slug}.md"
+path_pattern: "{id}-{slug}.md"
 ```
 
 Patterns use `{}` to reference field values. Common placeholders:
@@ -282,8 +298,8 @@ Patterns use `{}` to reference field values. Common placeholders:
 
 **Use cases:**
 
-1. **Validation**: Check that existing filenames match the pattern
-2. **Generation**: When creating new files, derive filename from field values
+1. **Validation**: Check that existing paths match the pattern
+2. **Generation**: When creating new files, derive path from the **effective** frontmatter (defaults + generated values)
 
 **Slugification rules:**
 - Lowercase all characters
@@ -291,6 +307,12 @@ Patterns use `{}` to reference field values. Common placeholders:
 - Remove consecutive hyphens
 - Trim hyphens from start and end
 - **Unicode handling:** Implementations MUST use Unicode-aware lowercasing (not locale-dependent). Non-ASCII letters SHOULD be transliterated to their ASCII equivalents where a well-known mapping exists (e.g., `ü` → `u`, `ñ` → `n`). Characters with no ASCII equivalent SHOULD be removed rather than replaced with hyphens.
+
+**Unresolvable variables:**
+- If a `{variable}` refers to a field that has no value (null/undefined/empty string), path derivation MUST fail with `path_required`.
+- If a `{variable}` refers to a field that is not defined in the type schema, type loading SHOULD emit a warning and path derivation MUST fail with `path_required`.
+
+**Path safety:** The resolved path MUST be a valid relative path and MUST NOT contain path traversal (`..`) or invalid characters. Invalid paths MUST fail with `invalid_path`.
 
 ---
 
@@ -309,9 +331,55 @@ When loading types from the types folder:
 
 ## 5.8 Built-in vs User Types
 
-This specification does not define built-in types. All types are user-defined via markdown files.
+This specification does not define built-in **content** types. All content types are user-defined via markdown files.
 
-However, implementations MAY provide **starter templates** for common types (task, note, person, etc.) that users can copy into their types folder and customize.
+However, implementations MUST create a **meta type** during collection initialization (see [§12.11](./12-operations.md)) that describes type definition files themselves. This meta type:
+
+- Lives in the types folder
+- Matches files in the types folder
+- Enables validating type files as ordinary records
+
+**Meta type requirements:**
+
+```yaml
+# _types/meta.md (or in the configured types folder)
+---
+name: meta
+description: Schema for type definition files
+
+match:
+  path_glob: "_types/**/*.md"
+
+strict: false
+
+fields:
+  name:
+    type: string
+    required: true
+  description:
+    type: string
+  display_name_key:
+    type: string
+  extends:
+    type: string
+  strict:
+    type: enum
+    values: ["true", "false", "warn"]
+  match:
+    type: object
+  path_pattern:
+    type: string
+  filename_pattern:
+    type: string
+  fields:
+    type: any
+---
+```
+
+Implementations MUST adjust `match.path_glob` to the configured types folder if `settings.types_folder`
+is customized. The `fields` property uses type `any` because field definitions are polymorphic.
+
+Implementations MAY also provide **starter templates** for common types (task, note, person, etc.) that users can copy into their types folder and customize.
 
 ---
 
@@ -371,7 +439,7 @@ When a type definition changes, existing files are NOT automatically migrated �
 
 **Inheritance changed:** The effective schema is recomputed. Fields gained from a new parent apply the same rules as "field added." Fields lost apply the same rules as "field removed."
 
-**Materializing defaults:** Defaults are **not required** to be persisted to disk. Implementations MAY provide a flag to write default values on create/update; if a default is written, it MUST equal the declared default at the time of the write.
+**Materializing defaults:** Defaults are persisted based on `settings.write_defaults` (see [§4](./04-configuration.md)). If a default is written, it MUST equal the declared default at the time of the write.
 
 **Migration strategy:** Validation is the migration mechanism. Run validation on the collection after schema changes, review reported errors, and fix affected files.
 
@@ -403,6 +471,15 @@ fields:
 ### Conformance
 
 Computed fields are a Level 3 (Querying) capability. Implementations below Level 3 MUST still load type definitions containing computed fields without error, but MUST ignore the `computed` property and treat the field as a regular (non-computed) field. This ensures type definitions are portable across conformance levels.
+
+---
+
+## 5.13 Display Name Key
+
+Types MAY define `display_name_key`, which indicates which field should be used as a human-readable
+label for records of that type (e.g., `title`, `name`, `subject`). The field SHOULD be defined in
+the type schema. If the field is missing or empty on a record, implementations MUST fall back to
+`file.basename` (the filename without the final extension).
 
 ### Evaluation Order
 
@@ -441,7 +518,7 @@ fields:
 
 ---
 
-## 5.13 Complete Type File Example
+## 5.14 Complete Type File Example
 
 ```markdown
 ---
@@ -455,7 +532,7 @@ match:
   path_glob: "meetings/**/*.md"
   fields_present: [date, attendees]
 
-filename_pattern: "{date}-{title}.md"
+path_pattern: "{date}-{title}.md"
 
 fields:
   title:

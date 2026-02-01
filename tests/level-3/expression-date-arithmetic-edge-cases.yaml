@@ -1,0 +1,381 @@
+name: "date arithmetic edge cases"
+level: 3
+category: expressions
+spec_ref: "§11.7, §11.8"
+
+# §11.8: Calendar arithmetic clamping, date subtraction returning milliseconds,
+# duration() function for arithmetic on durations.
+
+groups:
+  # =============================================================================
+  # Group 1: Calendar arithmetic — month clamping
+  # =============================================================================
+
+  - name: "calendar arithmetic clamps to last day of month"
+    spec_ref: "§11.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            due:
+              type: date
+          ---
+      files:
+        items/jan31.md: |
+          ---
+          type: item
+          title: "Jan 31"
+          due: 2024-01-31
+          ---
+        items/mar31.md: |
+          ---
+          type: item
+          title: "Mar 31"
+          due: 2024-03-31
+          ---
+        items/jan29.md: |
+          ---
+          type: item
+          title: "Jan 29"
+          due: 2023-01-29
+          ---
+
+    tests:
+      - name: "Jan 31 + 1 month clamps to Feb 29 in leap year"
+        operation: evaluate
+        input:
+          file: "items/jan31.md"
+          expression: '(due + "1M").format("YYYY-MM-DD")'
+        expect:
+          value: "2024-02-29"
+
+      - name: "Jan 29 + 1 month clamps to Feb 28 in non-leap year"
+        operation: evaluate
+        input:
+          file: "items/jan29.md"
+          expression: '(due + "1M").format("YYYY-MM-DD")'
+        expect:
+          value: "2023-02-28"
+
+      - name: "Mar 31 + 1 month clamps to Apr 30"
+        operation: evaluate
+        input:
+          file: "items/mar31.md"
+          expression: '(due + "1M").format("YYYY-MM-DD")'
+        expect:
+          value: "2024-04-30"
+
+      - name: "Jan 31 + 1 year stays Jan 31"
+        operation: evaluate
+        input:
+          file: "items/jan31.md"
+          expression: '(due + "1y").format("YYYY-MM-DD")'
+        expect:
+          value: "2025-01-31"
+
+  # =============================================================================
+  # Group 2: Date subtraction returns milliseconds
+  # =============================================================================
+
+  - name: "date subtraction returns milliseconds"
+    spec_ref: "§11.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            start:
+              type: date
+            end:
+              type: date
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          start: 2024-01-01
+          end: 2024-01-02
+          ---
+        items/b.md: |
+          ---
+          type: item
+          start: 2024-01-01
+          end: 2024-01-08
+          ---
+
+    tests:
+      - name: "subtracting two dates returns difference in milliseconds"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "end - start"
+        expect:
+          value: 86400000
+
+      - name: "7-day difference in milliseconds"
+        operation: evaluate
+        input:
+          file: "items/b.md"
+          expression: "end - start"
+        expect:
+          value: 604800000
+
+      - name: "date subtraction can compute days overdue"
+        operation: evaluate
+        input:
+          file: "items/b.md"
+          expression: "(end - start) / 86400000"
+        expect:
+          value: 7
+
+  # =============================================================================
+  # Group 3: duration() function with arithmetic
+  # =============================================================================
+
+  - name: "duration function enables duration arithmetic"
+    spec_ref: "§11.8"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            start:
+              type: date
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          start: 2024-03-01
+          ---
+
+    tests:
+      - name: "duration multiplied by scalar adds correct offset"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: '(start + duration("1d") * 3).format("YYYY-MM-DD")'
+        expect:
+          value: "2024-03-04"
+
+      - name: "chained duration additions"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: '(start + "1M" + "4d").format("YYYY-MM-DD")'
+        expect:
+          value: "2024-04-05"
+
+  # =============================================================================
+  # Group 4: Date component extraction
+  # =============================================================================
+
+  - name: "date component extraction"
+    spec_ref: "§11.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            created:
+              type: datetime
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          created: "2024-07-15T14:30:45Z"
+          ---
+
+    tests:
+      - name: "year component"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "created.year"
+        expect:
+          value: 2024
+
+      - name: "month component"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "created.month"
+        expect:
+          value: 7
+
+      - name: "day component"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "created.day"
+        expect:
+          value: 15
+
+      - name: "hour component"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "created.hour"
+        expect:
+          value: 14
+
+      - name: "minute component"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "created.minute"
+        expect:
+          value: 30
+
+      - name: "second component"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "created.second"
+        expect:
+          value: 45
+
+      - name: "dayOfWeek component (0=Sunday)"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "created.dayOfWeek"
+        expect:
+          value: 1
+
+      - name: ".date() extracts date portion"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'created.date().format("YYYY-MM-DD")'
+        expect:
+          value: "2024-07-15"
+
+      - name: ".time() extracts time portion"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'created.time()'
+        expect:
+          value: "14:30:45"
+
+  # =============================================================================
+  # Group 5: Format tokens
+  # =============================================================================
+
+  - name: "date format tokens"
+    spec_ref: "§11.7"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            created:
+              type: datetime
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          created: "2024-03-05T09:07:02Z"
+          ---
+
+    tests:
+      - name: "YYYY-MM-DD format"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'created.format("YYYY-MM-DD")'
+        expect:
+          value: "2024-03-05"
+
+      - name: "HH:mm:ss format"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'created.format("HH:mm:ss")'
+        expect:
+          value: "09:07:02"
+
+      - name: "combined date and time format"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'created.format("YYYY-MM-DD HH:mm")'
+        expect:
+          value: "2024-03-05 09:07"
+
+  # =============================================================================
+  # Group 6: Scientific notation in expressions
+  # =============================================================================
+
+  - name: "scientific notation number literals"
+    spec_ref: "§11.2"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            count:
+              type: number
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          count: 1500000
+          ---
+        items/b.md: |
+          ---
+          type: item
+          count: 500
+          ---
+
+    tests:
+      - name: "scientific notation 1e6 in comparison"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: "count > 1e6"
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+      - name: "scientific notation in arithmetic"
+        operation: evaluate
+        input:
+          file: "items/b.md"
+          expression: "count * 1e3"
+        expect:
+          value: 500000

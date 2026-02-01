@@ -1,0 +1,26 @@
+name: "collection init"
+level: 1
+category: config
+spec_ref: "§12.11, §5.8"
+
+groups:
+  - name: "init creates config and meta type"
+    setup:
+      config: null
+      files: {}
+
+    tests:
+      - name: "init creates mdbase.yaml and meta type file"
+        operation: init
+        input: {}
+        expect:
+          config_path: "mdbase.yaml"
+          types_folder: "_types"
+          meta_type_path: "_types/meta.md"
+        verify_after:
+          operation: read
+          input:
+            path: "_types/meta.md"
+          expect:
+            frontmatter:
+              name: meta

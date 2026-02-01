@@ -1,0 +1,568 @@
+name: "type checking and conversion functions"
+level: 3
+category: expressions
+spec_ref: "§11.11"
+
+# §11.11 defines type checking (.isType()) and conversion functions
+# (.toString(), number(), .isTruthy(), list()).
+
+groups:
+  # =============================================================================
+  # Group 1: .isType() checking
+  # =============================================================================
+
+  - name: "isType type checking"
+    spec_ref: "§11.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            count:
+              type: integer
+            score:
+              type: number
+            active:
+              type: boolean
+            due:
+              type: date
+            tags:
+              type: list
+              items:
+                type: string
+            metadata:
+              type: object
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Test"
+          count: 42
+          score: 3.14
+          active: true
+          due: 2024-06-15
+          tags: [one, two]
+          metadata:
+            key: value
+          ---
+
+    tests:
+      - name: "isType string"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'title.isType("string")'
+        expect:
+          value: true
+
+      - name: "isType number on integer"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'count.isType("number")'
+        expect:
+          value: true
+
+      - name: "isType number on float"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'score.isType("number")'
+        expect:
+          value: true
+
+      - name: "isType boolean"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'active.isType("boolean")'
+        expect:
+          value: true
+
+      - name: "isType date"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'due.isType("date")'
+        expect:
+          value: true
+
+      - name: "isType list"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'tags.isType("list")'
+        expect:
+          value: true
+
+      - name: "isType object"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'metadata.isType("object")'
+        expect:
+          value: true
+
+      - name: "isType returns false for wrong type"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'title.isType("number")'
+        expect:
+          value: false
+
+  # =============================================================================
+  # Group 2: .toString() conversion
+  # =============================================================================
+
+  - name: "toString conversion"
+    spec_ref: "§11.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            count:
+              type: integer
+            active:
+              type: boolean
+            score:
+              type: number
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          count: 42
+          active: true
+          score: 3.14
+          ---
+
+    tests:
+      - name: "integer toString"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "count.toString()"
+        expect:
+          value: "42"
+
+      - name: "boolean toString"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "active.toString()"
+        expect:
+          value: "true"
+
+      - name: "number toString"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "score.toString()"
+        expect:
+          value: "3.14"
+
+  # =============================================================================
+  # Group 3: number() conversion
+  # =============================================================================
+
+  - name: "number conversion"
+    spec_ref: "§11.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            value_str:
+              type: string
+            active:
+              type: boolean
+            inactive:
+              type: boolean
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          value_str: "3.14"
+          active: true
+          inactive: false
+          ---
+
+    tests:
+      - name: "number() parses string to number"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'number("3.14")'
+        expect:
+          value: 3.14
+
+      - name: "number(true) returns 1"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "number(true)"
+        expect:
+          value: 1
+
+      - name: "number(false) returns 0"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "number(false)"
+        expect:
+          value: 0
+
+      - name: "number() on field value"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "number(value_str)"
+        expect:
+          value: 3.14
+
+  # =============================================================================
+  # Group 4: .isTruthy() coercion
+  # =============================================================================
+
+  - name: "isTruthy boolean coercion"
+    spec_ref: "§11.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            count:
+              type: integer
+            tags:
+              type: list
+              items:
+                type: string
+            empty_str:
+              type: string
+          ---
+      files:
+        items/truthy.md: |
+          ---
+          type: item
+          title: "Hello"
+          count: 42
+          tags: [a]
+          empty_str: "not empty"
+          ---
+        items/falsy.md: |
+          ---
+          type: item
+          title: ""
+          count: 0
+          tags: []
+          empty_str: ""
+          ---
+
+    tests:
+      - name: "non-empty string is truthy"
+        operation: evaluate
+        input:
+          file: "items/truthy.md"
+          expression: "title.isTruthy()"
+        expect:
+          value: true
+
+      - name: "empty string is falsy"
+        operation: evaluate
+        input:
+          file: "items/falsy.md"
+          expression: "title.isTruthy()"
+        expect:
+          value: false
+
+      - name: "non-zero number is truthy"
+        operation: evaluate
+        input:
+          file: "items/truthy.md"
+          expression: "count.isTruthy()"
+        expect:
+          value: true
+
+      - name: "zero is falsy"
+        operation: evaluate
+        input:
+          file: "items/falsy.md"
+          expression: "count.isTruthy()"
+        expect:
+          value: false
+
+      - name: "non-empty list is truthy"
+        operation: evaluate
+        input:
+          file: "items/truthy.md"
+          expression: "tags.isTruthy()"
+        expect:
+          value: true
+
+      - name: "empty list is falsy"
+        operation: evaluate
+        input:
+          file: "items/falsy.md"
+          expression: "tags.isTruthy()"
+        expect:
+          value: false
+
+  # =============================================================================
+  # Group 5: list() wrapping
+  # =============================================================================
+
+  - name: "list function wraps non-list values"
+    spec_ref: "§11.11"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Test"
+          tags: [a, b]
+          ---
+
+    tests:
+      - name: "list() on a string wraps it in a list"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "list(title).length"
+        expect:
+          value: 1
+
+      - name: "list() on an existing list returns it unchanged"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "list(tags).length"
+        expect:
+          value: 2
+
+  # =============================================================================
+  # Group 6: default() function vs ?? operator
+  # =============================================================================
+
+  - name: "default function and null coalescing equivalence"
+    spec_ref: "§11.10"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+          ---
+      files:
+        items/with-priority.md: |
+          ---
+          type: item
+          title: "Has priority"
+          priority: 5
+          ---
+        items/no-priority.md: |
+          ---
+          type: item
+          title: "No priority"
+          ---
+
+    tests:
+      - name: "default() returns field value when present"
+        operation: evaluate
+        input:
+          file: "items/with-priority.md"
+          expression: "default(priority, 3)"
+        expect:
+          value: 5
+
+      - name: "default() returns fallback when field missing"
+        operation: evaluate
+        input:
+          file: "items/no-priority.md"
+          expression: "default(priority, 3)"
+        expect:
+          value: 3
+
+      - name: "?? returns field value when present"
+        operation: evaluate
+        input:
+          file: "items/with-priority.md"
+          expression: "priority ?? 3"
+        expect:
+          value: 5
+
+      - name: "?? returns fallback when field null/missing"
+        operation: evaluate
+        input:
+          file: "items/no-priority.md"
+          expression: "priority ?? 3"
+        expect:
+          value: 3
+
+  # =============================================================================
+  # Group 7: exists() function
+  # =============================================================================
+
+  - name: "exists function checks key presence"
+    spec_ref: "§11.10"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            optional:
+              type: string
+          ---
+      files:
+        items/with-null.md: |
+          ---
+          type: item
+          title: "Test"
+          optional: null
+          ---
+        items/missing.md: |
+          ---
+          type: item
+          title: "Test"
+          ---
+
+    tests:
+      - name: "exists returns true for present non-null field"
+        operation: evaluate
+        input:
+          file: "items/with-null.md"
+          expression: "exists(title)"
+        expect:
+          value: true
+
+      - name: "exists returns true for present null field"
+        operation: evaluate
+        input:
+          file: "items/with-null.md"
+          expression: "exists(optional)"
+        expect:
+          value: true
+
+      - name: "exists returns false for missing field"
+        operation: evaluate
+        input:
+          file: "items/missing.md"
+          expression: "exists(optional)"
+        expect:
+          value: false
+
+  # =============================================================================
+  # Group 8: Object methods
+  # =============================================================================
+
+  - name: "object methods"
+    spec_ref: "§11.13"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            metadata:
+              type: object
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          metadata:
+            color: red
+            size: large
+          ---
+        items/b.md: |
+          ---
+          type: item
+          metadata: {}
+          ---
+
+    tests:
+      - name: "object.isEmpty() returns false for non-empty object"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "metadata.isEmpty()"
+        expect:
+          value: false
+
+      - name: "object.isEmpty() returns true for empty object"
+        operation: evaluate
+        input:
+          file: "items/b.md"
+          expression: "metadata.isEmpty()"
+        expect:
+          value: true
+
+      - name: "object.keys() returns list of property names"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "metadata.keys().length"
+        expect:
+          value: 2
+
+      - name: "object.values() returns list of property values"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'metadata.values().contains("red")'
+        expect:
+          value: true

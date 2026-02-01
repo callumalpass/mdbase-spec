@@ -1,0 +1,139 @@
+name: "create must satisfy match rules"
+level: 1
+category: operations
+spec_ref: "§12.1, §6.3, §6.4"
+
+groups:
+  - name: "where match rule satisfied by defaults"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+        settings:
+          explicit_type_keys: []
+      types:
+        person.md: |
+          ---
+          name: person
+          match:
+            where:
+              tags:
+                contains: "person"
+          fields:
+            name:
+              type: string
+              required: true
+            tags:
+              type: list
+              items:
+                type: string
+              default: ["person"]
+          ---
+      files: {}
+
+    tests:
+      - name: "create succeeds when defaults satisfy where rule"
+        operation: create
+        input:
+          type: person
+          path: "people/alice.md"
+          frontmatter:
+            name: "Alice"
+        expect:
+          frontmatter_written:
+            tags: ["person"]
+          frontmatter_not_written: [type, types]
+
+  - name: "where match rule unsatisfied"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        person.md: |
+          ---
+          name: person
+          match:
+            where:
+              tags:
+                contains: "person"
+          fields:
+            name:
+              type: string
+              required: true
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files: {}
+
+    tests:
+      - name: "create fails when where rule not satisfied"
+        operation: create
+        input:
+          type: person
+          path: "people/bob.md"
+          frontmatter:
+            name: "Bob"
+        expect:
+          error:
+            code: match_failed
+
+  - name: "path_glob mismatch"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        person.md: |
+          ---
+          name: person
+          match:
+            path_glob: "people/*.md"
+          fields:
+            name:
+              type: string
+              required: true
+          ---
+      files: {}
+
+    tests:
+      - name: "create fails when path_glob does not match"
+        operation: create
+        input:
+          type: person
+          path: "notes/bob.md"
+          frontmatter:
+            name: "Bob"
+        expect:
+          error:
+            code: match_failed
+
+  - name: "fields_present mismatch"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        event.md: |
+          ---
+          name: event
+          match:
+            fields_present: [date]
+          fields:
+            date:
+              type: date
+            title:
+              type: string
+              required: true
+          ---
+      files: {}
+
+    tests:
+      - name: "create fails when fields_present are missing"
+        operation: create
+        input:
+          type: event
+          path: "events/e1.md"
+          frontmatter:
+            title: "No date"
+        expect:
+          error:
+            code: match_failed

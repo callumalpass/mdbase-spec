@@ -177,7 +177,52 @@ groups:
           results_count: 1
 
   # ===========================================================================
-  # Group 3: this context in expressions (§10.5, §11.1)
+  # Group 3: file.display_name derived from display_name_key (§5.13, §10.5)
+  # ===========================================================================
+  - name: "file.display_name"
+    spec_ref: "§5.13, §10.5"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          display_name_key: title
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "Display Title"
+          ---
+        notes/fallback.md: |
+          ---
+          type: note
+          ---
+
+    tests:
+      - name: "file.display_name uses display_name_key when present"
+        operation: query
+        input:
+          types: [note]
+          where: 'file.display_name == "Display Title"'
+        expect:
+          results_count: 1
+
+      - name: "file.display_name falls back to file.basename when missing"
+        operation: query
+        input:
+          types: [note]
+          where: 'file.display_name == "fallback"'
+        expect:
+          results_count: 1
+
+  # ===========================================================================
+  # Group 4: this context in expressions (§10.5, §11.1)
   # ===========================================================================
   # §10.5 says: "In embedded queries (queries within a file), `this` refers to
   # the containing file." §11.1 lists `this` as providing "Context reference

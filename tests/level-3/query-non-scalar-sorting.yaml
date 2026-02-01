@@ -1,0 +1,306 @@
+name: "non-scalar field sorting"
+level: 3
+category: queries
+spec_ref: "§10.3"
+
+# §10.3: "If order_by references a field whose value is a list, object, or other
+# non-scalar type, implementations MUST sort by a deterministic representation:
+# lists by length, objects by key count."
+
+groups:
+  # =============================================================================
+  # Group 1: Sorting by list field (by length)
+  # =============================================================================
+
+  - name: "sort by list field uses list length"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Three tags"
+          tags: [one, two, three]
+          ---
+        items/b.md: |
+          ---
+          type: item
+          title: "No tags"
+          tags: []
+          ---
+        items/c.md: |
+          ---
+          type: item
+          title: "One tag"
+          tags: [solo]
+          ---
+        items/d.md: |
+          ---
+          type: item
+          title: "Two tags"
+          tags: [first, second]
+          ---
+
+    tests:
+      - name: "ascending sort by list field orders by list length"
+        operation: query
+        input:
+          query:
+            types: [item]
+            order_by:
+              - field: tags
+                direction: asc
+        expect:
+          results:
+            - path: "items/b.md"
+              frontmatter:
+                title: "No tags"
+            - path: "items/c.md"
+              frontmatter:
+                title: "One tag"
+            - path: "items/d.md"
+              frontmatter:
+                title: "Two tags"
+            - path: "items/a.md"
+              frontmatter:
+                title: "Three tags"
+
+      - name: "descending sort by list field orders by list length descending"
+        operation: query
+        input:
+          query:
+            types: [item]
+            order_by:
+              - field: tags
+                direction: desc
+        expect:
+          results:
+            - path: "items/a.md"
+              frontmatter:
+                title: "Three tags"
+            - path: "items/d.md"
+              frontmatter:
+                title: "Two tags"
+            - path: "items/c.md"
+              frontmatter:
+                title: "One tag"
+            - path: "items/b.md"
+              frontmatter:
+                title: "No tags"
+
+  # =============================================================================
+  # Group 2: Sorting by object field (by key count)
+  # =============================================================================
+
+  - name: "sort by object field uses key count"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            metadata:
+              type: object
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Three keys"
+          metadata:
+            color: red
+            size: large
+            weight: heavy
+          ---
+        items/b.md: |
+          ---
+          type: item
+          title: "No keys"
+          metadata: {}
+          ---
+        items/c.md: |
+          ---
+          type: item
+          title: "One key"
+          metadata:
+            color: blue
+          ---
+
+    tests:
+      - name: "ascending sort by object field orders by key count"
+        operation: query
+        input:
+          query:
+            types: [item]
+            order_by:
+              - field: metadata
+                direction: asc
+        expect:
+          results:
+            - path: "items/b.md"
+              frontmatter:
+                title: "No keys"
+            - path: "items/c.md"
+              frontmatter:
+                title: "One key"
+            - path: "items/a.md"
+              frontmatter:
+                title: "Three keys"
+
+      - name: "descending sort by object field orders by key count descending"
+        operation: query
+        input:
+          query:
+            types: [item]
+            order_by:
+              - field: metadata
+                direction: desc
+        expect:
+          results:
+            - path: "items/a.md"
+              frontmatter:
+                title: "Three keys"
+            - path: "items/c.md"
+              frontmatter:
+                title: "One key"
+            - path: "items/b.md"
+              frontmatter:
+                title: "No keys"
+
+  # =============================================================================
+  # Group 3: Null handling with non-scalar sorts
+  # =============================================================================
+
+  - name: "null non-scalar fields sort last ascending"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Has tags"
+          tags: [one, two]
+          ---
+        items/b.md: |
+          ---
+          type: item
+          title: "No tags field"
+          ---
+        items/c.md: |
+          ---
+          type: item
+          title: "Null tags"
+          tags: null
+          ---
+        items/d.md: |
+          ---
+          type: item
+          title: "Empty tags"
+          tags: []
+          ---
+
+    tests:
+      - name: "null list fields sort last in ascending order"
+        operation: query
+        input:
+          query:
+            types: [item]
+            order_by:
+              - field: tags
+                direction: asc
+        expect:
+          results:
+            - path: "items/d.md"
+              frontmatter:
+                title: "Empty tags"
+            - path: "items/a.md"
+              frontmatter:
+                title: "Has tags"
+            - path: "items/b.md"
+            - path: "items/c.md"
+
+  # =============================================================================
+  # Group 4: Equal-length lists fall back to file.path
+  # =============================================================================
+
+  - name: "equal-length lists use file.path tie-breaker"
+    spec_ref: "§10.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            tags:
+              type: list
+              items:
+                type: string
+          ---
+      files:
+        items/zebra.md: |
+          ---
+          type: item
+          title: "Zebra"
+          tags: [a, b]
+          ---
+        items/alpha.md: |
+          ---
+          type: item
+          title: "Alpha"
+          tags: [x, y]
+          ---
+
+    tests:
+      - name: "same-length lists tie-break by file.path ascending"
+        operation: query
+        input:
+          query:
+            types: [item]
+            order_by:
+              - field: tags
+                direction: asc
+        expect:
+          results:
+            - path: "items/alpha.md"
+            - path: "items/zebra.md"

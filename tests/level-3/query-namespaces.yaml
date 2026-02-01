@@ -1,0 +1,338 @@
+name: "property namespace access"
+level: 3
+category: queries
+spec_ref: "§10.5, §11.3"
+
+# §10.5 defines property namespaces: bare (effective), note.* (raw persisted),
+# file.* (metadata), formula.* (computed), this (context).
+# §10.5: "file.properties provides raw persisted frontmatter ... equivalent to note."
+
+groups:
+  # =============================================================================
+  # Group 1: note.* namespace — raw persisted frontmatter
+  # =============================================================================
+
+  - name: "note namespace accesses raw persisted frontmatter"
+    spec_ref: "§10.5, §11.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, done]
+              default: open
+            priority:
+              type: integer
+              default: 3
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Explicit status"
+          status: done
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          title: "Default status"
+          ---
+
+    tests:
+      - name: "note.* accesses raw persisted value (not default-applied)"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'note.status == "done"'
+        expect:
+          results:
+            - path: "tasks/a.md"
+          meta:
+            total_count: 1
+
+      - name: "note.* returns null for field filled only by default"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: "note.priority == null"
+        expect:
+          results:
+            - path: "tasks/b.md"
+          meta:
+            total_count: 1
+
+      - name: "bare access returns effective value (with default applied)"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: "priority == 3"
+        expect:
+          results:
+            - path: "tasks/b.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 2: Bracket notation for reserved names
+  # =============================================================================
+
+  - name: "bracket notation for fields with special characters"
+    spec_ref: "§11.3"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+            field-with-dashes:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "Test"
+          field-with-dashes: "dash-value"
+          ---
+
+    tests:
+      - name: "bracket notation accesses fields with dashes"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'note["field-with-dashes"] == "dash-value"'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 3: note.type accesses raw type field
+  # =============================================================================
+
+  - name: "note.type accesses raw persisted type value"
+    spec_ref: "§10.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+        note.md: |
+          ---
+          name: note
+          fields:
+            content:
+              type: string
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "A task"
+          ---
+        notes/b.md: |
+          ---
+          type: note
+          content: "A note"
+          ---
+
+    tests:
+      - name: "note.type returns the raw type string"
+        operation: query
+        input:
+          query:
+            where: 'note.type == "task"'
+        expect:
+          results:
+            - path: "tasks/a.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 4: file.properties equivalence with note.*
+  # =============================================================================
+
+  - name: "file.properties is equivalent to note namespace"
+    spec_ref: "§10.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, done]
+              default: open
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "Has status"
+          status: done
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          title: "Default status"
+          ---
+
+    tests:
+      - name: "file.properties returns raw persisted frontmatter only"
+        operation: read
+        input:
+          path: "tasks/b.md"
+        expect:
+          frontmatter:
+            title: "Default status"
+            status: open
+
+      - name: "file.hasProperty returns true for persisted field"
+        operation: evaluate
+        input:
+          file: "tasks/a.md"
+          expression: 'file.hasProperty("status")'
+        expect:
+          value: true
+
+      - name: "file.hasProperty returns false for field only filled by default"
+        operation: evaluate
+        input:
+          file: "tasks/b.md"
+          expression: 'file.hasProperty("status")'
+        expect:
+          value: false
+
+      - name: "file.hasProperty returns true for type field"
+        operation: evaluate
+        input:
+          file: "tasks/a.md"
+          expression: 'file.hasProperty("type")'
+        expect:
+          value: true
+
+  # =============================================================================
+  # Group 5: file.display_name property
+  # =============================================================================
+
+  - name: "file.display_name falls back to file.basename"
+    spec_ref: "§10.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        tasks/my-task.md: |
+          ---
+          type: task
+          title: "My Task"
+          ---
+
+    tests:
+      - name: "file.display_name returns file.basename when no display_name_key"
+        operation: evaluate
+        input:
+          file: "tasks/my-task.md"
+          expression: "file.display_name"
+        expect:
+          value: "my-task"
+
+  # =============================================================================
+  # Group 6: file.embeds property
+  # =============================================================================
+
+  - name: "file.embeds returns embed links"
+    spec_ref: "§10.5, §8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "With embeds"
+          ---
+          See this image: ![[diagram.png]]
+
+          And this embed: ![alt text](chart.png)
+
+          Regular link: [[other-note]]
+        notes/b.md: |
+          ---
+          type: note
+          title: "No embeds"
+          ---
+          Just a [[link]] here.
+
+    tests:
+      - name: "file.embeds includes wikilink embeds"
+        operation: evaluate
+        input:
+          file: "notes/a.md"
+          expression: "file.embeds.length"
+        expect:
+          value: 2
+
+      - name: "file.embeds does not include regular links"
+        operation: evaluate
+        input:
+          file: "notes/b.md"
+          expression: "file.embeds.length"
+        expect:
+          value: 0
+
+      - name: "file.links does not include embeds"
+        operation: evaluate
+        input:
+          file: "notes/a.md"
+          expression: "file.links.length"
+        expect:
+          value: 1

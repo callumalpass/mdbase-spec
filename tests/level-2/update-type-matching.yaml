@@ -1,0 +1,96 @@
+name: "update type matching for generated fields"
+level: 2
+category: matching
+spec_ref: "§6.3, §6.4, §12.3, §7.15"
+
+groups:
+  - name: "update uses match rules to apply now_on_write"
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        log.md: |
+          ---
+          name: log
+          match:
+            path_glob: "logs/**/*.md"
+          fields:
+            message:
+              type: string
+            updated_at:
+              type: datetime
+              generated: now_on_write
+          ---
+        base.md: |
+          ---
+          name: base
+          fields:
+            updated_at:
+              type: datetime
+              generated: now_on_write
+          ---
+        note.md: |
+          ---
+          name: note
+          extends: base
+          match:
+            path_glob: "notes/**/*.md"
+          fields:
+            title:
+              type: string
+          ---
+        flagged.md: |
+          ---
+          name: flagged
+          match:
+            fields_present: [flag]
+          fields:
+            flag:
+              type: boolean
+            updated_at:
+              type: datetime
+              generated: now_on_write
+          ---
+      files:
+        logs/a.md: |
+          ---
+          message: "A"
+          updated_at: "2024-01-01T00:00:00Z"
+          ---
+        notes/b.md: |
+          ---
+          title: "B"
+          updated_at: "2024-01-01T00:00:00Z"
+          ---
+        misc/c.md: |
+          ---
+          flag: true
+          updated_at: "2024-01-01T00:00:00Z"
+          ---
+
+    tests:
+      - name: "path_glob matched type updates now_on_write"
+        operation: update
+        input:
+          path: "logs/a.md"
+          fields:
+            message: "Updated"
+        expect:
+          frontmatter_changed: [updated_at]
+
+      - name: "inherited now_on_write updates for path matched type"
+        operation: update
+        input:
+          path: "notes/b.md"
+          fields:
+            title: "Updated"
+        expect:
+          frontmatter_changed: [updated_at]
+
+      - name: "fields_present matched type updates now_on_write"
+        operation: update
+        input:
+          path: "misc/c.md"
+          body: "Changed body"
+        expect:
+          frontmatter_changed: [updated_at]

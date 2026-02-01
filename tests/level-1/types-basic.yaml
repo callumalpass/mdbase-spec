@@ -263,6 +263,27 @@ groups:
           warnings:
             - contains: "name"
 
+      - name: "path_pattern referencing unknown field emits warning"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            note.md: |
+              ---
+              name: note
+              path_pattern: "{missing}.md"
+              fields:
+                title:
+                  type: string
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: true
+          warnings:
+            - contains: "path_pattern"
+
       - name: "missing name field is rejected"
         setup:
           config: |
@@ -273,6 +294,49 @@ groups:
               fields:
                 title:
                   type: string
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition
+
+      - name: "random generation with invalid length is rejected"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            item.md: |
+              ---
+              name: item
+              fields:
+                id:
+                  type: string
+                  generated:
+                    random: 0
+              ---
+          files: {}
+        operation: load_types
+        input: {}
+        expect:
+          valid: false
+          error:
+            code: invalid_type_definition
+
+      - name: "sequence generation on non-integer field is rejected"
+        setup:
+          config: |
+            spec_version: "0.1.0"
+          types:
+            item.md: |
+              ---
+              name: item
+              fields:
+                number:
+                  type: string
+                  generated: sequence
               ---
           files: {}
         operation: load_types
@@ -438,6 +502,81 @@ groups:
         expect:
           valid: true
           issues: []
+
+  - name: "type inheritance - generated override"
+    spec_ref: "§5.4, §7.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        base.md: |
+          ---
+          name: base
+          fields:
+            id:
+              type: string
+              generated: ulid
+          ---
+        child-clear.md: |
+          ---
+          name: child-clear
+          extends: base
+          fields:
+            id:
+              type: string
+          ---
+        child-same.md: |
+          ---
+          name: child-same
+          extends: base
+          fields:
+            id:
+              type: string
+              generated: ulid
+          ---
+        child-diff.md: |
+          ---
+          name: child-diff
+          extends: base
+          fields:
+            id:
+              type: string
+              generated: uuid
+          ---
+      files: {}
+
+    tests:
+      - name: "child override without generated removes strategy"
+        operation: create
+        input:
+          type: child-clear
+          path: "items/clear.md"
+          frontmatter: {}
+        expect:
+          frontmatter_not_written: [id]
+
+      - name: "child override with same generated preserves strategy"
+        operation: create
+        input:
+          type: child-same
+          path: "items/same.md"
+          frontmatter: {}
+        expect:
+          frontmatter:
+            id:
+              matches: "^[0-9A-Z]{26}$"
+
+      - name: "child override with different generated uses child strategy"
+        operation: create
+        input:
+          type: child-diff
+          path: "items/diff.md"
+          frontmatter: {}
+        expect:
+          frontmatter_written:
+            id:
+              matches: "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
 
   - name: "type inheritance - chain"
     spec_ref: "§5.4"

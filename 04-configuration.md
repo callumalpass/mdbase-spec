@@ -135,6 +135,12 @@ settings:
   # "explicit": Write as `field: null`
   # Default: "omit"
   write_nulls: "omit"
+
+  # Whether to write fields that are filled solely by defaults
+  # true: Defaults are materialized on disk
+  # false: Defaults only appear in effective output, not on disk
+  # Default: true
+  write_defaults: true
   
   # Whether to write empty lists
   # true: Write as `field: []`
@@ -255,6 +261,15 @@ types: [task, urgent]
 ```
 
 **Using `type` as a normal field:** If you want a frontmatter field named `type` to be treated as ordinary data, remove it from `settings.explicit_type_keys` and choose different declaration keys (e.g., `kind`, `kinds`).
+
+### `settings.write_defaults`
+
+Whether to persist fields that are filled solely by defaults.
+
+**Default:** `true`
+
+When `true`, create and update operations MUST write default-only fields to disk.
+When `false`, defaults are only applied to the **effective** frontmatter returned by read/query/validation.
 
 ### `settings.default_validation`
 

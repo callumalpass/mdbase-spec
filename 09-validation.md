@@ -147,19 +147,19 @@ parent: "[[existing-task]]"
 parent: "[[nonexistent]]"
 ```
 
-### 9.2.7 Filename Patterns
+### 9.2.7 Path Patterns
 
-If a type defines `filename_pattern`, filenames MAY be validated:
+If a type defines `path_pattern` (or the `filename_pattern` alias), paths MAY be validated:
 
 ```yaml
 # Type definition
-filename_pattern: "{id}.md"
+path_pattern: "{id}.md"
 
 # File: task-001.md with id: "task-001" → valid
 # File: random-name.md with id: "task-001" → warning (mismatch)
 ```
 
-Filename pattern validation is RECOMMENDED but not strictly required.
+Path pattern validation is RECOMMENDED but not strictly required.
 
 ### 9.2.8 Unique ID Field
 

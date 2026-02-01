@@ -1,0 +1,316 @@
+name: "string replace-all and containsAll/containsAny semantics"
+level: 3
+category: expressions
+spec_ref: "§11.5"
+
+# §11.5: ".replace() replaces ALL occurrences (matching Obsidian Bases behavior).
+# This differs from JavaScript's String.prototype.replace() which only replaces
+# the first match."
+# Also tests string .containsAll() and .containsAny() which are string methods.
+
+groups:
+  # =============================================================================
+  # Group 1: .replace() replaces all occurrences
+  # =============================================================================
+
+  - name: "string replace replaces all occurrences"
+    spec_ref: "§11.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "foo bar foo baz foo"
+          ---
+        items/b.md: |
+          ---
+          type: item
+          title: "aaa-bbb-aaa"
+          ---
+        items/c.md: |
+          ---
+          type: item
+          title: "no match here"
+          ---
+
+    tests:
+      - name: "replace replaces all occurrences not just first"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'title.replace("foo", "X")'
+        expect:
+          value: "X bar X baz X"
+
+      - name: "replace with multiple occurrences of longer pattern"
+        operation: evaluate
+        input:
+          file: "items/b.md"
+          expression: 'title.replace("aaa", "zzz")'
+        expect:
+          value: "zzz-bbb-zzz"
+
+      - name: "replace with no match returns original string"
+        operation: evaluate
+        input:
+          file: "items/c.md"
+          expression: 'title.replace("xyz", "abc")'
+        expect:
+          value: "no match here"
+
+      - name: "replace with empty string removes all occurrences"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'title.replace("foo", "")'
+        expect:
+          value: " bar  baz "
+
+      - name: "replace into longer string"
+        operation: evaluate
+        input:
+          file: "items/b.md"
+          expression: 'title.replace("-", " -- ")'
+        expect:
+          value: "aaa -- bbb -- aaa"
+
+  # =============================================================================
+  # Group 2: String .containsAll() and .containsAny()
+  # =============================================================================
+
+  - name: "string containsAll and containsAny"
+    spec_ref: "§11.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "fix critical bug in auth"
+          ---
+        items/b.md: |
+          ---
+          type: item
+          title: "add new feature"
+          ---
+
+    tests:
+      - name: "containsAll returns true when all substrings present"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'title.containsAll("bug", "auth")'
+        expect:
+          value: true
+
+      - name: "containsAll returns false when one substring missing"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'title.containsAll("bug", "feature")'
+        expect:
+          value: false
+
+      - name: "containsAny returns true when at least one substring present"
+        operation: evaluate
+        input:
+          file: "items/b.md"
+          expression: 'title.containsAny("bug", "feature")'
+        expect:
+          value: true
+
+      - name: "containsAny returns false when no substrings present"
+        operation: evaluate
+        input:
+          file: "items/b.md"
+          expression: 'title.containsAny("bug", "critical")'
+        expect:
+          value: false
+
+      - name: "query using containsAll on string field"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'title.containsAll("fix", "bug")'
+        expect:
+          results:
+            - path: "items/a.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 3: String .repeat() and .reverse()
+  # =============================================================================
+
+  - name: "string repeat and reverse"
+    spec_ref: "§11.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "abc"
+          ---
+
+    tests:
+      - name: "repeat creates repeated string"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: '"-".repeat(3)'
+        expect:
+          value: "---"
+
+      - name: "reverse reverses string"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "title.reverse()"
+        expect:
+          value: "cba"
+
+      - name: "repeat(0) returns empty string"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: '"x".repeat(0)'
+        expect:
+          value: ""
+
+      - name: "repeat(1) returns original string"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: '"x".repeat(1)'
+        expect:
+          value: "x"
+
+  # =============================================================================
+  # Group 4: String .title() case conversion
+  # =============================================================================
+
+  - name: "string title case"
+    spec_ref: "§11.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          title: "hello world"
+          ---
+        items/b.md: |
+          ---
+          type: item
+          title: "fix the BUG"
+          ---
+
+    tests:
+      - name: "title() capitalizes first letter of each word"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: "title.title()"
+        expect:
+          value: "Hello World"
+
+      - name: "title() on mixed case"
+        operation: evaluate
+        input:
+          file: "items/b.md"
+          expression: "title.title()"
+        expect:
+          value: "Fix The Bug"
+
+  # =============================================================================
+  # Group 5: String .split() with limit
+  # =============================================================================
+
+  - name: "string split with optional limit"
+    spec_ref: "§11.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            csv:
+              type: string
+          ---
+      files:
+        items/a.md: |
+          ---
+          type: item
+          csv: "a,b,c,d,e"
+          ---
+
+    tests:
+      - name: "split without limit returns all parts"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'csv.split(",").length'
+        expect:
+          value: 5
+
+      - name: "split with limit caps number of parts"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'csv.split(",", 3).length'
+        expect:
+          value: 3
+
+      - name: "split returns correct values"
+        operation: evaluate
+        input:
+          file: "items/a.md"
+          expression: 'csv.split(",")[0]'
+        expect:
+          value: "a"

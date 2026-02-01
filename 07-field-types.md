@@ -456,9 +456,11 @@ fields:
 |----------|-------------|
 | `ulid` | Generate a ULID (Universally Unique Lexicographically Sortable Identifier) |
 | `uuid` | Generate a UUID v4 |
+| `{random: N}` | Generate a random lowercase alphanumeric string of length `N` |
+| `sequence` / `{sequence: { ... }}` | Generate an auto-incrementing integer |
 | `now` | Current datetime (on create only) |
 | `now_on_write` | Current datetime (on every write) |
-| `{from, transform}` | Derive from another field |
+| `{from, transform}` | Derive from another field or file metadata |
 
 **Transform functions for derived fields:**
 
@@ -474,6 +476,72 @@ fields:
 2. User-provided values are NEVER overwritten by `now` or `ulid`/`uuid`
 3. `now_on_write` ALWAYS updates the field on every write operation
 4. Generated fields can still have `required: true` (they'll satisfy the requirement via generation)
+5. `random` MAY only be used on `string` fields; `sequence` MAY only be used on `integer` fields
+
+### Random String Generation
+
+Use `{random: N}` to generate a random string of length `N` using the alphabet `a-z` and `0-9`.
+`N` MUST be an integer between 1 and 64 (inclusive). Implementations SHOULD use a cryptographically
+secure random generator when available.
+
+If `N` is missing, non-integer, or out of range, implementations MUST reject the type definition
+with `invalid_type_definition`.
+
+```yaml
+fields:
+  short_id:
+    type: string
+    generated:
+      random: 8
+```
+
+### Sequence Generation
+
+Use `sequence` to generate an auto-incrementing integer.
+
+**Defaults:**
+- Start at 1
+- Scope is per-type (each type has its own counter)
+- No gap reuse (next value is `max + 1`)
+
+```yaml
+fields:
+  number:
+    type: integer
+    generated: sequence
+```
+
+Optional configuration:
+
+```yaml
+fields:
+  number:
+    type: integer
+    generated:
+      sequence:
+        start: 100
+        scope: type   # or "collection"
+```
+
+Implementations MUST ensure sequence assignment is race-safe (no duplicates) within a collection.
+
+If `start` is provided, it MUST be an integer. Invalid sequence configuration MUST be rejected with
+`invalid_type_definition`.
+
+### Derived Values From File Metadata
+
+The `{from, transform}` strategy MAY reference file metadata using the same `file.*` names defined
+in [§10.5](./10-querying.md):
+
+- `file.name` (filename without extension)
+- `file.basename` (filename with extension)
+- `file.ext`
+- `file.path`
+- `file.folder`
+
+On create, these values refer to the final resolved path. On update, they refer to the current
+file path. If a generated field depends on `file.*`, that field MUST NOT be referenced by
+`path_pattern` (to avoid circular dependencies).
 
 ---
 

@@ -91,6 +91,7 @@ This appendix defines standard error codes for validation issues and operation e
 | `permission_denied` | Filesystem permission error | Cannot write to file |
 | `concurrent_modification` | File was modified by another process during operation | File mtime changed between read and write |
 | `path_traversal` | Path resolution would escape collection root. Applies to any path resolution — link resolution, operation input paths, computed paths | `[[../../../etc/passwd]]` escapes root |
+| `match_failed` | Created record does not satisfy explicit type match rules | Type match rules not satisfied by final record |
 
 ### Rename Operations
 

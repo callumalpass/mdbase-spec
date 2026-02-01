@@ -103,7 +103,7 @@ groups:
           error:
             code: path_conflict
 
-      - name: "create without path and no filename_pattern fails"
+      - name: "create without path and no path_pattern fails"
         operation: create
         input:
           type: task
@@ -545,10 +545,10 @@ groups:
             code: invalid_path
 
   # =============================================================================
-  # Group 7: Filename pattern
+  # Group 7: Path pattern
   # =============================================================================
 
-  - name: "filename pattern"
+  - name: "path pattern"
     spec_ref: "§5.6"
 
     setup:
@@ -558,7 +558,7 @@ groups:
         task.md: |
           ---
           name: task
-          filename_pattern: "{id}.md"
+          path_pattern: "{id}.md"
           fields:
             id:
               type: string
@@ -569,7 +569,7 @@ groups:
       files: {}
 
     tests:
-      - name: "create derives path from filename_pattern"
+      - name: "create derives path from path_pattern"
         operation: create
         input:
           type: task
@@ -578,6 +578,75 @@ groups:
             title: "Test"
         expect:
           path_contains: "task-001.md"
+
+  - name: "path_pattern uses generated and default values"
+    spec_ref: "§12.1"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          path_pattern: "notes/{category}/{slug}.md"
+          fields:
+            title:
+              type: string
+              required: true
+            category:
+              type: string
+              default: "notes"
+            slug:
+              type: string
+              generated:
+                from: title
+                transform: slugify
+          ---
+      files: {}
+
+    tests:
+      - name: "create derives path from generated and default values"
+        operation: create
+        input:
+          type: note
+          frontmatter:
+            title: "Hello World"
+        expect:
+          path_contains: "notes/notes/hello-world.md"
+
+  - name: "filename_pattern alias"
+    spec_ref: "§5.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          filename_pattern: "{slug}.md"
+          fields:
+            title:
+              type: string
+              required: true
+            slug:
+              type: string
+              generated:
+                from: title
+                transform: slugify
+          ---
+      files: {}
+
+    tests:
+      - name: "create derives path using filename_pattern alias"
+        operation: create
+        input:
+          type: note
+          frontmatter:
+            title: "Alias Test"
+        expect:
+          path_contains: "alias-test.md"
 
   # =============================================================================
   # Group 8: Generated fields in operations

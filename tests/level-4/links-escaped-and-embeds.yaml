@@ -1,0 +1,335 @@
+name: "escaped wikilinks and embed extraction"
+level: 4
+category: links
+spec_ref: "§8.6"
+
+# §8.6: "Escaped wikilinks: a backslash immediately before [[ (i.e., \[[)
+# prevents wikilink parsing. The backslash is consumed and the brackets are
+# treated as literal text."
+# §8.6: "Embeds in wikilink form (![[target]]) and markdown form (![alt](path.md))
+# are included in link extraction"
+# §8.6: "file.links returns all non-embed links; file.embeds returns only embeds."
+
+groups:
+  # =============================================================================
+  # Group 1: Escaped wikilinks in body content
+  # =============================================================================
+
+  - name: "escaped wikilinks are not parsed as links"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/target.md: |
+          ---
+          type: note
+          title: "Target note"
+          ---
+        notes/with-escaped.md: |
+          ---
+          type: note
+          title: "Has escaped wikilink"
+          ---
+          This is a regular link: [[target]]
+
+          This is an escaped wikilink: \[[not-a-link]]
+
+          Another escaped: \[[target]]
+        notes/all-escaped.md: |
+          ---
+          type: note
+          title: "All escaped"
+          ---
+          Only escaped links here: \[[target]] and \[[other]]
+
+    tests:
+      - name: "escaped wikilink is not included in file.links"
+        operation: evaluate
+        input:
+          file: "notes/with-escaped.md"
+          expression: "file.links.length"
+        expect:
+          value: 1
+
+      - name: "file with only escaped wikilinks has no links"
+        operation: evaluate
+        input:
+          file: "notes/all-escaped.md"
+          expression: "file.links.length"
+        expect:
+          value: 0
+
+      - name: "regular wikilink is still extracted alongside escaped ones"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: "file.links.length > 0"
+        expect:
+          results:
+            - path: "notes/with-escaped.md"
+          meta:
+            total_count: 1
+
+  # =============================================================================
+  # Group 2: Embed extraction — wikilink form
+  # =============================================================================
+
+  - name: "wikilink embed extraction"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "With embeds"
+          ---
+          Here is an embedded note: ![[embedded-note]]
+
+          And an image: ![[image.png]]
+
+          And a regular link: [[regular-link]]
+        notes/b.md: |
+          ---
+          type: note
+          title: "No embeds"
+          ---
+          Just regular [[links]] here.
+        notes/embedded-note.md: |
+          ---
+          type: note
+          title: "Embedded"
+          ---
+        notes/regular-link.md: |
+          ---
+          type: note
+          title: "Regular"
+          ---
+
+    tests:
+      - name: "file.embeds includes wikilink embeds"
+        operation: evaluate
+        input:
+          file: "notes/a.md"
+          expression: "file.embeds.length"
+        expect:
+          value: 2
+
+      - name: "file.embeds excludes regular wikilinks"
+        operation: evaluate
+        input:
+          file: "notes/b.md"
+          expression: "file.embeds.length"
+        expect:
+          value: 0
+
+      - name: "file.links excludes wikilink embeds"
+        operation: evaluate
+        input:
+          file: "notes/a.md"
+          expression: "file.links.length"
+        expect:
+          value: 1
+
+  # =============================================================================
+  # Group 3: Embed extraction — markdown form
+  # =============================================================================
+
+  - name: "markdown embed extraction"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "Markdown embeds"
+          ---
+          An image: ![Screenshot](./screenshot.png)
+
+          A regular link: [Click here](./other.md)
+
+          Another embed: ![Diagram](diagrams/flow.png)
+        notes/other.md: |
+          ---
+          type: note
+          title: "Other"
+          ---
+
+    tests:
+      - name: "markdown image syntax counted as embeds"
+        operation: evaluate
+        input:
+          file: "notes/a.md"
+          expression: "file.embeds.length"
+        expect:
+          value: 2
+
+      - name: "markdown link syntax not counted as embeds"
+        operation: evaluate
+        input:
+          file: "notes/a.md"
+          expression: "file.links.length"
+        expect:
+          value: 1
+
+  # =============================================================================
+  # Group 4: Embeds inside code blocks should be excluded
+  # =============================================================================
+
+  - name: "embeds inside code blocks excluded"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "Code block embeds"
+          ---
+          Real embed: ![[real-embed]]
+
+          ```markdown
+          This is example syntax: ![[not-an-embed]]
+          ```
+
+          `Inline: ![[also-not-an-embed]]`
+
+    tests:
+      - name: "embeds inside fenced code blocks excluded"
+        operation: evaluate
+        input:
+          file: "notes/a.md"
+          expression: "file.embeds.length"
+        expect:
+          value: 1
+
+  # =============================================================================
+  # Group 5: Embed with alias/anchor
+  # =============================================================================
+
+  - name: "embed with alias and anchor"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "Embed with anchor"
+          ---
+          ![[target#section]]
+
+          ![[target#section|Display Text]]
+
+    tests:
+      - name: "embed with anchor is extracted"
+        operation: evaluate
+        input:
+          file: "notes/a.md"
+          expression: "file.embeds.length"
+        expect:
+          value: 2
+
+  # =============================================================================
+  # Group 6: Mixed links and embeds counting
+  # =============================================================================
+
+  - name: "links and embeds counted independently"
+    spec_ref: "§8.6"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+            ref:
+              type: link
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "Mixed"
+          ref: "[[fm-link]]"
+          ---
+          Body link: [[body-link]]
+
+          Body embed: ![[body-embed]]
+
+          Markdown link: [text](./md-link.md)
+
+          Markdown embed: ![img](./md-embed.png)
+
+    tests:
+      - name: "file.links counts frontmatter and body non-embed links"
+        operation: evaluate
+        input:
+          file: "notes/a.md"
+          expression: "file.links.length"
+        expect:
+          value: 3
+
+      - name: "file.embeds counts only embed syntax"
+        operation: evaluate
+        input:
+          file: "notes/a.md"
+          expression: "file.embeds.length"
+        expect:
+          value: 2

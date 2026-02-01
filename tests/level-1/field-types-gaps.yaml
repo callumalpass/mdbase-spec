@@ -316,6 +316,144 @@ groups:
           frontmatter:
             id: "my-custom-id"
 
+  - name: "random generation strategy"
+    spec_ref: "§7.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            id:
+              type: string
+              generated:
+                random: 8
+            title:
+              type: string
+              required: true
+          ---
+
+    tests:
+      - name: "random string generated with correct length and charset"
+        operation: create
+        input:
+          type: item
+          path: "items/r1.md"
+          frontmatter:
+            title: "Random ID"
+        expect:
+          frontmatter_written:
+            id: { matches: "^[a-z0-9]{8}$" }
+
+  - name: "sequence generation strategy"
+    spec_ref: "§7.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        issue.md: |
+          ---
+          name: issue
+          fields:
+            number:
+              type: integer
+              generated: sequence
+            title:
+              type: string
+              required: true
+          ---
+      files:
+        issues/i1.md: |
+          ---
+          type: issue
+          number: 1
+          title: "One"
+          ---
+        issues/i3.md: |
+          ---
+          type: issue
+          number: 3
+          title: "Three"
+          ---
+
+    tests:
+      - name: "sequence uses max + 1 without gap reuse"
+        operation: create
+        input:
+          type: issue
+          path: "issues/i4.md"
+          frontmatter:
+            title: "Four"
+        expect:
+          frontmatter_written:
+            number: 4
+
+  - name: "sequence generation with custom start"
+    spec_ref: "§7.15"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        ticket.md: |
+          ---
+          name: ticket
+          fields:
+            number:
+              type: integer
+              generated:
+                sequence:
+                  start: 100
+            title:
+              type: string
+              required: true
+          ---
+      files: {}
+
+    tests:
+      - name: "sequence honors custom start value"
+        operation: create
+        input:
+          type: ticket
+          path: "tickets/t1.md"
+          frontmatter:
+            title: "First ticket"
+        expect:
+          frontmatter_written:
+            number: 100
+
+  - name: "generated from file metadata"
+    spec_ref: "§7.15, §10.5"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            slug:
+              type: string
+              generated:
+                from: file.name
+          ---
+
+    tests:
+      - name: "file.name can be used as generated source on create"
+        operation: create
+        input:
+          type: note
+          path: "notes/hello-world.md"
+          frontmatter: {}
+        expect:
+          frontmatter_written:
+            slug: "hello-world"
+
   - name: "lowercase and uppercase transforms"
     spec_ref: "§7.15"
 

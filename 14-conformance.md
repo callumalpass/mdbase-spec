@@ -193,6 +193,7 @@ The conformance test suite uses several extensions beyond the base format shown 
 | `batch_update` | Bulk update matching files | [§12.7](./12-operations.md) |
 | `batch_delete` | Bulk delete matching files | [§12.7](./12-operations.md) |
 | `create_type` | Create a type definition file | [§5.9](./05-types.md) |
+| `init` | Initialize a new collection | [§12.11](./12-operations.md) |
 | `watch` | Start filesystem watcher and simulate events | [§15](./15-watching.md) |
 
 ### Extended Input Fields

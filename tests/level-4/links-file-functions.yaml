@@ -1,0 +1,309 @@
+name: "link file functions — hasProperty, inFolder, asLink"
+level: 4
+category: links
+spec_ref: "§11.12"
+
+# §11.12 defines file.hasProperty(), file.inFolder(), and file.asLink().
+# These are link/file functions that operate in expression contexts.
+
+groups:
+  # =============================================================================
+  # Group 1: file.hasProperty()
+  # =============================================================================
+
+  - name: "file.hasProperty checks raw persisted frontmatter"
+    spec_ref: "§11.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            priority:
+              type: integer
+              default: 3
+            status:
+              type: enum
+              values: [open, done]
+          ---
+      files:
+        tasks/explicit.md: |
+          ---
+          type: task
+          title: "Explicit fields"
+          priority: 5
+          status: open
+          ---
+        tasks/defaults-only.md: |
+          ---
+          type: task
+          title: "Defaults only"
+          ---
+        tasks/null-field.md: |
+          ---
+          type: task
+          title: "Null priority"
+          priority: null
+          ---
+
+    tests:
+      - name: "hasProperty returns true for explicitly set field"
+        operation: evaluate
+        input:
+          file: "tasks/explicit.md"
+          expression: 'file.hasProperty("priority")'
+        expect:
+          value: true
+
+      - name: "hasProperty returns false for field only from default"
+        operation: evaluate
+        input:
+          file: "tasks/defaults-only.md"
+          expression: 'file.hasProperty("priority")'
+        expect:
+          value: false
+
+      - name: "hasProperty returns true for null-valued field (key is present)"
+        operation: evaluate
+        input:
+          file: "tasks/null-field.md"
+          expression: 'file.hasProperty("priority")'
+        expect:
+          value: true
+
+      - name: "hasProperty returns false for completely absent field"
+        operation: evaluate
+        input:
+          file: "tasks/defaults-only.md"
+          expression: 'file.hasProperty("status")'
+        expect:
+          value: false
+
+      - name: "hasProperty returns true for type field"
+        operation: evaluate
+        input:
+          file: "tasks/explicit.md"
+          expression: 'file.hasProperty("type")'
+        expect:
+          value: true
+
+      - name: "query using hasProperty"
+        operation: query
+        input:
+          query:
+            types: [task]
+            where: 'file.hasProperty("priority")'
+        expect:
+          results:
+            - path: "tasks/explicit.md"
+            - path: "tasks/null-field.md"
+          meta:
+            total_count: 2
+
+  # =============================================================================
+  # Group 2: file.inFolder()
+  # =============================================================================
+
+  - name: "file.inFolder checks folder containment"
+    spec_ref: "§11.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        item.md: |
+          ---
+          name: item
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: item
+          title: "Top-level task"
+          ---
+        tasks/sub/b.md: |
+          ---
+          type: item
+          title: "Sub-level task"
+          ---
+        archive/c.md: |
+          ---
+          type: item
+          title: "Archived"
+          ---
+        d.md: |
+          ---
+          type: item
+          title: "Root level"
+          ---
+
+    tests:
+      - name: "inFolder matches files directly in folder"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'file.inFolder("tasks")'
+        expect:
+          results:
+            - path: "tasks/a.md"
+            - path: "tasks/sub/b.md"
+          meta:
+            total_count: 2
+
+      - name: "inFolder matches files in subfolders"
+        operation: evaluate
+        input:
+          file: "tasks/sub/b.md"
+          expression: 'file.inFolder("tasks")'
+        expect:
+          value: true
+
+      - name: "inFolder does not match files in different folder"
+        operation: evaluate
+        input:
+          file: "archive/c.md"
+          expression: 'file.inFolder("tasks")'
+        expect:
+          value: false
+
+      - name: "inFolder with subfolder path"
+        operation: query
+        input:
+          query:
+            types: [item]
+            where: 'file.inFolder("tasks/sub")'
+        expect:
+          results:
+            - path: "tasks/sub/b.md"
+          meta:
+            total_count: 1
+
+      - name: "inFolder does not match root-level files when given folder"
+        operation: evaluate
+        input:
+          file: "d.md"
+          expression: 'file.inFolder("tasks")'
+        expect:
+          value: false
+
+  # =============================================================================
+  # Group 3: file.asLink()
+  # =============================================================================
+
+  - name: "file.asLink converts file to link"
+    spec_ref: "§11.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        tasks/my-task.md: |
+          ---
+          type: task
+          title: "My Task"
+          ---
+
+    tests:
+      - name: "file.asLink produces a link value"
+        operation: evaluate
+        input:
+          file: "tasks/my-task.md"
+          expression: "file.asLink() != null"
+        expect:
+          value: true
+
+      - name: "file.asLink with display text"
+        operation: evaluate
+        input:
+          file: "tasks/my-task.md"
+          expression: 'file.asLink("Display") != null'
+        expect:
+          value: true
+
+  # =============================================================================
+  # Group 4: file.hasLink() with link() constructor
+  # =============================================================================
+
+  - name: "file.hasLink with link constructor"
+    spec_ref: "§11.12"
+
+    setup:
+      config: |
+        spec_version: "0.1.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            title:
+              type: string
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          title: "Links to target"
+          ---
+          See [[target]] for details.
+        notes/b.md: |
+          ---
+          type: note
+          title: "No link to target"
+          ---
+          See [[other]] for details.
+        notes/target.md: |
+          ---
+          type: note
+          title: "Target"
+          ---
+        notes/other.md: |
+          ---
+          type: note
+          title: "Other"
+          ---
+
+    tests:
+      - name: "file.hasLink returns true when file links to target"
+        operation: evaluate
+        input:
+          file: "notes/a.md"
+          expression: 'file.hasLink(link("notes/target"))'
+        expect:
+          value: true
+
+      - name: "file.hasLink returns false when file does not link to target"
+        operation: evaluate
+        input:
+          file: "notes/b.md"
+          expression: 'file.hasLink(link("notes/target"))'
+        expect:
+          value: false
+
+      - name: "query files linking to specific target"
+        operation: query
+        input:
+          query:
+            types: [note]
+            where: 'file.hasLink(link("notes/target"))'
+        expect:
+          results:
+            - path: "notes/a.md"
+          meta:
+            total_count: 1

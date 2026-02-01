@@ -40,6 +40,7 @@ A complete task management setup with types, queries, and examples.
 tasks-project/
 ├── mdbase.yaml
 ├── _types/
+│   ├── meta.md
 │   ├── base.md
 │   ├── task.md
 │   ├── person.md
@@ -81,6 +82,26 @@ settings:
 
 ### Type Definitions
 
+**_types/meta.md:**
+```markdown
+---
+name: meta
+description: Schema for type definition files
+
+match:
+  path_glob: "_types/**/*.md"
+
+strict: false
+
+fields:
+  name:
+    type: string
+    required: true
+  fields:
+    type: any
+---
+```
+
 **_types/base.md:**
 ```markdown
 ---
@@ -114,7 +135,7 @@ extends: base
 match:
   path_glob: "tasks/**/*.md"
 
-filename_pattern: "{id}.md"
+path_pattern: "{id}.md"
 
 fields:
   title:
@@ -577,7 +598,7 @@ extends: document
 match:
   path_glob: "daily/**/*.md"
 
-filename_pattern: "{date}.md"
+path_pattern: "{date}.md"
 
 fields:
   date:
@@ -608,6 +629,7 @@ Journal entries organized by date.
 # Initialize a new collection
 mkdir my-project && cd my-project
 mdbase init
+# Creates mdbase.yaml, _types/, and _types/meta.md
 
 # Create a type
 mdbase type create task

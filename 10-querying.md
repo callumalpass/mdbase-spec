@@ -245,11 +245,17 @@ In query expressions, properties are accessed through namespaces:
 | `file.size` | number | File size in bytes |
 | `file.ctime` | datetime | Created time |
 | `file.mtime` | datetime | Modified time |
+| `file.display_name` | string | Human-readable display name (from type `display_name_key`, or `file.basename` fallback) |
 | `file.links` | list | Outgoing links (including links to non-markdown files) |
 | `file.backlinks` | list | Incoming links (requires index); MAY be null/empty if backlinks are unsupported |
 | `file.tags` | list | All tags (raw frontmatter `tags` + inline `#tags`, including nested) |
 | `file.properties` | object | Raw persisted frontmatter properties only (no computed fields, no applied defaults). This is equivalent to `note.` |
 | `file.embeds` | list | All embed links in the file body |
+
+`file.display_name` is derived from the matched type's `display_name_key` (see [§5.13](./05-types.md)).
+If multiple matched types define `display_name_key`, implementations SHOULD use the first type in the
+`types` list. If the key is missing or empty on a record, implementations MUST fall back to
+`file.basename`.
 
 ### Body Content Properties
 

@@ -143,6 +143,8 @@ groups:
     setup:
       config: |
         spec_version: "0.1.0"
+        settings:
+          write_defaults: false
       types:
         task.md: |
           ---
