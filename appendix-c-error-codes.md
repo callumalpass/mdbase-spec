@@ -63,7 +63,7 @@ This appendix defines standard error codes for validation issues and operation e
 | `invalid_link` | Link cannot be parsed | Malformed wikilink |
 | `link_not_found` | Link target doesn't exist | Target "[[missing]]" not found |
 | `link_wrong_type` | Target is wrong type | Expected person, found task |
-| `ambiguous_link` | Multiple candidates for simple name link after tiebreakers | "[[note]]" matches notes/note.md and archive/note.md |
+| `ambiguous_link` | Multiple candidates for a simple-name link (error on ID ambiguity, warning if still ambiguous after tiebreakers) | "[[note]]" matches notes/note.md and archive/note.md |
 
 ### Date/Time Errors
 
@@ -100,6 +100,9 @@ This appendix defines standard error codes for validation issues and operation e
 | `invalid_path` | Path is malformed (e.g., null bytes, control characters) | Path contains invalid characters |
 | `invalid_frontmatter` | Frontmatter YAML cannot be parsed | YAML syntax error in frontmatter |
 | `validation_failed` | Frontmatter fails validation against type schema(s) | Contains individual validation issues (see §C.1) |
+| `invalid_request` | Operation input is missing required parameters or is otherwise invalid | Backfill requires `type` or `where` |
+| `invalid_migration` | Migration manifest is malformed or contains invalid steps | Missing `steps` array |
+| `migration_failed` | Migration step failed during execution | Backfill step failed validation |
 | `permission_denied` | Filesystem permission error | Cannot write to file |
 | `concurrent_modification` | File was modified by another process during operation | File mtime changed between read and write |
 | `path_traversal` | Path resolution would escape collection root. Applies to any path resolution — link resolution, operation input paths, computed paths | `[[../../../etc/passwd]]` escapes root |
@@ -117,7 +120,7 @@ This appendix defines standard error codes for validation issues and operation e
 |------|-------------|---------|
 | `invalid_config` | Config file malformed | YAML parse error |
 | `missing_config` | No mdbase.yaml found | Not a collection |
-| `unsupported_version` | spec_version not supported | Version 2.0 not supported |
+| `unsupported_version` | spec_version not supported | Version 0.3.0 not supported |
 
 ---
 

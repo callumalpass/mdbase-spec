@@ -174,7 +174,7 @@ collections:
     output: true
 
 # This spec mdbase.yaml
-spec_version: "0.1.0"
+spec_version: "0.2.0"
 settings:
   types_folder: "_types"
 # Define post and project types

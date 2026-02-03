@@ -1,4 +1,5 @@
 name: "error code hardening — iteration 12"
+guardrail_ignore: true
 level: 1
 category: validation
 spec_ref: "§7, §9, §12, §4"
@@ -16,7 +17,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:
@@ -218,7 +219,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:
@@ -361,7 +362,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:
@@ -444,7 +445,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:
@@ -523,7 +524,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
           write_nulls: "explicit"
@@ -613,7 +614,7 @@ groups:
       - name: "config file with valid UTF-8 loads successfully"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             # Comment with Unicode: café, naïve, 日本語
           types: {}
         operation: validate
@@ -626,7 +627,7 @@ groups:
       - name: "type definition file with UTF-8 field descriptions loads"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
           types:
             note.md: |
               ---
@@ -662,7 +663,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:
@@ -756,7 +757,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         record.md: |
           ---
@@ -848,7 +849,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -887,7 +888,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
 
@@ -982,7 +983,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:

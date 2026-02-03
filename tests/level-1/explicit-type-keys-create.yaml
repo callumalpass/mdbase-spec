@@ -1,4 +1,5 @@
 name: "explicit type keys on create"
+guardrail_ignore: true
 level: 1
 category: operations
 spec_ref: "§6.2, §12.1"
@@ -7,7 +8,7 @@ groups:
   - name: "explicit_type_keys empty"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           explicit_type_keys: []
       types:
@@ -37,7 +38,7 @@ groups:
   - name: "explicit_type_keys custom"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           explicit_type_keys: ["kind"]
       types:
@@ -67,7 +68,7 @@ groups:
   - name: "explicit_type_keys default"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         task.md: |
           ---

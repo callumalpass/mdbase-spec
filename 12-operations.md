@@ -4,7 +4,7 @@ id: 12-operations
 title: "Operations"
 description: "Create, Read, Update, Delete, Rename, batch operations, and initialization"
 section: 12
-conformance_levels: [1, 5]
+conformance_levels: [1, 6]
 test_categories: [operations, references, concurrency]
 depends_on:
   - "[[09-validation]]"
@@ -514,7 +514,77 @@ Batch operations MUST support `--dry-run` which validates all changes and report
 
 ---
 
-## 12.8 Formatting Preservation
+## 12.8 Backfill (Level 6)
+
+Backfill applies defaults and/or generated values to **missing** fields across many files. It is intended for schema evolution and migration workflows (see [§5.11.1](./05-types.md#5111-migration-manifests-optional)).
+
+### Input
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `type` | No | Type name to target (optional if `where` is provided) |
+| `where` | No | Query filter expression to select files |
+| `fields` | No | Specific fields to backfill (default: all fields with defaults/generated values) |
+| `apply.defaults` | No | Apply default values to missing fields (default: true) |
+| `apply.generated` | No | Apply generated values to missing fields (default: true) |
+| `dry_run` | No | Validate and report changes without writing files |
+
+### Behavior
+
+1. **Select candidates**:
+   - If `type` is provided, include files matching that type
+   - If `where` is provided, filter candidates using the query expression
+   - If neither is provided, the operation MUST fail with `invalid_request`
+
+2. **Compute changes**:
+   - Only **missing** fields are eligible for backfill
+   - Explicit `null` values are considered present and are NOT backfilled
+   - If `fields` is provided, only those fields are considered
+   - If `apply.defaults` is true, apply defaults for missing fields
+   - If `apply.generated` is true, apply generated values for missing fields (including `ulid`, `uuid`, `{random: N}`, `sequence`, `now`, `{from, transform}`)
+   - If a file has no eligible missing fields, it MUST be reported as `skipped`
+
+3. **Validate**:
+   - Apply the backfill changes to the **effective** frontmatter
+   - If `default_validation` is `error` and any file fails validation, abort the entire operation with no files modified
+
+4. **Write** (unless `dry_run`):
+   - Persist fields that were filled by backfill
+   - Honor `settings.write_defaults` when writing default-filled fields
+   - Preserve formatting per §12.9
+
+### Output
+
+Returns a batch-style result (same `batch_result` structure as §12.7, including `skipped` and per-file `details`):
+
+```yaml
+batch_result:
+  total: 12
+  succeeded: 10
+  failed: 1
+  skipped: 1
+  details:
+    - path: "tasks/a.md"
+      status: "success"
+      changed_fields: [status, id]
+    - path: "tasks/b.md"
+      status: "skipped"
+      reason: "No missing fields to backfill"
+    - path: "tasks/c.md"
+      status: "failed"
+      error: { code: "validation_failed", message: "..." }
+```
+
+### Errors
+
+| Code | Description |
+|------|-------------|
+| `invalid_request` | Missing `type` and `where` |
+| `validation_failed` | Validation errors (with details) |
+
+---
+
+## 12.9 Formatting Preservation
 
 When writing files, implementations SHOULD preserve:
 
@@ -535,7 +605,7 @@ When writing files, implementations SHOULD preserve:
 
 ---
 
-## 12.9 Hooks (Optional)
+## 12.10 Hooks (Optional)
 
 Implementations MAY support hooks for custom logic:
 
@@ -559,7 +629,7 @@ This is an OPTIONAL feature; implementations need not support hooks.
 
 ---
 
-## 12.10 Concurrency
+## 12.11 Concurrency
 
 ### Read-Modify-Write Cycle
 
@@ -598,7 +668,7 @@ Implementations MAY use advisory file locks for write operations. If used:
 
 ---
 
-## 12.11 Init
+## 12.12 Init
 
 Initializes a new collection in a directory.
 
@@ -636,3 +706,68 @@ meta_type_path: "_types/meta.md"
 |------|-------------|
 | `path_conflict` | Collection already exists at target path |
 | `invalid_path` | Path is malformed |
+
+---
+
+## 12.13 Migrate (Level 6)
+
+Applies a migration manifest in order. Migration manifests are defined in [§5.11.1](./05-types.md#5111-migration-manifests-level-6).
+
+### Input
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `id` | No | Migration manifest ID (from manifest frontmatter) |
+| `path` | No | Explicit path to a migration manifest file |
+| `dry_run` | No | If true, execute backfill steps in dry-run mode |
+
+Exactly one of `id` or `path` MUST be provided.
+
+### Behavior
+
+1. **Load manifest**:
+   - If `path` is provided, load that file
+   - If `id` is provided, search `settings.migrations_folder` for a manifest with matching `id`
+
+2. **Validate manifest**:
+   - Manifest frontmatter MUST contain `steps` as a list
+   - Each step MUST include `id` and `op`
+   - Unknown `op` values MUST fail with `invalid_migration`
+
+3. **Execute steps in order**:
+   - For `backfill` steps, run the Backfill operation (§12.8) with the step’s parameters
+     - If `dry_run` is true on the migrate operation, it overrides the step’s `dry_run` to true
+   - For schema-only steps (`add_field`, `rename_field`, `change_type`, `rename_type`, `move_path`), record the step as `manual` and continue
+   - If any backfill step fails, stop execution and return `migration_failed`
+
+### Output
+
+The output MUST include:
+- `migration_result.id`
+- `migration_result.steps[]` with `id`, `op`, and `status`
+- For `backfill` steps, `steps[].result.batch_result`
+
+```yaml
+migration_result:
+  id: "2026-02-03-migrate-tasks"
+  steps:
+    - id: "add-status-field"
+      op: add_field
+      status: manual
+    - id: "backfill-status"
+      op: backfill
+      status: success
+      result:
+        batch_result:
+          total: 12
+          succeeded: 12
+          failed: 0
+```
+
+### Errors
+
+| Code | Description |
+|------|-------------|
+| `invalid_request` | Missing or conflicting `id`/`path` |
+| `invalid_migration` | Manifest is malformed or contains invalid steps |
+| `migration_failed` | A step failed during execution (see details) |

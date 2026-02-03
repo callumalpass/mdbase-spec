@@ -51,7 +51,7 @@ groups:
         operation: init
         input:
           config:
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               types_folder: "schemas"
         expect:

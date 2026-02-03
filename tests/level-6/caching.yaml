@@ -13,7 +13,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           id_field: "id"
       types:
@@ -96,7 +96,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           id_field: "id"
       types:
@@ -210,7 +210,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           id_field: "id"
       types:
@@ -236,7 +236,7 @@ groups:
         simulate:
           config_change:
             new_config: |
-              spec_version: "0.1.0"
+              spec_version: "0.2.0"
               settings:
                 id_field: "slug"
         operation: query
@@ -257,7 +257,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         task.md: |
           ---
@@ -310,7 +310,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           id_field: "id"
       types:
@@ -389,7 +389,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           id_field: "id"
       types:
@@ -472,7 +472,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -511,7 +511,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           id_field: "id"
       types:

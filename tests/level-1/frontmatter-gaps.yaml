@@ -13,7 +13,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -103,7 +103,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "off"
       types: {}
@@ -128,7 +128,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "warn"
       types: {}
@@ -158,7 +158,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           write_nulls: "explicit"
       types:
@@ -195,7 +195,7 @@ groups:
       - name: "omit mode removes null fields from output"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               write_nulls: "omit"
           files:
@@ -222,7 +222,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -261,7 +261,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -318,7 +318,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -364,7 +364,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types: {}
       files:
         notes/special.md: |
@@ -394,7 +394,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -463,7 +463,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         task.md: |
           ---
@@ -500,7 +500,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---

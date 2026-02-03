@@ -45,11 +45,11 @@ groups:
           error:
             code: unsupported_version
 
-      - name: "future minor version 0.2.0 is rejected when implementation supports 0.1.x"
+      - name: "future minor version 0.3.0 is rejected when implementation supports 0.2.x"
         spec_ref: "§4.4.1"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.3.0"
           types: {}
           files: {}
         operation: load_config
@@ -59,11 +59,11 @@ groups:
           error:
             code: unsupported_version
 
-      - name: "compatible patch version 0.1.1 is accepted"
+      - name: "compatible patch version 0.2.1 is accepted"
         spec_ref: "§4.4.1"
         setup:
           config: |
-            spec_version: "0.1.1"
+            spec_version: "0.2.1"
           types: {}
           files: {}
         operation: load_config
@@ -71,11 +71,11 @@ groups:
         expect:
           valid: true
 
-      - name: "compatible patch version 0.1.99 is accepted"
+      - name: "compatible patch version 0.2.99 is accepted"
         spec_ref: "§4.4.1"
         setup:
           config: |
-            spec_version: "0.1.99"
+            spec_version: "0.2.99"
           types: {}
           files: {}
         operation: load_config
@@ -92,7 +92,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.3.0"
       types:
         task.md: |
           ---

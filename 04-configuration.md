@@ -40,7 +40,7 @@ The file MUST be valid YAML and MUST parse as a mapping at the top level.
 The simplest valid configuration declares only the specification version:
 
 ```yaml
-spec_version: "0.1.0"
+spec_version: "0.2.0"
 ```
 
 This creates a collection with all default settings and no types (all files are untyped).
@@ -56,7 +56,7 @@ This creates a collection with all default settings and no types (all files are 
 
 # Specification version this configuration conforms to
 # Implementations MUST reject versions they do not support
-spec_version: "0.1.0"
+spec_version: "0.2.0"
 
 # =============================================================================
 # OPTIONAL: Collection Metadata
@@ -194,18 +194,18 @@ settings:
 
 The version of this specification the configuration conforms to. Implementations MUST check this value and MUST reject configuration files with versions they do not support.
 
-**Valid values:** `"0.1.0"`
+**Valid values:** `"0.2.0"`
 
-**Compatibility:** Implementations MAY accept `"0.1"` as an alias for `"0.1.0"`, but
-SHOULD emit a warning and normalize to `"0.1.0"` when writing.
+**Compatibility:** Implementations MAY accept `"0.2"` as an alias for `"0.2.0"`, but
+SHOULD emit a warning and normalize to `"0.2.0"` when writing.
 
 #### 4.4.1 Version Compatibility
 
 The `spec_version` field uses semantic versioning (MAJOR.MINOR.PATCH):
 
-**PATCH bumps** (e.g., 0.1.0 → 0.1.1): Clarifications and errata only. No behavioral changes. All implementations of X.Y.z are compatible with any X.Y.z′.
+**PATCH bumps** (e.g., 0.2.0 → 0.2.1): Clarifications and errata only. No behavioral changes. All implementations of X.Y.z are compatible with any X.Y.z′.
 
-**MINOR bumps** (e.g., 0.1.0 → 0.2.0): Additive changes only — new optional fields, new expression functions, new config keys. Implementations of X.Y MUST ignore unknown config keys introduced in X.Y+1 rather than rejecting them. Collections authored for X.Y work on X.Y+N without modification.
+**MINOR bumps** (e.g., 0.2.0 → 0.3.0): Additive changes only — new optional fields, new expression functions, new config keys. Implementations of X.Y MUST ignore unknown config keys introduced in X.Y+1 rather than rejecting them. Collections authored for X.Y work on X.Y+N without modification.
 
 **MAJOR bumps** (e.g., 0.x → 1.0): Breaking changes. Implementations MUST reject configuration files with a different major version than the one they support.
 
@@ -266,6 +266,14 @@ The types folder:
 - Is scanned separately to load type definitions
 - May contain subdirectories (all `.md` files are processed)
 
+### `settings.migrations_folder`
+
+Folder containing migration manifests (see [§5.11.1](./05-types.md#5111-migration-manifests-optional)).
+
+**Default:** `"<types_folder>/_migrations"` (e.g., `_types/_migrations`)
+
+Migration manifests are optional. If the folder exists and an implementation supports migrations, it MUST load manifests from this location.
+
 ### `settings.explicit_type_keys`
 
 Frontmatter keys that can explicitly declare a file's type(s). When a file has one of these keys, its value determines the type assignment, overriding any match rules.
@@ -324,6 +332,8 @@ Timezone for date/time functions (`now()`, `today()`) and naive datetime compari
 
 **Format:** IANA timezone name (e.g., `"UTC"`, `"America/New_York"`)
 
+**Portability note:** For deterministic results across machines, collections SHOULD set `settings.timezone` explicitly (e.g., `"UTC"`). If unset, identical queries can yield different results on different systems.
+
 ### `settings.id_field`
 
 The field name used as a unique identifier for link resolution. When a link is a simple name (not a path), implementations search for files where this field matches.
@@ -380,13 +390,13 @@ If validation fails, implementations MUST NOT process the collection and MUST re
 ### Minimal
 
 ```yaml
-spec_version: "0.1.0"
+spec_version: "0.2.0"
 ```
 
 ### Standard Project
 
 ```yaml
-spec_version: "0.1.0"
+spec_version: "0.2.0"
 name: "Project Documentation"
 description: "Specs, decisions, and meeting notes"
 
@@ -401,7 +411,7 @@ settings:
 ### Knowledge Base with Custom Types Folder
 
 ```yaml
-spec_version: "0.1.0"
+spec_version: "0.2.0"
 name: "Personal Knowledge Base"
 
 settings:
@@ -414,7 +424,7 @@ settings:
 ### Strict Validation
 
 ```yaml
-spec_version: "0.1.0"
+spec_version: "0.2.0"
 name: "Production Data"
 
 settings:

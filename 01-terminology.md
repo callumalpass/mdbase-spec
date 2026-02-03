@@ -30,7 +30,6 @@ YAML metadata at the beginning of a file, delimited by `---` markers. The frontm
 ```markdown
 ---
 title: My Document
-status: draft
 tags: [important, review]
 ---
 

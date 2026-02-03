@@ -13,7 +13,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -30,7 +30,7 @@ groups:
           simulate:
             config_change:
               new_config: |
-                spec_version: "0.1.0"
+                spec_version: "0.2.0"
                 settings:
                   default_validation: "warn"
         expect:
@@ -47,7 +47,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -108,7 +108,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -175,7 +175,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -231,7 +231,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           exclude:
             - "drafts/**"
@@ -268,7 +268,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           extensions: ["mdx"]
       types:

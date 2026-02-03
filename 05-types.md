@@ -119,6 +119,9 @@ name: task
 # Human-readable description
 description: "A task or todo item"
 
+# Optional schema version for migration tooling
+version: 1
+
 # Field to use as a human-readable display name for records of this type
 # If missing or empty on a record, implementations MUST fall back to file.basename
 display_name_key: title
@@ -165,6 +168,11 @@ fields:
     required: false
     # ... field options
 ```
+
+**Optional metadata fields:**
+- `description`: Human-readable description of the type
+- `version`: Positive integer for migration tooling (informational only; see §5.11.2)
+- `display_name_key`: Field used as a human-readable label (see §5.13)
 
 ---
 
@@ -343,7 +351,7 @@ When loading types from the types folder:
 
 This specification does not define built-in **content** types. All content types are user-defined via markdown files.
 
-However, implementations MUST create a **meta type** during collection initialization (see [§12.11](./12-operations.md)) that describes type definition files themselves. This meta type:
+However, implementations MUST create a **meta type** during collection initialization (see [§12.12](./12-operations.md)) that describes type definition files themselves. This meta type:
 
 - Lives in the types folder
 - Matches files in the types folder
@@ -455,7 +463,66 @@ When a type definition changes, existing files are NOT automatically migrated �
 
 **Materializing defaults:** Defaults are persisted based on `settings.write_defaults` (see [§4](./04-configuration.md)). If a default is written, it MUST equal the declared default at the time of the write.
 
-**Migration strategy:** Validation is the migration mechanism. Run validation on the collection after schema changes, review reported errors, and fix affected files.
+**Migration strategy:** Validation is the baseline mechanism, but implementations MAY also support **migration manifests** and the **backfill** operation for structured, repeatable migrations (see §5.11.1 and §12.8).
+
+### 5.11.1 Migration Manifests (Level 6)
+
+Migration manifests provide a declarative, ordered list of schema and data changes. **Level 6 implementations MUST support migration manifests** and the `migrate` operation (§12.13). Lower-level implementations MAY ignore them.
+
+**Location:**  
+By default, manifests live under the migrations folder:
+- `settings.migrations_folder` if set
+- otherwise `<types_folder>/_migrations/` (e.g., `_types/_migrations/`)
+
+**Format:** A migration manifest is a markdown file. Its frontmatter contains a `steps` array. The body is free-form documentation.
+
+**Execution:** Migration manifests are executed via the `migrate` operation (§12.13).
+
+```yaml
+---
+id: "2026-02-03-migrate-tasks"
+description: "Add status and backfill existing tasks"
+steps:
+  - id: "add-status-field"
+    op: add_field
+    type: task
+    field: status
+    optional: true
+    default: "open"
+
+  - id: "backfill-status"
+    op: backfill
+    type: task
+    fields: [status]
+    apply:
+      defaults: true
+      generated: false
+    dry_run: false
+---
+```
+
+**Supported `op` values:**
+- `add_field` (schema change, descriptive)
+- `rename_field` (schema change, descriptive)
+- `change_type` (schema change, descriptive)
+- `rename_type` (schema change, descriptive)
+- `move_path` (schema change, descriptive)
+- `backfill` (data change; see §12.8)
+
+**Semantics:**
+- Schema-change steps (`add_field`, `rename_field`, `change_type`, `rename_type`, `move_path`) are **descriptive**. They document the intended change but do not mutate files by themselves. Implementations MAY provide tooling to automate these, but automation is not required for conformance.
+- `backfill` steps MUST execute the Backfill operation (§12.8) with the provided parameters.
+- Steps MUST be executed in order. A failure in one step MUST stop execution. Implementations MAY expose an override, but it is not required for conformance.
+- Migration manifests MUST NOT be treated as type definition files, even though they live under the types folder. The migrations folder is excluded from type loading and from record scans.
+
+### 5.11.2 Schema Versioning (Optional)
+
+Types MAY include a `version` integer in their frontmatter. Tools MAY also write a `_schema_version` field into records as part of migrations or backfills. These fields are **informational** and MUST NOT affect validation unless an implementation opts into a migration system.
+
+**Rules:**
+- `version` MUST be a positive integer if present.
+- `_schema_version`, if present on a record, MUST be a positive integer.
+- Implementations MUST ignore `_schema_version` during validation unless explicitly documented otherwise.
 
 ---
 

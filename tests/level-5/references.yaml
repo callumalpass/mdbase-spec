@@ -13,7 +13,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           rename_update_refs: true
       types:
@@ -169,7 +169,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           id_field: "id"
           rename_update_refs: true
@@ -258,7 +258,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           id_field: "id"
           rename_update_refs: true
@@ -372,7 +372,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           id_field: "id"
           rename_update_refs: true
@@ -426,7 +426,7 @@ groups:
       - name: "filename-based wikilink IS rewritten when file renamed"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               rename_update_refs: true
               # No id_field configured — resolution falls through to filename match
@@ -474,7 +474,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           rename_update_refs: true
       types:
@@ -562,7 +562,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           rename_update_refs: true
       types:
@@ -624,7 +624,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           rename_update_refs: true
       types:
@@ -717,7 +717,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           rename_update_refs: true
       types:
@@ -801,7 +801,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           rename_update_refs: true
       types:
@@ -863,7 +863,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           rename_update_refs: true
       types:

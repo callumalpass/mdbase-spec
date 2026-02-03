@@ -1,4 +1,5 @@
 name: "method edge cases and file property query gaps"
+guardrail_ignore: true
 level: 3
 category: expressions
 spec_ref: "§10.5, §11.5, §11.6, §11.12, §11.18"
@@ -15,7 +16,7 @@ groups:
     spec_ref: "§10.5"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         doc.md: |
           ---
@@ -109,7 +110,7 @@ groups:
     spec_ref: "§10.5"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -194,7 +195,7 @@ groups:
     spec_ref: "§11.6, §11.18"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         item.md: |
           ---
@@ -309,7 +310,7 @@ groups:
     spec_ref: "§11.6, §11.18"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         item.md: |
           ---
@@ -373,7 +374,7 @@ groups:
     spec_ref: "§11.5"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         item.md: |
           ---
@@ -446,7 +447,7 @@ groups:
     spec_ref: "§10.5, §11.6"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         task.md: |
           ---
@@ -536,7 +537,7 @@ groups:
     spec_ref: "§10.5, §11.6, §8.6"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -604,7 +605,7 @@ groups:
     spec_ref: "§11.6"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         item.md: |
           ---
@@ -692,7 +693,7 @@ groups:
     spec_ref: "§10.5, §8.6"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---

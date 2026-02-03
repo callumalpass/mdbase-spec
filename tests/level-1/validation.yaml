@@ -1,4 +1,5 @@
 name: "validation and frontmatter parsing"
+guardrail_ignore: true
 level: 1
 category: validation
 spec_ref: "§9, §3"
@@ -13,7 +14,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:
@@ -129,7 +130,7 @@ groups:
       - name: "required field with default is satisfied by default"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               default_validation: "error"
           types:
@@ -180,7 +181,7 @@ groups:
       - name: "validation level off skips validation"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               default_validation: "off"
         operation: read
@@ -192,7 +193,7 @@ groups:
       - name: "validation level warn reports but succeeds"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               default_validation: "warn"
         operation: read
@@ -209,7 +210,7 @@ groups:
       - name: "validation level error reports and fails"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               default_validation: "error"
         operation: validate
@@ -230,7 +231,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types: {}
 
     tests:
@@ -295,7 +296,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types: {}
@@ -339,7 +340,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types: {}
 
     tests:
@@ -454,7 +455,7 @@ groups:
       - name: "write_nulls omit removes null fields"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               write_nulls: "omit"
           types:
@@ -488,7 +489,7 @@ groups:
       - name: "write_nulls explicit writes null keyword"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               write_nulls: "explicit"
           types:
@@ -524,7 +525,7 @@ groups:
       - name: "write_empty_lists true writes empty list"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               write_empty_lists: true
           types:
@@ -555,7 +556,7 @@ groups:
       - name: "write_empty_lists false omits empty list"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               write_empty_lists: false
           types:
@@ -592,7 +593,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         task.md: |
           ---
@@ -635,7 +636,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types: {}
 
     tests:
@@ -680,7 +681,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         item.md: |
           ---
@@ -781,7 +782,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:
@@ -829,7 +830,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -877,7 +878,7 @@ groups:
         spec_ref: "§7.3"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
           types:
             note.md: |
               ---
@@ -908,7 +909,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         task.md: |
           ---
@@ -953,7 +954,7 @@ groups:
       - name: "empty collection (no files) is valid"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
           types: {}
           files: {}
         operation: validate
@@ -970,7 +971,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types: {}
 
     tests:
@@ -1011,7 +1012,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:
@@ -1081,7 +1082,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           explicit_type_keys: ["kind"]
       types:
@@ -1137,7 +1138,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         task.md: |
           ---

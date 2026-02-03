@@ -7,7 +7,7 @@ groups:
   - name: "update uses match rules to apply now_on_write"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         log.md: |
           ---

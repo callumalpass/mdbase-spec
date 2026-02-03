@@ -208,7 +208,7 @@ value ?? default    // Returns default if value is null
 | `.unique()` | Remove duplicates | `tags.unique()` |
 | `.join(sep)` | Join to string | `tags.join(", ")` |
 
-In `filter()`, `map()`, and `reduce()`, the implicit variables `value` and `index` refer to the current element and its position. For `reduce()`, `acc` is the accumulator.
+In `filter()`, `map()`, and `reduce()`, the implicit variables `value` and `index` refer to the current element and its position. For `reduce()`, `acc` is the accumulator. These implicit variables **shadow** any frontmatter fields with the same names. To access a field named `value`, `index`, or `acc`, use an explicit namespace (e.g., `note.value` or `file.properties.value`) or `this.value` in embedded-query contexts.
 
 `containsAll()` and `containsAny()` are variadic; passing a list literal counts as a single value and does not auto-expand.
 
@@ -379,9 +379,9 @@ field ?? value         // Null coalescing operator
 exists(due_date)                    // Has a due date?
 default(priority, 3)                // Default priority to 3
 assignee ?? "unassigned"            // Default to "unassigned"
+```
 
 **Missing vs null:** In expressions, missing properties are treated like `null` for `default()` and `??`. Use `exists(field)` to distinguish missing from present-null.
-```
 
 ---
 

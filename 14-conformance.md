@@ -89,6 +89,7 @@ Implementations may claim conformance at different levels. Each level builds on 
 - Watch mode with event delivery (per [§15](./15-watching.md))
 - Type creation via tooling
 - Nested collection detection (per §2)
+- Migration manifests and backfill (per §5.11.1 and §12.8/§12.13)
 
 **Test coverage:** Performance, cache correctness, watching, edge cases
 
@@ -107,7 +108,7 @@ Implementations SHOULD clearly state their conformance level:
 ```
 mdbase-tool v1.0.0
 Conformance: Level 4 (Links)
-Specification: 0.1.0
+Specification: 0.2.0
 ```
 
 Implementations MAY implement features from higher levels while claiming a lower level, but SHOULD NOT claim a level without passing all tests for that level.
@@ -128,7 +129,7 @@ spec_ref: "§7.2"
 
 setup:
   config: |
-    spec_version: "0.1.0"
+    spec_version: "0.2.0"
   types:
     task.md: |
       ---
@@ -183,8 +184,9 @@ tests:
 | `links` | Link parsing and resolution | [§8](./08-links.md) |
 | `operations` | CRUD operations | [§12](./12-operations.md) |
 | `references` | Reference updates | [§12.5](./12-operations.md) |
+| `migration` | Migration manifests and backfill | [§5.11.1](./05-types.md) / [§12.8](./12-operations.md) |
 | `caching` | Cache behavior | [§13](./13-caching.md) |
-| `concurrency` | Concurrent modification detection | [§12.10](./12-operations.md) |
+| `concurrency` | Concurrent modification detection | [§12.11](./12-operations.md) |
 | `watching` | Watch mode event delivery | [§15](./15-watching.md) |
 | `body_search` | Body content filtering | [§10.5](./10-querying.md) |
 | `computed_fields` | Computed field evaluation | [§5.12](./05-types.md) |
@@ -207,14 +209,20 @@ Some Level 1–2 tests use `operation: query` as test infrastructure for collect
 
 This subset does **not** require expression evaluation, computed fields, or body search. Full query semantics remain a Level 3 requirement.
 
+### Conformance Level Integrity (Non-Normative)
+
+Test suites SHOULD include a guardrail that validates each test file’s declared `level` against the `spec_ref` sections it cites. This prevents accidental drift where lower-level suites require higher-level features. A simple static mapping from spec sections to conformance levels is sufficient.
+
 ### Extended Operations
 
 | Operation | Description | Spec Reference |
 |-----------|-------------|----------------|
 | `batch_update` | Bulk update matching files | [§12.7](./12-operations.md) |
 | `batch_delete` | Bulk delete matching files | [§12.7](./12-operations.md) |
+| `backfill` | Backfill missing fields across files | [§12.8](./12-operations.md) |
 | `create_type` | Create a type definition file | [§5.9](./05-types.md) |
-| `init` | Initialize a new collection | [§12.11](./12-operations.md) |
+| `init` | Initialize a new collection | [§12.12](./12-operations.md) |
+| `migrate` | Apply a migration manifest | [§12.13](./12-operations.md) |
 | `watch` | Start filesystem watcher and simulate events | [§15](./15-watching.md) |
 
 ### Extended Input Fields

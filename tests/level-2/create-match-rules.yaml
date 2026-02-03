@@ -7,7 +7,7 @@ groups:
   - name: "where match rule satisfied by defaults"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           explicit_type_keys: []
       types:
@@ -46,7 +46,7 @@ groups:
   - name: "where match rule unsatisfied"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         person.md: |
           ---
@@ -81,7 +81,7 @@ groups:
   - name: "path_glob mismatch"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         person.md: |
           ---
@@ -110,7 +110,7 @@ groups:
   - name: "fields_present mismatch"
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         event.md: |
           ---

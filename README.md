@@ -2,7 +2,7 @@
 
 A specification for treating a folder of markdown files with YAML frontmatter as a typed, queryable data collection.
 
-Version 0.1.0 (draft).
+Version 0.2.0.
 
 **Read the spec:** [mdbase.dev](https://mdbase.dev)
 

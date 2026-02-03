@@ -1,0 +1,457 @@
+name: "migration and backfill"
+level: 6
+category: migration
+spec_ref: "§5.11.1, §12.8, §12.13"
+
+groups:
+  - name: "backfill applies defaults and generated values"
+    spec_ref: "§12.8"
+    setup:
+      config: |
+        spec_version: "0.2.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: enum
+              values: [open, done]
+              default: open
+            id:
+              type: string
+              generated: ulid
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          title: "A"
+          ---
+        tasks/b.md: |
+          ---
+          type: task
+          title: "B"
+          status: done
+          id: "custom-id"
+          ---
+    tests:
+      - name: "backfill defaults + generated"
+        operation: backfill
+        input:
+          type: task
+          apply:
+            defaults: true
+            generated: true
+        expect:
+          batch_result:
+            total: 2
+            succeeded: 2
+            failed: 0
+        verify_after:
+          - operation: read
+            input:
+              path: "tasks/a.md"
+            expect:
+              frontmatter:
+                title: "A"
+                status: open
+              frontmatter_written: [id, status]
+          - operation: read
+            input:
+              path: "tasks/b.md"
+            expect:
+              frontmatter:
+                title: "B"
+                status: done
+                id: "custom-id"
+
+  - name: "backfill respects fields subset and generated=false"
+    spec_ref: "§12.8"
+    setup:
+      config: |
+        spec_version: "0.2.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            status:
+              type: string
+              default: open
+            id:
+              type: string
+              generated: ulid
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          ---
+    tests:
+      - name: "fields subset ignores generated"
+        operation: backfill
+        input:
+          type: note
+          fields: [status]
+          apply:
+            defaults: true
+            generated: false
+        expect:
+          batch_result:
+            total: 1
+            succeeded: 1
+            failed: 0
+        verify_after:
+          operation: read
+          input:
+            path: "notes/a.md"
+          expect:
+            frontmatter:
+              status: open
+            frontmatter_written: [status]
+            frontmatter_not_written: [id]
+
+  - name: "explicit null is not backfilled"
+    spec_ref: "§12.8"
+    setup:
+      config: |
+        spec_version: "0.2.0"
+        settings:
+          write_nulls: "explicit"
+      types:
+        doc.md: |
+          ---
+          name: doc
+          fields:
+            id:
+              type: string
+              generated: ulid
+          ---
+      files:
+        docs/a.md: |
+          ---
+          type: doc
+          id: null
+          ---
+    tests:
+      - name: "null field is treated as present"
+        operation: backfill
+        input:
+          type: doc
+          fields: [id]
+          apply:
+            generated: true
+        expect:
+          batch_result:
+            total: 1
+            succeeded: 0
+            failed: 0
+            skipped: 1
+        verify_after:
+          operation: read
+          input:
+            path: "docs/a.md"
+          expect:
+            frontmatter_written:
+              id: null
+
+  - name: "backfill dry-run does not modify files"
+    spec_ref: "§12.8"
+    setup:
+      config: |
+        spec_version: "0.2.0"
+      types:
+        note.md: |
+          ---
+          name: note
+          fields:
+            status:
+              type: string
+              default: open
+          ---
+      files:
+        notes/a.md: |
+          ---
+          type: note
+          ---
+    tests:
+      - name: "dry-run reports but does not write"
+        operation: backfill
+        input:
+          type: note
+          dry_run: true
+        expect:
+          batch_result:
+            total: 1
+            succeeded: 1
+            failed: 0
+        verify_after:
+          operation: read
+          input:
+            path: "notes/a.md"
+          expect:
+            frontmatter_not_written: [status]
+
+  - name: "backfill validation failure aborts"
+    spec_ref: "§12.8"
+    setup:
+      config: |
+        spec_version: "0.2.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: string
+              default: open
+          ---
+      files:
+        tasks/a.md: |
+          ---
+          type: task
+          ---
+    tests:
+      - name: "missing required causes abort"
+        operation: backfill
+        input:
+          type: task
+          fields: [status]
+          apply:
+            defaults: true
+            generated: false
+        expect:
+          error:
+            code: validation_failed
+        verify_after:
+          operation: read
+          input:
+            path: "tasks/a.md"
+          expect:
+            frontmatter_not_written: [status]
+
+  - name: "backfill requires type or where"
+    spec_ref: "§12.8"
+    setup:
+      config: |
+        spec_version: "0.2.0"
+    tests:
+      - name: "missing selector fails"
+        operation: backfill
+        input: {}
+        expect:
+          error:
+            code: invalid_request
+
+  - name: "migrate executes manifest steps in order"
+    spec_ref: "§5.11.1, §12.13"
+    setup:
+      config: |
+        spec_version: "0.2.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+            status:
+              type: string
+              default: open
+          ---
+      files:
+        _types/_migrations/2026-02-03.md: |
+          ---
+          id: "2026-02-03-migrate-tasks"
+          steps:
+            - id: "add-status-field"
+              op: add_field
+              type: task
+              field: status
+            - id: "backfill-status"
+              op: backfill
+              type: task
+              fields: [status]
+              apply:
+                defaults: true
+          ---
+        tasks/a.md: |
+          ---
+          type: task
+          title: "A"
+          ---
+    tests:
+      - name: "migrate runs backfill step"
+        operation: migrate
+        input:
+          id: "2026-02-03-migrate-tasks"
+        expect:
+          migration_result:
+            id: "2026-02-03-migrate-tasks"
+            steps:
+              - id: "add-status-field"
+                op: add_field
+                status: manual
+              - id: "backfill-status"
+                op: backfill
+                status: success
+        verify_after:
+          operation: read
+          input:
+            path: "tasks/a.md"
+          expect:
+            frontmatter:
+              status: open
+
+  - name: "migrate stops on failed backfill"
+    spec_ref: "§12.13"
+    setup:
+      config: |
+        spec_version: "0.2.0"
+        settings:
+          default_validation: "error"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            title:
+              type: string
+              required: true
+            status:
+              type: string
+              default: open
+          ---
+      files:
+        _types/_migrations/2026-02-04.md: |
+          ---
+          id: "2026-02-04-migrate-tasks"
+          steps:
+            - id: "backfill-status"
+              op: backfill
+              type: task
+              fields: [status]
+              apply:
+                defaults: true
+            - id: "backfill-again"
+              op: backfill
+              type: task
+              fields: [status]
+              apply:
+                defaults: true
+          ---
+        tasks/a.md: |
+          ---
+          type: task
+          ---
+    tests:
+      - name: "failure aborts migration"
+        operation: migrate
+        input:
+          id: "2026-02-04-migrate-tasks"
+        expect:
+          error:
+            code: migration_failed
+        verify_after:
+          operation: read
+          input:
+            path: "tasks/a.md"
+          expect:
+            frontmatter_not_written: [status]
+
+  - name: "migrate dry-run does not modify files"
+    spec_ref: "§12.13"
+    setup:
+      config: |
+        spec_version: "0.2.0"
+      types:
+        task.md: |
+          ---
+          name: task
+          fields:
+            status:
+              type: string
+              default: open
+          ---
+      files:
+        _types/_migrations/2026-02-05.md: |
+          ---
+          id: "2026-02-05-migrate-tasks"
+          steps:
+            - id: "backfill-status"
+              op: backfill
+              type: task
+              fields: [status]
+              apply:
+                defaults: true
+          ---
+        tasks/a.md: |
+          ---
+          type: task
+          ---
+    tests:
+      - name: "dry-run leaves file unchanged"
+        operation: migrate
+        input:
+          id: "2026-02-05-migrate-tasks"
+          dry_run: true
+        expect:
+          migration_result:
+            id: "2026-02-05-migrate-tasks"
+        verify_after:
+          operation: read
+          input:
+            path: "tasks/a.md"
+          expect:
+            frontmatter_not_written: [status]
+
+  - name: "invalid migration manifest fails"
+    spec_ref: "§12.13"
+    setup:
+      config: |
+        spec_version: "0.2.0"
+      files:
+        _types/_migrations/bad.md: |
+          ---
+          id: "bad"
+          ---
+    tests:
+      - name: "missing steps triggers invalid_migration"
+        operation: migrate
+        input:
+          id: "bad"
+        expect:
+          error:
+            code: invalid_migration
+
+  - name: "custom migrations folder and unknown op"
+    spec_ref: "§5.11.1, §12.13"
+    setup:
+      config: |
+        spec_version: "0.2.0"
+        settings:
+          migrations_folder: "_migrations"
+      files:
+        _migrations/unknown-op.md: |
+          ---
+          id: "unknown-op"
+          steps:
+            - id: "mystery"
+              op: unknown_step
+          ---
+    tests:
+      - name: "unknown op triggers invalid_migration"
+        operation: migrate
+        input:
+          id: "unknown-op"
+        expect:
+          error:
+            code: invalid_migration

@@ -13,7 +13,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           id_field: "id"
           default_validation: "error"
@@ -148,7 +148,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           id_field: "uid"
           default_validation: "error"
@@ -196,7 +196,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:
@@ -264,7 +264,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
           default_strict: true
@@ -397,7 +397,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:
@@ -483,7 +483,7 @@ groups:
       - name: "off level skips validation entirely"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               default_validation: "off"
         operation: read
@@ -495,7 +495,7 @@ groups:
       - name: "warn level reports issues but read succeeds"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               default_validation: "warn"
         operation: validate
@@ -511,7 +511,7 @@ groups:
       - name: "error level causes operation failure on create"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               default_validation: "error"
         operation: create
@@ -532,7 +532,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:
@@ -591,7 +591,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:
@@ -645,7 +645,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:

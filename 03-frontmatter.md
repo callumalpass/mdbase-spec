@@ -23,7 +23,6 @@ A file MAY begin with YAML frontmatter. Frontmatter is delimited by two lines co
 ```markdown
 ---
 title: My Document
-status: draft
 ---
 
 # Heading

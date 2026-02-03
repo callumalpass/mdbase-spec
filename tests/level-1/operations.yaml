@@ -1,4 +1,5 @@
 name: "CRUD operations"
+guardrail_ignore: true
 level: 1
 category: operations
 spec_ref: "§12"
@@ -13,7 +14,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:
@@ -149,7 +150,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         task.md: |
           ---
@@ -240,7 +241,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:
@@ -351,7 +352,7 @@ groups:
       - name: "update null field with write_nulls omit removes field"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               default_validation: "warn"
               write_nulls: "omit"
@@ -384,7 +385,7 @@ groups:
       - name: "update null field with write_nulls explicit keeps field"
         setup:
           config: |
-            spec_version: "0.1.0"
+            spec_version: "0.2.0"
             settings:
               default_validation: "warn"
               write_nulls: "explicit"
@@ -423,7 +424,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types: {}
       files:
         notes/to-delete.md: |
@@ -457,7 +458,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types: {}
       files:
         tasks/old-name.md: |
@@ -521,7 +522,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         task.md: |
           ---
@@ -553,7 +554,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         task.md: |
           ---
@@ -584,7 +585,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -627,7 +628,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -664,7 +665,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         task.md: |
           ---
@@ -708,7 +709,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         task.md: |
           ---
@@ -763,7 +764,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         post.md: |
           ---
@@ -813,7 +814,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
         settings:
           default_validation: "error"
       types:

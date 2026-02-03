@@ -9,7 +9,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.1.0"
+        spec_version: "0.2.0"
       types:
         note.md: |
           ---
@@ -25,7 +25,7 @@ groups:
           title: "Parent collection note"
           ---
         sub-project/mdbase.yaml: |
-          spec_version: "0.1.0"
+          spec_version: "0.2.0"
         sub-project/docs/readme.md: |
           ---
           type: note
