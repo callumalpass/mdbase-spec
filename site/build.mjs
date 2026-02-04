@@ -153,7 +153,8 @@ function buildSpec() {
       continue;
     }
 
-    const md = readFileSync(filePath, 'utf-8');
+    const raw = readFileSync(filePath, 'utf-8');
+    const md = raw.replace(/^---\n[\s\S]*?\n---\n/, '');
     const html = marked.parse(md);
 
     contentHtml += `<section class="spec-section" id="${entry.id}">\n`;
