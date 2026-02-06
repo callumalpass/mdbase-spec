@@ -95,6 +95,12 @@ tests/
 | [mdbase-lsp](https://github.com/callumalpass/mdbase-lsp) | Rust | Early release (LSP server) |
 | [mdbase-cli](https://github.com/callumalpass/mdbase-cli) | TypeScript | Early release (CLI tool with .base file support) |
 
+## Example applications
+
+| Project | Description |
+|---------|-------------|
+| [mdbase-workouts](https://github.com/callumalpass/mdbase-workouts) | Workout tracker with chat interface, built on mdbase |
+
 ## License
 
 MIT
