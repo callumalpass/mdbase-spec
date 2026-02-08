@@ -38,6 +38,31 @@ groups:
             fields:
               name:
                 type: string
+                required: true
+              description:
+                type: string
+              version:
+                type: integer
+              extends:
+                type: string
+              strict:
+                type: enum
+                values: ["true", "false", "warn"]
+              display_name_key:
+                type: string
+              match:
+                type: object
+                fields:
+                  path_glob:
+                    type: string
+                  fields_present:
+                    type: list
+                  where:
+                    type: object
+              path_pattern:
+                type: string
+              filename_pattern:
+                type: string
               fields:
                 type: any
 
