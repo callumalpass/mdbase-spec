@@ -120,6 +120,11 @@ function build() {
   writeFileSync(join(DIST, 'index.html'), indexHtml);
   console.log('  Built index.html');
 
+  // Copy ecosystem.html
+  const ecosystemHtml = readFileSync(join(TEMPLATES, 'ecosystem.html'), 'utf-8');
+  writeFileSync(join(DIST, 'ecosystem.html'), ecosystemHtml);
+  console.log('  Built ecosystem.html');
+
   // Build spec page
   buildSpec();
 

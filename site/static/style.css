@@ -608,6 +608,122 @@ tr:hover td {
 
 
 /* ==========================================================================
+   Ecosystem Page
+   ========================================================================== */
+
+.eco-hero {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: calc(var(--header-h) + 5rem) 2rem 2rem;
+}
+
+.eco-hero-sub {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+  max-width: 50ch;
+}
+
+.eco-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1px;
+  background: var(--border-dim);
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 2rem 0;
+}
+
+.eco-card {
+  background: var(--bg-raised);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: background 0.2s ease;
+}
+
+.eco-card:hover {
+  background: var(--surface);
+}
+
+.eco-lang {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.eco-name {
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin: 0 0 0.5rem;
+}
+
+.eco-desc {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+}
+
+.eco-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  flex: 1;
+}
+
+.eco-features li {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 0.15rem 0;
+  margin: 0;
+}
+
+.eco-features li::before {
+  content: '~ ';
+  color: var(--border);
+}
+
+.eco-link {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-dim);
+}
+
+.eco-link:hover {
+  color: var(--amber);
+}
+
+.landing-nav .nav-active {
+  color: var(--text-bright);
+}
+
+@media (max-width: 600px) {
+  .eco-hero {
+    padding: calc(var(--header-h) + 3rem) 1rem 1rem;
+  }
+
+  .eco-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
    Spec Reader Page
    ========================================================================== */
 
