@@ -9,8 +9,8 @@ normative: false
 
 # Typed Markdown Collections Specification
 
-**Version:** 0.2.0  
-**Last Updated:** 2026-02-03
+**Version:** 0.2.1
+**Last Updated:** 2026-02-15
 
 ---
 
@@ -209,7 +209,7 @@ Implementations don't need to support everything. Six conformance levels let too
 
 ## Versioning
 
-This specification uses semantic versioning. The current version is **0.2.0**. Breaking changes may occur before 1.0.0.
+This specification uses semantic versioning. The current version is **0.2.1**. Breaking changes may occur before 1.0.0.
 
 Tools should declare which specification version they implement and should reject configuration files with unsupported `spec_version` values.
 
