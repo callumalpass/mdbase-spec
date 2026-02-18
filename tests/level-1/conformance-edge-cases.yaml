@@ -14,7 +14,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           default_validation: "error"
       types: {}
@@ -107,7 +107,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types: {}
 
     tests:
@@ -168,7 +168,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         event.md: |
           ---
@@ -280,7 +280,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         person.md: |
           ---
@@ -406,7 +406,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -490,7 +490,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
 
     tests:
       - name: "type name must start with a letter"
@@ -597,7 +597,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           default_validation: "error"
           future_setting_xyz: true
@@ -644,7 +644,7 @@ groups:
       - name: "off level — list frontmatter treated as empty, read succeeds"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
             settings:
               default_validation: "off"
           types: {}
@@ -662,7 +662,7 @@ groups:
       - name: "warn level — list frontmatter treated as empty with warning"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
             settings:
               default_validation: "warn"
           types: {}
@@ -682,7 +682,7 @@ groups:
       - name: "error level — list frontmatter fails operation"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
             settings:
               default_validation: "error"
           types: {}

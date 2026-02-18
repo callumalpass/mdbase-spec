@@ -311,7 +311,7 @@ Cache format may change between implementation versions. Include a version marke
 ```json
 {
   "version": "1.0",
-  "spec_version": "0.2.0",
+  "spec_version": "0.2.1",
   "built_at": "2024-03-15T10:30:00Z"
 }
 ```

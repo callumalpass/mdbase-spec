@@ -29,7 +29,7 @@ minimal/
 
 **mdbase.yaml:**
 ```yaml
-spec_version: "0.2.0"
+spec_version: "0.2.1"
 ```
 
 **hello.md:**
@@ -74,7 +74,7 @@ tasks-project/
 
 **mdbase.yaml:**
 ```yaml
-spec_version: "0.2.0"
+spec_version: "0.2.1"
 
 name: "Project Tasks"
 description: "Task tracking for the main project"

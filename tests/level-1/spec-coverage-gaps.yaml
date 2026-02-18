@@ -14,7 +14,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           default_validation: "error"
       types:
@@ -176,7 +176,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           default_validation: "error"
       types:
@@ -353,7 +353,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           default_validation: "error"
       types:
@@ -432,7 +432,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           default_validation: "error"
       types:
@@ -517,7 +517,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -569,7 +569,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           default_validation: "error"
 
@@ -669,7 +669,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           default_validation: "error"
       types:
@@ -782,7 +782,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -909,7 +909,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           default_validation: "error"
       types:
@@ -975,7 +975,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           default_validation: "error"
       types:
@@ -1095,7 +1095,7 @@ groups:
       - name: "invalid type for settings.default_validation"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
             settings:
               default_validation: 42
         operation: validate
@@ -1113,7 +1113,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---

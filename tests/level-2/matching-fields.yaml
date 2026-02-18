@@ -13,7 +13,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         actionable.md: |
           ---
@@ -133,7 +133,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -213,7 +213,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         assigned.md: |
           ---
@@ -298,7 +298,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         high_priority.md: |
           ---
@@ -392,7 +392,7 @@ groups:
       - name: "gt matches strictly greater value"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             above_three.md: |
               ---
@@ -419,7 +419,7 @@ groups:
       - name: "gt does not match equal value"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             above_three.md: |
               ---
@@ -446,7 +446,7 @@ groups:
       - name: "eq matches exact value"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             priority_three.md: |
               ---
@@ -473,7 +473,7 @@ groups:
       - name: "neq matches non-equal value"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             not_done.md: |
               ---
@@ -500,7 +500,7 @@ groups:
       - name: "neq does not match equal value"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             not_done.md: |
               ---
@@ -527,7 +527,7 @@ groups:
       - name: "lte matches equal value"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             capped.md: |
               ---
@@ -554,7 +554,7 @@ groups:
       - name: "lte does not match greater value"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             capped.md: |
               ---
@@ -587,7 +587,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         urgent.md: |
           ---
@@ -756,7 +756,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         wip.md: |
           ---
@@ -932,7 +932,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         active_task.md: |
           ---

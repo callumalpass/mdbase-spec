@@ -13,7 +13,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           id_field: "id"
       types:
@@ -98,7 +98,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           id_field: "id"
       types:
@@ -194,7 +194,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           id_field: "id"
       types:
@@ -247,7 +247,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -301,7 +301,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -350,7 +350,7 @@ groups:
         simulate:
           config_change:
             new_config: |
-              spec_version: "0.2.0"
+              spec_version: "0.2.1"
               settings:
                 id_field: "slug"
         expect:
@@ -366,7 +366,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           default_validation: "error"
       types:
@@ -444,7 +444,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -519,7 +519,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -580,7 +580,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -639,7 +639,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           id_field: "id"
       types:
@@ -698,7 +698,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---

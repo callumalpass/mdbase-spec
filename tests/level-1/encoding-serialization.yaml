@@ -14,7 +14,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -92,7 +92,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -146,7 +146,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -256,7 +256,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           write_nulls: "explicit"
       types:
@@ -308,7 +308,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           write_nulls: "omit"
       types:
@@ -354,7 +354,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -408,7 +408,7 @@ groups:
       - name: "empty list written as [] when write_empty_lists is true"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
             settings:
               write_empty_lists: true
           types:
@@ -437,7 +437,7 @@ groups:
       - name: "empty list omitted when write_empty_lists is false"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
             settings:
               write_empty_lists: false
           types:
@@ -471,7 +471,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -527,7 +527,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types: {}
 
     tests:
@@ -567,7 +567,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---

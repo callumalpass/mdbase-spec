@@ -8,7 +8,7 @@ groups:
     spec_ref: "§12.8"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -72,7 +72,7 @@ groups:
     spec_ref: "§12.8"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -118,7 +118,7 @@ groups:
     spec_ref: "§12.8"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           write_nulls: "explicit"
       types:
@@ -162,7 +162,7 @@ groups:
     spec_ref: "§12.8"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -199,7 +199,7 @@ groups:
     spec_ref: "§12.8"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           default_validation: "error"
       types:
@@ -242,7 +242,7 @@ groups:
     spec_ref: "§12.8"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
     tests:
       - name: "missing selector fails"
         operation: backfill
@@ -255,7 +255,7 @@ groups:
     spec_ref: "§5.11.1, §12.13"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -315,7 +315,7 @@ groups:
     spec_ref: "§12.13"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           default_validation: "error"
       types:
@@ -371,7 +371,7 @@ groups:
     spec_ref: "§12.13"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -417,7 +417,7 @@ groups:
     spec_ref: "§12.13"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       files:
         _types/_migrations/bad.md: |
           ---
@@ -436,7 +436,7 @@ groups:
     spec_ref: "§5.11.1, §12.13"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           migrations_folder: "_migrations"
       files:

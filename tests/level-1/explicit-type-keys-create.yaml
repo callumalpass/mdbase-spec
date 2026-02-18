@@ -8,7 +8,7 @@ groups:
   - name: "explicit_type_keys empty"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           explicit_type_keys: []
       types:
@@ -38,7 +38,7 @@ groups:
   - name: "explicit_type_keys custom"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
         settings:
           explicit_type_keys: ["kind"]
       types:
@@ -68,7 +68,7 @@ groups:
   - name: "explicit_type_keys default"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---

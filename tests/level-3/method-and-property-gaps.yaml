@@ -16,7 +16,7 @@ groups:
     spec_ref: "§10.5"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         doc.md: |
           ---
@@ -110,7 +110,7 @@ groups:
     spec_ref: "§10.5"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -195,7 +195,7 @@ groups:
     spec_ref: "§11.6, §11.18"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         item.md: |
           ---
@@ -310,7 +310,7 @@ groups:
     spec_ref: "§11.6, §11.18"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         item.md: |
           ---
@@ -374,7 +374,7 @@ groups:
     spec_ref: "§11.5"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         item.md: |
           ---
@@ -447,7 +447,7 @@ groups:
     spec_ref: "§10.5, §11.6"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -537,7 +537,7 @@ groups:
     spec_ref: "§10.5, §11.6, §8.6"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -605,7 +605,7 @@ groups:
     spec_ref: "§11.6"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         item.md: |
           ---
@@ -693,7 +693,7 @@ groups:
     spec_ref: "§10.5, §8.6"
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---

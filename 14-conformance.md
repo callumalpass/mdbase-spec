@@ -108,7 +108,7 @@ Implementations SHOULD clearly state their conformance level:
 ```
 mdbase-tool v1.0.0
 Conformance: Level 4 (Links)
-Specification: 0.2.0
+Specification: 0.2.1
 ```
 
 Implementations MAY implement features from higher levels while claiming a lower level, but SHOULD NOT claim a level without passing all tests for that level.
@@ -129,7 +129,7 @@ spec_ref: "§7.2"
 
 setup:
   config: |
-    spec_version: "0.2.0"
+    spec_version: "0.2.1"
   types:
     task.md: |
       ---

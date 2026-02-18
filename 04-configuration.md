@@ -40,7 +40,7 @@ The file MUST be valid YAML and MUST parse as a mapping at the top level.
 The simplest valid configuration declares only the specification version:
 
 ```yaml
-spec_version: "0.2.0"
+spec_version: "0.2.1"
 ```
 
 This creates a collection with all default settings and no types (all files are untyped).
@@ -56,7 +56,7 @@ This creates a collection with all default settings and no types (all files are 
 
 # Specification version this configuration conforms to
 # Implementations MUST reject versions they do not support
-spec_version: "0.2.0"
+spec_version: "0.2.1"
 
 # =============================================================================
 # OPTIONAL: Collection Metadata
@@ -194,10 +194,10 @@ settings:
 
 The version of this specification the configuration conforms to. Implementations MUST check this value and MUST reject configuration files with versions they do not support.
 
-**Valid values:** `"0.2.0"`
+**Valid values:** `"0.2.1"`
 
-**Compatibility:** Implementations MAY accept `"0.2"` as an alias for `"0.2.0"`, but
-SHOULD emit a warning and normalize to `"0.2.0"` when writing.
+**Compatibility:** Implementations MAY accept `"0.2"` as an alias for `"0.2.1"`, but
+SHOULD emit a warning and normalize to `"0.2.1"` when writing.
 
 #### 4.4.1 Version Compatibility
 
@@ -390,13 +390,13 @@ If validation fails, implementations MUST NOT process the collection and MUST re
 ### Minimal
 
 ```yaml
-spec_version: "0.2.0"
+spec_version: "0.2.1"
 ```
 
 ### Standard Project
 
 ```yaml
-spec_version: "0.2.0"
+spec_version: "0.2.1"
 name: "Project Documentation"
 description: "Specs, decisions, and meeting notes"
 
@@ -411,7 +411,7 @@ settings:
 ### Knowledge Base with Custom Types Folder
 
 ```yaml
-spec_version: "0.2.0"
+spec_version: "0.2.1"
 name: "Personal Knowledge Base"
 
 settings:
@@ -424,7 +424,7 @@ settings:
 ### Strict Validation
 
 ```yaml
-spec_version: "0.2.0"
+spec_version: "0.2.1"
 name: "Production Data"
 
 settings:

@@ -93,7 +93,7 @@ The minimal config just declares the spec version:
 
 ```yaml
 # mdbase.yaml
-spec_version: "0.2.0"
+spec_version: "0.2.1"
 ```
 
 ### Types are defined as markdown files

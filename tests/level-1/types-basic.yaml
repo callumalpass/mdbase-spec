@@ -13,7 +13,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -69,7 +69,7 @@ groups:
       - name: "valid type name with lowercase letters"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             task.md: |
               ---
@@ -88,7 +88,7 @@ groups:
       - name: "valid type name with hyphens and underscores"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             meeting-note.md: |
               ---
@@ -107,7 +107,7 @@ groups:
       - name: "valid type name with numbers"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             task2.md: |
               ---
@@ -126,7 +126,7 @@ groups:
       - name: "type name starting with underscore is rejected (reserved)"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             _internal.md: |
               ---
@@ -146,7 +146,7 @@ groups:
       - name: "type name 'file' is rejected (reserved keyword)"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             file.md: |
               ---
@@ -166,7 +166,7 @@ groups:
       - name: "type name 'formula' is rejected (reserved keyword)"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             formula.md: |
               ---
@@ -186,7 +186,7 @@ groups:
       - name: "type name 'this' is rejected (reserved keyword)"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             this.md: |
               ---
@@ -206,7 +206,7 @@ groups:
       - name: "type name not starting with letter is rejected"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             123task.md: |
               ---
@@ -226,7 +226,7 @@ groups:
       - name: "type name exceeding 64 characters is rejected"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeefffffffff012345.md: |
               ---
@@ -246,7 +246,7 @@ groups:
       - name: "name mismatch with filename emits warning"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             task.md: |
               ---
@@ -266,7 +266,7 @@ groups:
       - name: "path_pattern referencing unknown field emits warning"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             note.md: |
               ---
@@ -287,7 +287,7 @@ groups:
       - name: "missing name field is rejected"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             task.md: |
               ---
@@ -306,7 +306,7 @@ groups:
       - name: "random generation with invalid length is rejected"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             item.md: |
               ---
@@ -328,7 +328,7 @@ groups:
       - name: "sequence generation on non-integer field is rejected"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             item.md: |
               ---
@@ -349,7 +349,7 @@ groups:
       - name: "type name is case-insensitive (canonicalized to lowercase)"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             task.md: |
               ---
@@ -379,7 +379,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         base.md: |
           ---
@@ -466,7 +466,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         base-task.md: |
           ---
@@ -508,7 +508,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         base.md: |
           ---
@@ -583,7 +583,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         root.md: |
           ---
@@ -635,7 +635,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         a-child.md: |
           ---
@@ -678,7 +678,7 @@ groups:
       - name: "circular inheritance is rejected"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             a.md: |
               ---
@@ -707,7 +707,7 @@ groups:
       - name: "self-referential extends is rejected"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             selfref.md: |
               ---
@@ -728,7 +728,7 @@ groups:
       - name: "missing parent type is rejected"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             child.md: |
               ---
@@ -749,7 +749,7 @@ groups:
       - name: "3-node circular inheritance chain is rejected"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             alpha.md: |
               ---
@@ -794,7 +794,7 @@ groups:
       - name: "strict false allows unknown fields"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             task.md: |
               ---
@@ -821,7 +821,7 @@ groups:
       - name: "strict true rejects unknown fields"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             task.md: |
               ---
@@ -850,7 +850,7 @@ groups:
       - name: "strict warn allows unknown fields with warning"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             task.md: |
               ---
@@ -881,7 +881,7 @@ groups:
         spec_ref: "§9.2.4"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             task.md: |
               ---
@@ -907,7 +907,7 @@ groups:
       - name: "strictness inherits from config default_strict"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
             settings:
               default_strict: true
           types:
@@ -937,7 +937,7 @@ groups:
       - name: "type-level strict overrides config default_strict"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
             settings:
               default_strict: true
           types:
@@ -972,7 +972,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -1094,7 +1094,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -1256,7 +1256,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         rating.md: |
           ---
@@ -1357,7 +1357,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         note.md: |
           ---
@@ -1453,7 +1453,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         event.md: |
           ---
@@ -1517,7 +1517,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         event.md: |
           ---
@@ -1592,7 +1592,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         event.md: |
           ---
@@ -1657,7 +1657,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -1745,7 +1745,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -1867,7 +1867,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         article.md: |
           ---
@@ -1944,7 +1944,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         flexible.md: |
           ---
@@ -2051,7 +2051,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -2093,7 +2093,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -2180,7 +2180,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -2258,7 +2258,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -2323,7 +2323,7 @@ groups:
       - name: "custom explicit_type_keys"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
             settings:
               explicit_type_keys: ["kind"]
           types:
@@ -2355,7 +2355,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         empty.md: |
           ---
@@ -2385,7 +2385,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         post.md: |
           ---
@@ -2431,7 +2431,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.2.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---
@@ -2476,7 +2476,7 @@ groups:
       - name: "derived field with missing source field produces null slug"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             post.md: |
               ---
@@ -2504,7 +2504,7 @@ groups:
         spec_ref: "§5.6"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             post.md: |
               ---
@@ -2534,7 +2534,7 @@ groups:
         spec_ref: "§5.6"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             post.md: |
               ---
@@ -2563,7 +2563,7 @@ groups:
         spec_ref: "§5.6"
         setup:
           config: |
-            spec_version: "0.2.0"
+            spec_version: "0.2.1"
           types:
             post.md: |
               ---
