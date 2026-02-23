@@ -23,6 +23,7 @@
     <nav class="landing-nav">
       <a href="#principles" class="hide-mobile">Principles</a>
       <a href="#examples" class="hide-mobile">Examples</a>
+      <a href="#implementors" class="hide-mobile">Implementors</a>
       <a href="ecosystem.html">Ecosystem</a>
       <a href="https://github.com/callumalpass/mdbase-spec" class="hide-mobile">GitHub</a>
       <a href="spec.html" class="nav-cta">Read the spec</a>
@@ -190,6 +191,75 @@ priority ?? <span class="number">3</span></code></pre>
       <div class="level">
         <span class="level-num">6</span>
         <span class="level-name">Full</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Implementor Resources -->
+  <section class="landing-section" id="implementors">
+    <div class="section-label">Implementors</div>
+    <h2 class="section-title">Build a conforming implementation quickly</h2>
+    <p style="color: var(--text-dim); margin-bottom: 1.5rem;">Start with the quickstart and adapter template, then run the reference conformance runner.</p>
+
+    <div class="eco-grid">
+      <div class="eco-card">
+        <span class="eco-lang">Guide</span>
+        <h3 class="eco-name">Implementing.md</h3>
+        <p class="eco-desc">Step-by-step Level 1 on-ramp: required operations, test YAML interpretation, and conformance workflow.</p>
+        <ul class="eco-features">
+          <li>Zero-to-Level-1 path</li>
+          <li>Adapter contract summary</li>
+          <li>Suggested build order</li>
+        </ul>
+        <a href="https://github.com/callumalpass/mdbase-spec/blob/main/IMPLEMENTING.md" class="eco-link">Open guide</a>
+      </div>
+
+      <div class="eco-card">
+        <span class="eco-lang">Runner</span>
+        <h3 class="eco-name">Reference Runner</h3>
+        <p class="eco-desc">Canonical adapter protocol and command usage for `scripts/mdbase-test.py`.</p>
+        <ul class="eco-features">
+          <li>stdin/stdout JSON interface</li>
+          <li>Expectation model</li>
+          <li>Fixture setup behavior</li>
+        </ul>
+        <a href="https://github.com/callumalpass/mdbase-spec/blob/main/REFERENCE-RUNNER.md" class="eco-link">Open runner docs</a>
+      </div>
+
+      <div class="eco-card">
+        <span class="eco-lang">Template</span>
+        <h3 class="eco-name">Adapter Template</h3>
+        <p class="eco-desc">Minimal adapter scaffold to connect your implementation to the conformance suite.</p>
+        <ul class="eco-features">
+          <li>Single-request process model</li>
+          <li>Operation dispatch skeleton</li>
+          <li>Error shape examples</li>
+        </ul>
+        <a href="https://github.com/callumalpass/mdbase-spec/blob/main/examples/adapter-template.py" class="eco-link">Open template</a>
+      </div>
+
+      <div class="eco-card">
+        <span class="eco-lang">Example</span>
+        <h3 class="eco-name">Annotated Collection</h3>
+        <p class="eco-desc">Runnable sample collection with valid and invalid records for manual smoke testing.</p>
+        <ul class="eco-features">
+          <li>Complete folder fixture</li>
+          <li>Type definitions and records</li>
+          <li>Manual check script in README</li>
+        </ul>
+        <a href="https://github.com/callumalpass/mdbase-spec/tree/main/examples/annotated-collection" class="eco-link">Open example</a>
+      </div>
+
+      <div class="eco-card">
+        <span class="eco-lang">Cheat Sheet</span>
+        <h3 class="eco-name">Quick Reference</h3>
+        <p class="eco-desc">Compact card for operations, field types, error codes, operators, and precedence.</p>
+        <ul class="eco-features">
+          <li>High-frequency lookups</li>
+          <li>Error code index</li>
+          <li>Operator precedence</li>
+        </ul>
+        <a href="https://github.com/callumalpass/mdbase-spec/blob/main/QUICK-REFERENCE.md" class="eco-link">Open reference</a>
       </div>
     </div>
   </section>
