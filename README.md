@@ -86,6 +86,16 @@ tests/
 └── level-6/    # caching, watching
 ```
 
+## Implementor resources
+
+| Resource | Purpose |
+|----------|---------|
+| [`IMPLEMENTING.md`](./IMPLEMENTING.md) | Start-from-zero guide to passing Level 1 |
+| [`QUICK-REFERENCE.md`](./QUICK-REFERENCE.md) | One-page operations/types/errors/operators cheat sheet |
+| [`REFERENCE-RUNNER.md`](./REFERENCE-RUNNER.md) | Adapter protocol + usage for `scripts/mdbase-test.py` |
+| [`examples/adapter-template.py`](./examples/adapter-template.py) | Minimal adapter shim template for the reference runner |
+| [`examples/annotated-collection/`](./examples/annotated-collection/) | Runnable example collection for manual verification |
+
 ## Implementations
 
 | Project | Language | Status |

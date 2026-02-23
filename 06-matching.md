@@ -292,6 +292,19 @@ When two types define the same field differently:
 
 When field types are incompatible, implementations MUST report a `type_conflict` error. The file cannot satisfy both schemas simultaneously.
 
+<details>
+<summary>Implementation Notes (Non-Normative)</summary>
+
+Suggested merge strategy for multi-type validation:
+
+1. Collect matched types first; do not attempt eager conflict resolution during type load.
+2. Build a merged constraint map per field at validation time.
+3. For each overlapping field, merge constraints by intersection rules in this section.
+4. Fail early with `type_conflict` for base-type mismatch, empty enum intersection, or `min > max`.
+5. Keep per-source metadata (`type`, `field`) so diagnostics can point to both conflicting definitions.
+
+</details>
+
 ### Querying
 
 A multi-type file appears in queries for ANY of its matched types:

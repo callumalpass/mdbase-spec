@@ -1,0 +1,13 @@
+spec_version: "0.2.1"
+name: "Annotated Example Collection"
+description: "Minimal runnable collection for implementor manual checks"
+settings:
+  types_folder: "_types"
+  explicit_type_keys: ["type", "types"]
+  default_validation: "error"
+  default_strict: false
+  id_field: "id"
+  write_nulls: "omit"
+  write_defaults: true
+  write_empty_lists: true
+  include_subfolders: true

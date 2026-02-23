@@ -173,6 +173,19 @@ This distinction matters for:
 
 Implementations MUST preserve these distinctions in validation and query evaluation.
 
+<details>
+<summary>Implementation Notes (Non-Normative)</summary>
+
+Practical approach to avoid null-semantics bugs:
+
+1. Preserve raw parsed keys and values exactly after YAML parse.
+2. Represent missing keys and present-null keys distinctly in memory.
+3. Run `exists()` and `file.hasProperty()` checks against raw persisted keys.
+4. Build effective frontmatter in a separate projection layer where defaults are applied only to missing keys.
+5. Run required checks after effective-frontmatter construction, but still treat explicit null as failing required.
+
+</details>
+
 ---
 
 ## 3.4 Writing Frontmatter

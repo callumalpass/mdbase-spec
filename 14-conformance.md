@@ -256,6 +256,16 @@ Test suites SHOULD include a guardrail that validates each test file’s declare
 | `line_endings` | string | Line ending style: `"LF"` or `"CRLF"` |
 | nested collections | — | A `setup.files` entry like `sub-project/mdbase.yaml` creates a nested collection marker that the implementation must detect and exclude |
 
+### Implementor On-Ramp (Non-Normative)
+
+For practical implementation guidance and runnable fixtures, see:
+
+- [`IMPLEMENTING.md`](./IMPLEMENTING.md) for a Level 1 quickstart
+- [`REFERENCE-RUNNER.md`](./REFERENCE-RUNNER.md) for adapter protocol details
+- [`examples/adapter-template.py`](./examples/adapter-template.py) for a minimal adapter scaffold
+- [`QUICK-REFERENCE.md`](./QUICK-REFERENCE.md) for a compact behavior card
+- [`examples/annotated-collection/`](./examples/annotated-collection/) for a manual test collection
+
 ---
 
 ## 14.4 Required Test Coverage
@@ -283,16 +293,13 @@ Test suite can be run against any implementation:
 
 ```bash
 # Run all tests
-mdbase-test run --impl ./my-impl
+python scripts/mdbase-test.py run --impl ./my-impl
 
 # Run specific level
-mdbase-test run --impl ./my-impl --level 3
+python scripts/mdbase-test.py run --impl ./my-impl --level 3
 
 # Run specific category
-mdbase-test run --impl ./my-impl --category validation
-
-# Generate conformance report
-mdbase-test report --impl ./my-impl --output report.html
+python scripts/mdbase-test.py run --impl ./my-impl --category validation
 ```
 
 ---

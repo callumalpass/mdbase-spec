@@ -152,6 +152,17 @@ this.author         // Current file's author field
 | `\|\|` | Logical OR | `a \|\| b` |
 | `!` | Logical NOT | `!done` |
 
+<details>
+<summary>Implementation Notes (Non-Normative)</summary>
+
+For predictable behavior across implementations, evaluate boolean expressions left-to-right with short-circuiting:
+
+1. `a && b`: if `a` is falsy, do not evaluate `b`.
+2. `a || b`: if `a` is truthy, do not evaluate `b`.
+3. Keep method/function evaluation side-effect free so short-circuiting only affects performance and null-safety, not state.
+
+</details>
+
 ### Null Coalescing
 
 ```javascript
@@ -610,6 +621,26 @@ Expression evaluation errors MUST be handled gracefully and MUST NOT abort the o
 Implementations SHOULD log evaluation errors and continue processing where possible.
 
 > **Note:** These error-handling rules apply to **all** expression evaluation contexts, including `where` filters in queries and match rules. A type mismatch such as `"hello" + 5` returns `null` and emits `type_error` as a diagnostic — it does **not** abort the query. The file is simply excluded from results because the `where` expression evaluated to a non-truthy value. Only structural errors (`invalid_expression`, `unknown_function`, `wrong_argument_count`) abort the query, because they indicate a malformed query rather than a data-dependent evaluation issue.
+
+<details>
+<summary>Implementation Notes (Non-Normative)</summary>
+
+A robust evaluator typically separates:
+
+1. Parse-time structural errors (abort evaluation/query):
+   - `invalid_expression`
+   - `unknown_function`
+   - `wrong_argument_count`
+2. Runtime data-dependent errors (return `null`, continue):
+   - null property access
+   - method call on null
+   - type mismatch
+   - invalid regex
+   - division by zero
+
+This split keeps query behavior deterministic while preserving per-record fault tolerance.
+
+</details>
 
 ### 11.18.1 General Expression Nesting Limit
 
