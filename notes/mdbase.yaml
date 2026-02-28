@@ -1,0 +1,8 @@
+spec_version: "0.2.1"
+name: "Spec Notes"
+description: "Clarification notes, ambiguities, and editorial observations filed during spec development"
+
+settings:
+  default_validation: "warn"
+  default_strict: true
+  id_field: "id"
