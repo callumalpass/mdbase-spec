@@ -3,77 +3,90 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Specification — mdbase</title>
+  <title>Specification - mdbase</title>
   <meta name="description" content="The full mdbase specification for typed markdown collections.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9670;</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Header -->
   <header class="spec-header">
-    <div style="display:flex;align-items:center;gap:1rem;">
-      <button class="sidebar-toggle" aria-label="Toggle navigation" id="sidebar-toggle">
-        &#9776; Sections
+    <div class="spec-brand">
+      <button class="sidebar-toggle" aria-label="Open section navigation" aria-controls="spec-sidebar" aria-expanded="false" id="sidebar-toggle" type="button">
+        Sections
       </button>
       <a href="/" class="landing-logo">
         <span class="dot"></span>
         mdbase
       </a>
-      <span style="font-family:var(--mono);font-size:0.72rem;color:var(--text-muted);letter-spacing:0.05em;">SPECIFICATION v0.2.1</span>
+      <span class="spec-version">Specification v0.2.1</span>
     </div>
-    <nav class="landing-nav">
+    <nav class="landing-nav" aria-label="Spec links">
       <a href="/">Home</a>
       <a href="ecosystem.html">Ecosystem</a>
       <a href="https://github.com/callumalpass/mdbase-spec">GitHub</a>
     </nav>
   </header>
 
-  <div class="spec-layout">
+  <button class="sidebar-scrim" id="sidebar-scrim" type="button" aria-label="Close section navigation" hidden></button>
 
-    <!-- Sidebar Navigation -->
-    <nav class="spec-sidebar" id="spec-sidebar">
+  <div class="spec-layout">
+    <nav class="spec-sidebar" id="spec-sidebar" aria-label="Specification sections">
       <div class="sidebar-group">
         <div class="sidebar-group-label">Specification</div>
         {{SIDEBAR_LINKS}}
       </div>
+      <div class="spec-mobile-links" aria-label="Site links">
+        <a href="/">Home</a>
+        <a href="ecosystem.html">Ecosystem</a>
+        <a href="https://github.com/callumalpass/mdbase-spec">GitHub</a>
+      </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="spec-content">
       {{SPEC_CONTENT}}
     </main>
-
   </div>
 
   <script>
-    // Sidebar toggle (mobile)
     const toggle = document.getElementById('sidebar-toggle');
     const sidebar = document.getElementById('spec-sidebar');
+    const scrim = document.getElementById('sidebar-scrim');
+
+    function setSidebarOpen(open) {
+      sidebar.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Close section navigation' : 'Open section navigation');
+      scrim.hidden = !open;
+    }
+
     toggle.addEventListener('click', () => {
-      sidebar.classList.toggle('open');
+      setSidebarOpen(!sidebar.classList.contains('open'));
     });
 
-    // Close sidebar on link click (mobile)
-    sidebar.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
-        sidebar.classList.remove('open');
-      });
+    scrim.addEventListener('click', () => setSidebarOpen(false));
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        setSidebarOpen(false);
+      }
     });
 
-    // Active section tracking via Intersection Observer
+    sidebar.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => setSidebarOpen(false));
+    });
+
     const sections = document.querySelectorAll('.spec-section');
     const sidebarLinks = document.querySelectorAll('.sidebar-link');
 
     const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
+      entries.forEach((entry) => {
         if (entry.isIntersecting) {
           const id = entry.target.id;
-          sidebarLinks.forEach(link => {
+          sidebarLinks.forEach((link) => {
             link.classList.toggle('active', link.getAttribute('href') === '#' + id);
           });
 
-          // Scroll active link into view in sidebar
           const activeLink = sidebar.querySelector('.sidebar-link.active');
           if (activeLink) {
             activeLink.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -85,7 +98,7 @@
       threshold: 0
     });
 
-    sections.forEach(section => observer.observe(section));
+    sections.forEach((section) => observer.observe(section));
   </script>
 
 </body>

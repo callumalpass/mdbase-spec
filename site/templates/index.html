@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>mdbase — Typed Markdown Collections</title>
+  <title>mdbase - Typed Markdown Collections</title>
   <meta name="description" content="A specification for treating folders of markdown files as typed, queryable data collections.">
-  <meta property="og:title" content="mdbase — Typed Markdown Collections">
+  <meta property="og:title" content="mdbase - Typed Markdown Collections">
   <meta property="og:description" content="A specification for treating folders of markdown files as typed, queryable data collections.">
   <meta property="og:url" content="https://mdbase.dev">
   <meta property="og:type" content="website">
@@ -14,13 +14,12 @@
 </head>
 <body>
 
-  <!-- Header -->
   <header class="landing-header">
     <a href="/" class="landing-logo">
       <span class="dot"></span>
       mdbase
     </a>
-    <nav class="landing-nav">
+    <nav class="landing-nav" aria-label="Primary">
       <a href="#principles" class="hide-mobile">Principles</a>
       <a href="#examples" class="hide-mobile">Examples</a>
       <a href="#implementors" class="hide-mobile">Implementors</a>
@@ -30,89 +29,164 @@
     </nav>
   </header>
 
-  <!-- Hero -->
-  <section class="hero">
-    <div class="hero-version">
-      <span class="tag">v0.2.1</span>
-      Specification
-    </div>
-    <h1>Typed Markdown<br><span class="accent">Collections</span></h1>
-    <p class="hero-sub">
-      A specification for treating folders of markdown files as typed, queryable
-      data collections. Schemas, queries, and expressions are all defined in
-      plain text.
-    </p>
-    <div class="hero-actions">
-      <a href="spec.html" class="btn btn-primary">Read the specification</a>
-      <a href="https://github.com/callumalpass/mdbase-spec" class="btn btn-ghost">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        GitHub
-      </a>
-    </div>
-  </section>
-
-  <!-- Principles -->
-  <section class="landing-section" id="principles">
-    <div class="section-label">Design Principles</div>
-    <h2 class="section-title">Design principles</h2>
-
-    <div class="principles">
-      <div class="principle">
-        <div class="principle-num">01</div>
-        <h3>Files are the source of truth</h3>
-        <p>Tools read from and write to the filesystem. Indexes and caches are derived and disposable.</p>
-      </div>
-      <div class="principle">
-        <div class="principle-num">02</div>
-        <h3>Human-readable first</h3>
-        <p>No proprietary formats. A user with a text editor can read and modify any file.</p>
-      </div>
-      <div class="principle">
-        <div class="principle-num">03</div>
-        <h3>Progressive strictness</h3>
-        <p>Works with no schema at all. Validation is opt-in and configurable.</p>
-      </div>
-      <div class="principle">
-        <div class="principle-num">04</div>
-        <h3>Portable</h3>
-        <p>Collections work with any conforming tool. No vendor lock-in.</p>
-      </div>
-      <div class="principle">
-        <div class="principle-num">05</div>
-        <h3>Git-friendly</h3>
-        <p>All persistent state is text files suitable for version control.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Examples -->
-  <section class="landing-section" id="examples">
-    <div class="section-label">How it works</div>
-    <h2 class="section-title">Schemas, queries, and expressions in plain text</h2>
-
-    <div class="examples-container">
-      <div class="example-tabs" role="tablist">
-        <button class="example-tab active" role="tab" data-panel="ex-structure">Structure</button>
-        <button class="example-tab" role="tab" data-panel="ex-type">Type definition</button>
-        <button class="example-tab" role="tab" data-panel="ex-query">Query</button>
-        <button class="example-tab" role="tab" data-panel="ex-expressions">Expressions</button>
+  <main>
+    <section class="hero">
+      <div class="hero-scene" aria-hidden="true">
+        <div class="scene-card scene-folder">
+          <code><strong>collection/</strong>
+|-- mdbase.yaml
+|-- _types/
+|   |-- task.md
+|   `-- person.md
+`-- tasks/
+    `-- fix-bug.md</code>
+        </div>
+        <div class="scene-card scene-type">
+          <code><strong>_types/task.md</strong>
+---
+name: task
+fields:
+  status:
+    type: enum
+    values: [open, done]
+  assignee:
+    type: link
+    target: person
+---</code>
+        </div>
+        <div class="scene-card scene-query">
+          <code><strong>query</strong>
+types: [task]
+where:
+  - 'status != "done"'
+order_by:
+  - priority desc</code>
+        </div>
       </div>
 
-      <div id="ex-structure" class="example-panel active">
-        <pre data-lang="folder"><code>my-project/
-├── mdbase.yaml            <span class="comment"># marks this folder as a collection</span>
-├── _types/                <span class="comment"># type definitions (schemas)</span>
-│   ├── task.md
-│   └── person.md
-├── tasks/
-│   ├── fix-bug.md         <span class="comment"># a record of type "task"</span>
-│   └── write-docs.md
-└── people/
-    └── alice.md           <span class="comment"># a record of type "person"</span></code></pre>
+      <div class="hero-inner">
+        <div class="hero-version">
+          <span class="tag">v0.2.1</span>
+          Specification
+        </div>
+        <h1>Typed Markdown <span class="accent">Collections</span></h1>
+        <p class="hero-sub">
+          mdbase turns a folder of Markdown files into a typed, queryable collection:
+          schemas live beside records, validation is portable, and every conforming
+          tool reads the same plain-text contract.
+        </p>
+        <ul class="hero-proof" aria-label="Specification coverage">
+          <li>schema files</li>
+          <li>frontmatter validation</li>
+          <li>queries and links</li>
+          <li>conformance tests</li>
+        </ul>
+        <div class="hero-actions">
+          <a href="spec.html" class="btn btn-primary">Read the specification</a>
+          <a href="https://github.com/callumalpass/mdbase-spec" class="btn btn-ghost">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+          </a>
+        </div>
       </div>
+    </section>
 
-      <div id="ex-type" class="example-panel">
-        <pre data-lang="yaml"><code><span class="comment">---</span>
+    <section class="landing-section" id="quick-model">
+      <div class="section-kicker">Mental model</div>
+      <h2 class="section-title">One folder, one contract, many tools</h2>
+      <p class="section-intro">
+        A collection is just files. mdbase specifies the rules that let CLIs,
+        editors, agents, and apps agree on types, validation, queries, links,
+        references, caching, and watching.
+      </p>
+
+      <div class="proof-flow">
+        <div class="proof-step">
+          <code>_types/task.md</code>
+          <h3>Define the shape</h3>
+          <p>Type files document fields, inheritance, generated values, matching rules, and strictness.</p>
+        </div>
+        <div class="proof-step">
+          <code>tasks/fix-bug.md</code>
+          <h3>Validate records</h3>
+          <p>Markdown records stay human-readable while tools enforce the effective schema.</p>
+        </div>
+        <div class="proof-step">
+          <code>query.where</code>
+          <h3>Ask structured questions</h3>
+          <p>Expressions, ordering, body search, and link traversal work across conforming implementations.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-section" id="principles">
+      <div class="section-kicker">Principles</div>
+      <h2 class="section-title">Designed for plain-text systems</h2>
+      <p class="section-intro">
+        mdbase is strict where tools need agreement and humble where files need
+        to remain ordinary Markdown.
+      </p>
+
+      <div class="principles">
+        <div class="principle">
+          <div class="principle-num">01</div>
+          <h3>Files are the source of truth</h3>
+          <p>Tools read from and write to the filesystem. Indexes and caches are derived and disposable.</p>
+        </div>
+        <div class="principle">
+          <div class="principle-num">02</div>
+          <h3>Human-readable first</h3>
+          <p>No proprietary formats. A user with a text editor can read and modify any persistent file.</p>
+        </div>
+        <div class="principle">
+          <div class="principle-num">03</div>
+          <h3>Progressive strictness</h3>
+          <p>Collections can start untyped, then opt into validation, matching, links, caching, and watch mode.</p>
+        </div>
+        <div class="principle">
+          <div class="principle-num">04</div>
+          <h3>Portable by default</h3>
+          <p>Collections work with any conforming tool. Templates, plugins, and agents share one contract.</p>
+        </div>
+        <div class="principle">
+          <div class="principle-num">05</div>
+          <h3>Git-friendly</h3>
+          <p>Every durable change is text, reviewable in a diff and versioned with the rest of the collection.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-section" id="examples">
+      <div class="section-kicker">How it works</div>
+      <h2 class="section-title">Schemas, queries, and expressions in plain text</h2>
+      <p class="section-intro">
+        The same primitives appear in the spec, the reference tests, and real
+        implementations.
+      </p>
+
+      <div class="examples-container">
+        <div class="example-tabs" role="tablist" aria-label="Code examples">
+          <button class="example-tab" id="tab-structure" role="tab" type="button" aria-selected="true" aria-controls="ex-structure" data-panel="ex-structure">Structure</button>
+          <button class="example-tab" id="tab-type" role="tab" type="button" aria-selected="false" aria-controls="ex-type" tabindex="-1" data-panel="ex-type">Type definition</button>
+          <button class="example-tab" id="tab-query" role="tab" type="button" aria-selected="false" aria-controls="ex-query" tabindex="-1" data-panel="ex-query">Query</button>
+          <button class="example-tab" id="tab-expressions" role="tab" type="button" aria-selected="false" aria-controls="ex-expressions" tabindex="-1" data-panel="ex-expressions">Expressions</button>
+        </div>
+
+        <div id="ex-structure" class="example-panel" role="tabpanel" aria-labelledby="tab-structure">
+          <pre data-lang="folder"><code>my-project/
+|-- mdbase.yaml            <span class="comment"># marks this folder as a collection</span>
+|-- _types/                <span class="comment"># type definitions (schemas)</span>
+|   |-- task.md
+|   `-- person.md
+|-- tasks/
+|   |-- fix-bug.md         <span class="comment"># a record of type "task"</span>
+|   `-- write-docs.md
+`-- people/
+    `-- alice.md           <span class="comment"># a record of type "person"</span></code></pre>
+        </div>
+
+        <div id="ex-type" class="example-panel" role="tabpanel" aria-labelledby="tab-type" hidden>
+          <pre data-lang="yaml"><code><span class="comment">---</span>
 <span class="key">name</span>: task
 <span class="key">fields</span>:
   <span class="key">title</span>:
@@ -130,10 +204,10 @@
     <span class="key">type</span>: <span class="string">link</span>
     <span class="key">target</span>: <span class="string">person</span>
 <span class="comment">---</span></code></pre>
-      </div>
+        </div>
 
-      <div id="ex-query" class="example-panel">
-        <pre data-lang="yaml"><code><span class="key">query</span>:
+        <div id="ex-query" class="example-panel" role="tabpanel" aria-labelledby="tab-query" hidden>
+          <pre data-lang="yaml"><code><span class="key">query</span>:
   <span class="key">types</span>: [<span class="string">task</span>]
   <span class="key">where</span>:
     <span class="key">and</span>:
@@ -143,10 +217,10 @@
     - <span class="key">field</span>: <span class="string">due_date</span>
       <span class="key">direction</span>: <span class="string">asc</span>
   <span class="key">limit</span>: <span class="number">20</span></code></pre>
-      </div>
+        </div>
 
-      <div id="ex-expressions" class="example-panel">
-        <pre data-lang="expression"><code><span class="comment"># Filter by status and tags</span>
+        <div id="ex-expressions" class="example-panel" role="tabpanel" aria-labelledby="tab-expressions" hidden>
+          <pre data-lang="expression"><code><span class="comment"># Filter by status and tags</span>
 status == <span class="string">"open"</span> && tags.contains(<span class="string">"urgent"</span>)
 
 <span class="comment"># Date arithmetic</span>
@@ -157,156 +231,165 @@ assignee.asFile().team == <span class="string">"engineering"</span>
 
 <span class="comment"># Null coalescing</span>
 priority ?? <span class="number">3</span></code></pre>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Conformance -->
-  <section class="landing-section" id="conformance">
-    <div class="section-label">Conformance</div>
-    <h2 class="section-title">Six conformance levels</h2>
-    <p style="color: var(--text-dim); margin-bottom: 1.5rem;">Implementations claim conformance at the level they support. Each level builds on the last.</p>
+    <section class="landing-section" id="conformance">
+      <div class="section-kicker">Conformance</div>
+      <h2 class="section-title">Six levels, from core CRUD to full watch mode</h2>
+      <p class="section-intro">Implementations claim conformance at the level they support. Each level includes every level before it.</p>
 
-    <div class="levels">
-      <div class="level">
-        <span class="level-num">1</span>
-        <span class="level-name">Core</span>
+      <div class="levels" aria-label="Conformance levels">
+        <div class="level"><span class="level-num">1</span><span class="level-name">Core</span></div>
+        <div class="level"><span class="level-num">2</span><span class="level-name">Matching</span></div>
+        <div class="level"><span class="level-num">3</span><span class="level-name">Querying</span></div>
+        <div class="level"><span class="level-num">4</span><span class="level-name">Links</span></div>
+        <div class="level"><span class="level-num">5</span><span class="level-name">References</span></div>
+        <div class="level"><span class="level-num">6</span><span class="level-name">Full</span></div>
       </div>
-      <div class="level">
-        <span class="level-num">2</span>
-        <span class="level-name">Matching</span>
-      </div>
-      <div class="level">
-        <span class="level-num">3</span>
-        <span class="level-name">Querying</span>
-      </div>
-      <div class="level">
-        <span class="level-num">4</span>
-        <span class="level-name">Links</span>
-      </div>
-      <div class="level">
-        <span class="level-num">5</span>
-        <span class="level-name">References</span>
-      </div>
-      <div class="level">
-        <span class="level-num">6</span>
-        <span class="level-name">Full</span>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Implementor Resources -->
-  <section class="landing-section" id="implementors">
-    <div class="section-label">Implementors</div>
-    <h2 class="section-title">Build a conforming implementation quickly</h2>
-    <p style="color: var(--text-dim); margin-bottom: 1.5rem;">Start with the quickstart and adapter template, then run the reference conformance runner.</p>
+    <section class="landing-section" id="implementors">
+      <div class="section-kicker">Implementors</div>
+      <h2 class="section-title">Build a conforming implementation quickly</h2>
+      <p class="section-intro">Start with the quickstart and adapter template, then run the shared conformance runner.</p>
 
-    <div class="eco-grid">
-      <div class="eco-card">
-        <span class="eco-lang">Guide</span>
-        <h3 class="eco-name">Implementing.md</h3>
-        <p class="eco-desc">Step-by-step Level 1 on-ramp: required operations, test YAML interpretation, and conformance workflow.</p>
-        <ul class="eco-features">
-          <li>Zero-to-Level-1 path</li>
-          <li>Adapter contract summary</li>
-          <li>Suggested build order</li>
-        </ul>
-        <a href="https://github.com/callumalpass/mdbase-spec/blob/main/IMPLEMENTING.md" class="eco-link">Open guide</a>
+      <div class="eco-grid">
+        <div class="eco-card">
+          <span class="eco-lang">Guide</span>
+          <h3 class="eco-name">Implementing.md</h3>
+          <p class="eco-desc">Step-by-step Level 1 on-ramp: required operations, test YAML interpretation, and conformance workflow.</p>
+          <ul class="eco-features">
+            <li>Zero-to-Level-1 path</li>
+            <li>Adapter contract summary</li>
+            <li>Suggested build order</li>
+          </ul>
+          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/IMPLEMENTING.md" class="eco-link">Open guide</a>
+        </div>
+
+        <div class="eco-card">
+          <span class="eco-lang">Runner</span>
+          <h3 class="eco-name">Reference Runner</h3>
+          <p class="eco-desc">Canonical adapter protocol and command usage for `scripts/mdbase-test.py`.</p>
+          <ul class="eco-features">
+            <li>stdin/stdout JSON interface</li>
+            <li>Expectation model</li>
+            <li>Fixture setup behavior</li>
+          </ul>
+          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/REFERENCE-RUNNER.md" class="eco-link">Open runner docs</a>
+        </div>
+
+        <div class="eco-card">
+          <span class="eco-lang">Template</span>
+          <h3 class="eco-name">Adapter Template</h3>
+          <p class="eco-desc">Minimal adapter scaffold to connect your implementation to the conformance suite.</p>
+          <ul class="eco-features">
+            <li>Single-request process model</li>
+            <li>Operation dispatch skeleton</li>
+            <li>Error shape examples</li>
+          </ul>
+          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/examples/adapter-template.py" class="eco-link">Open template</a>
+        </div>
+
+        <div class="eco-card">
+          <span class="eco-lang">Example</span>
+          <h3 class="eco-name">Annotated Collection</h3>
+          <p class="eco-desc">Runnable sample collection with valid and invalid records for manual smoke testing.</p>
+          <ul class="eco-features">
+            <li>Complete folder fixture</li>
+            <li>Type definitions and records</li>
+            <li>Manual check script in README</li>
+          </ul>
+          <a href="https://github.com/callumalpass/mdbase-spec/tree/main/examples/annotated-collection" class="eco-link">Open example</a>
+        </div>
+
+        <div class="eco-card">
+          <span class="eco-lang">Cheat Sheet</span>
+          <h3 class="eco-name">Quick Reference</h3>
+          <p class="eco-desc">Compact reference for operations, field types, error codes, operators, and precedence.</p>
+          <ul class="eco-features">
+            <li>High-frequency lookups</li>
+            <li>Error code index</li>
+            <li>Operator precedence</li>
+          </ul>
+          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/QUICK-REFERENCE.md" class="eco-link">Open reference</a>
+        </div>
       </div>
+    </section>
 
-      <div class="eco-card">
-        <span class="eco-lang">Runner</span>
-        <h3 class="eco-name">Reference Runner</h3>
-        <p class="eco-desc">Canonical adapter protocol and command usage for `scripts/mdbase-test.py`.</p>
-        <ul class="eco-features">
-          <li>stdin/stdout JSON interface</li>
-          <li>Expectation model</li>
-          <li>Fixture setup behavior</li>
-        </ul>
-        <a href="https://github.com/callumalpass/mdbase-spec/blob/main/REFERENCE-RUNNER.md" class="eco-link">Open runner docs</a>
+    <section class="landing-section" id="spec-sections">
+      <div class="section-kicker">Specification</div>
+      <h2 class="section-title">Read the full spec</h2>
+      <p class="section-intro">Jump into a section or open the full reader with the sidebar navigation.</p>
+
+      <div class="spec-toc">
+        <a class="toc-item" href="spec.html#section-00"><span class="toc-num">00</span> Overview</a>
+        <a class="toc-item" href="spec.html#section-01"><span class="toc-num">01</span> Terminology</a>
+        <a class="toc-item" href="spec.html#section-02"><span class="toc-num">02</span> Collection Layout</a>
+        <a class="toc-item" href="spec.html#section-03"><span class="toc-num">03</span> Frontmatter</a>
+        <a class="toc-item" href="spec.html#section-04"><span class="toc-num">04</span> Configuration</a>
+        <a class="toc-item" href="spec.html#section-05"><span class="toc-num">05</span> Types</a>
+        <a class="toc-item" href="spec.html#section-06"><span class="toc-num">06</span> Matching</a>
+        <a class="toc-item" href="spec.html#section-07"><span class="toc-num">07</span> Field Types</a>
+        <a class="toc-item" href="spec.html#section-08"><span class="toc-num">08</span> Links</a>
+        <a class="toc-item" href="spec.html#section-09"><span class="toc-num">09</span> Validation</a>
+        <a class="toc-item" href="spec.html#section-10"><span class="toc-num">10</span> Querying</a>
+        <a class="toc-item" href="spec.html#section-11"><span class="toc-num">11</span> Expressions</a>
+        <a class="toc-item" href="spec.html#section-12"><span class="toc-num">12</span> Operations</a>
+        <a class="toc-item" href="spec.html#section-13"><span class="toc-num">13</span> Caching</a>
+        <a class="toc-item" href="spec.html#section-14"><span class="toc-num">14</span> Conformance</a>
+        <a class="toc-item" href="spec.html#section-15"><span class="toc-num">15</span> Watching</a>
+        <a class="toc-item" href="spec.html#appendix-a"><span class="toc-num">A</span> Examples</a>
+        <a class="toc-item" href="spec.html#appendix-b"><span class="toc-num">B</span> Expression Grammar</a>
+        <a class="toc-item" href="spec.html#appendix-c"><span class="toc-num">C</span> Error Codes</a>
+        <a class="toc-item" href="spec.html#appendix-d"><span class="toc-num">D</span> Compatibility</a>
       </div>
+    </section>
+  </main>
 
-      <div class="eco-card">
-        <span class="eco-lang">Template</span>
-        <h3 class="eco-name">Adapter Template</h3>
-        <p class="eco-desc">Minimal adapter scaffold to connect your implementation to the conformance suite.</p>
-        <ul class="eco-features">
-          <li>Single-request process model</li>
-          <li>Operation dispatch skeleton</li>
-          <li>Error shape examples</li>
-        </ul>
-        <a href="https://github.com/callumalpass/mdbase-spec/blob/main/examples/adapter-template.py" class="eco-link">Open template</a>
-      </div>
-
-      <div class="eco-card">
-        <span class="eco-lang">Example</span>
-        <h3 class="eco-name">Annotated Collection</h3>
-        <p class="eco-desc">Runnable sample collection with valid and invalid records for manual smoke testing.</p>
-        <ul class="eco-features">
-          <li>Complete folder fixture</li>
-          <li>Type definitions and records</li>
-          <li>Manual check script in README</li>
-        </ul>
-        <a href="https://github.com/callumalpass/mdbase-spec/tree/main/examples/annotated-collection" class="eco-link">Open example</a>
-      </div>
-
-      <div class="eco-card">
-        <span class="eco-lang">Cheat Sheet</span>
-        <h3 class="eco-name">Quick Reference</h3>
-        <p class="eco-desc">Compact card for operations, field types, error codes, operators, and precedence.</p>
-        <ul class="eco-features">
-          <li>High-frequency lookups</li>
-          <li>Error code index</li>
-          <li>Operator precedence</li>
-        </ul>
-        <a href="https://github.com/callumalpass/mdbase-spec/blob/main/QUICK-REFERENCE.md" class="eco-link">Open reference</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Spec Sections -->
-  <section class="landing-section" id="spec-sections">
-    <div class="section-label">Specification</div>
-    <h2 class="section-title">Read the full spec</h2>
-
-    <div class="spec-toc">
-      <a class="toc-item" href="spec.html#section-00"><span class="toc-num">00</span> Overview</a>
-      <a class="toc-item" href="spec.html#section-01"><span class="toc-num">01</span> Terminology</a>
-      <a class="toc-item" href="spec.html#section-02"><span class="toc-num">02</span> Collection Layout</a>
-      <a class="toc-item" href="spec.html#section-03"><span class="toc-num">03</span> Frontmatter</a>
-      <a class="toc-item" href="spec.html#section-04"><span class="toc-num">04</span> Configuration</a>
-      <a class="toc-item" href="spec.html#section-05"><span class="toc-num">05</span> Types</a>
-      <a class="toc-item" href="spec.html#section-06"><span class="toc-num">06</span> Matching</a>
-      <a class="toc-item" href="spec.html#section-07"><span class="toc-num">07</span> Field Types</a>
-      <a class="toc-item" href="spec.html#section-08"><span class="toc-num">08</span> Links</a>
-      <a class="toc-item" href="spec.html#section-09"><span class="toc-num">09</span> Validation</a>
-      <a class="toc-item" href="spec.html#section-10"><span class="toc-num">10</span> Querying</a>
-      <a class="toc-item" href="spec.html#section-11"><span class="toc-num">11</span> Expressions</a>
-      <a class="toc-item" href="spec.html#section-12"><span class="toc-num">12</span> Operations</a>
-      <a class="toc-item" href="spec.html#section-13"><span class="toc-num">13</span> Caching</a>
-      <a class="toc-item" href="spec.html#section-14"><span class="toc-num">14</span> Conformance</a>
-      <a class="toc-item" href="spec.html#section-15"><span class="toc-num">15</span> Watching</a>
-      <a class="toc-item" href="spec.html#appendix-a"><span class="toc-num">A</span> Examples</a>
-      <a class="toc-item" href="spec.html#appendix-b"><span class="toc-num">B</span> Expression Grammar</a>
-      <a class="toc-item" href="spec.html#appendix-c"><span class="toc-num">C</span> Error Codes</a>
-      <a class="toc-item" href="spec.html#appendix-d"><span class="toc-num">D</span> Compatibility</a>
-    </div>
-  </section>
-
-  <!-- Footer -->
   <footer class="landing-footer">
     <p>mdbase specification v0.2.1 &middot; <a href="https://opensource.org/licenses/MIT">MIT License</a> &middot; <a href="https://github.com/callumalpass/mdbase-spec">Source on GitHub</a></p>
   </footer>
 
   <script>
-    // Tab switching
-    document.querySelectorAll('.example-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        const panelId = tab.dataset.panel;
-        tab.closest('.examples-container').querySelectorAll('.example-tab').forEach(t => t.classList.remove('active'));
-        tab.closest('.examples-container').querySelectorAll('.example-panel').forEach(p => p.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById(panelId).classList.add('active');
+    const tablists = document.querySelectorAll('[role="tablist"]');
+
+    tablists.forEach((tablist) => {
+      const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+
+      function activateTab(tab, focusTab = true) {
+        tabs.forEach((candidate) => {
+          const selected = candidate === tab;
+          const panel = document.getElementById(candidate.getAttribute('aria-controls'));
+          candidate.setAttribute('aria-selected', String(selected));
+          candidate.tabIndex = selected ? 0 : -1;
+          if (panel) {
+            panel.hidden = !selected;
+          }
+        });
+
+        if (focusTab) {
+          tab.focus();
+        }
+      }
+
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => activateTab(tab, false));
+        tab.addEventListener('keydown', (event) => {
+          const lastIndex = tabs.length - 1;
+          let nextIndex = index;
+
+          if (event.key === 'ArrowRight') nextIndex = index === lastIndex ? 0 : index + 1;
+          if (event.key === 'ArrowLeft') nextIndex = index === 0 ? lastIndex : index - 1;
+          if (event.key === 'Home') nextIndex = 0;
+          if (event.key === 'End') nextIndex = lastIndex;
+
+          if (nextIndex !== index) {
+            event.preventDefault();
+            activateTab(tabs[nextIndex]);
+          }
+        });
       });
     });
   </script>
