@@ -417,8 +417,22 @@ tr:hover td {
   transform: rotate(var(--tilt, 0deg));
 }
 
+.scene-card pre {
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.scene-card pre::before {
+  content: none;
+}
+
 .scene-card code {
   display: block;
+  min-width: 0;
   padding: 0;
   border: 0;
   background: transparent;
@@ -486,7 +500,7 @@ tr:hover td {
 }
 
 .hero-sub {
-  max-width: 37rem;
+  max-width: 29rem;
   margin-bottom: var(--space-xl);
   color: var(--text-dim);
   font-size: 1.25rem;
@@ -497,6 +511,7 @@ tr:hover td {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-sm);
+  max-width: 31rem;
   margin: 0 0 var(--space-xl);
   padding: 0;
   list-style: none;
@@ -1152,7 +1167,7 @@ tr:hover td {
   }
 
   .hero-scene {
-    opacity: 0.26;
+    opacity: 0.18;
   }
 
   .scene-card {
@@ -1160,8 +1175,8 @@ tr:hover td {
   }
 
   .scene-folder {
-    top: 7%;
-    right: -8rem;
+    top: 8%;
+    right: -13rem;
   }
 
   .scene-type {
@@ -1169,8 +1184,8 @@ tr:hover td {
   }
 
   .scene-query {
-    right: -10rem;
-    top: 46%;
+    right: -15rem;
+    top: 48%;
   }
 
   .hero h1 {

@@ -33,16 +33,16 @@
     <section class="hero">
       <div class="hero-scene" aria-hidden="true">
         <div class="scene-card scene-folder">
-          <code><strong>collection/</strong>
+          <pre><code><strong>collection/</strong>
 |-- mdbase.yaml
 |-- _types/
 |   |-- task.md
 |   `-- person.md
 `-- tasks/
-    `-- fix-bug.md</code>
+    `-- fix-bug.md</code></pre>
         </div>
         <div class="scene-card scene-type">
-          <code><strong>_types/task.md</strong>
+          <pre><code><strong>_types/task.md</strong>
 ---
 name: task
 fields:
@@ -52,15 +52,15 @@ fields:
   assignee:
     type: link
     target: person
----</code>
+---</code></pre>
         </div>
         <div class="scene-card scene-query">
-          <code><strong>query</strong>
+          <pre><code><strong>query</strong>
 types: [task]
 where:
   - 'status != "done"'
 order_by:
-  - priority desc</code>
+  - priority desc</code></pre>
         </div>
       </div>
 
