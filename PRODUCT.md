@@ -14,19 +14,20 @@ The site presents mdbase as a serious, portable specification for treating a fol
 
 ## Brand Personality
 
-Precise, plain-spoken, and field-tested. The tone should feel like a well-kept technical manual: confident enough to be opinionated, quiet enough to support long reading sessions, and concrete enough that implementors can picture the files on disk.
+Precise, literal, and implementation-facing. The tone should feel like specification documentation: clear about behavior, quiet enough for long reading sessions, and concrete enough that implementors can picture the files on disk.
 
 ## Anti-references
 
-Avoid generic SaaS launch-page gloss, terminal cosplay that hides information behind darkness, oversized decorative metrics, mascot-led developer marketing, and card grids that imply more product surface than exists. Do not make the spec feel like a blog theme or a venture-backed product landing page.
+Avoid generic SaaS launch-page gloss, rhetorical product slogans, terminal cosplay that hides information behind darkness, oversized decorative metrics, mascot-led developer marketing, and card grids that imply more product surface than exists. Do not make the spec feel like a blog theme or a venture-backed product landing page.
 
 ## Design Principles
 
 - Show the filesystem model before abstract claims.
 - Treat the spec reader as the product's deepest proof point.
 - Make conformance resources feel first-class, not buried in repository links.
-- Favor durable manual-like craft over flashy developer branding.
+- Favor durable reference-page craft over flashy developer branding.
 - Keep every visual flourish tied to real mdbase artifacts: type files, records, queries, links, and tests.
+- Prefer literal section headings over slogan-shaped framing.
 
 ## Accessibility & Inclusion
 

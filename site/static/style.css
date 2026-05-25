@@ -1,35 +1,35 @@
-/* mdbase.dev - technical field manual */
+/* mdbase.dev - technical specification site */
 
 @import url('https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap');
 
 :root {
   color-scheme: dark;
 
-  --bg: oklch(16% 0.015 165);
-  --bg-elevated: oklch(20% 0.018 165);
-  --bg-panel: oklch(23% 0.02 165);
-  --bg-code: oklch(18% 0.02 165);
-  --bg-sidebar: oklch(18% 0.016 165);
-  --bg-header: oklch(16% 0.015 165 / 0.88);
+  --bg: oklch(15.5% 0.006 72);
+  --bg-elevated: oklch(19.5% 0.007 72);
+  --bg-panel: oklch(22.5% 0.008 72);
+  --bg-code: oklch(17% 0.006 72);
+  --bg-sidebar: oklch(17% 0.006 72);
+  --bg-header: oklch(15.5% 0.006 72 / 0.9);
 
-  --border: oklch(37% 0.025 165);
-  --border-soft: oklch(29% 0.022 165);
-  --border-strong: oklch(52% 0.05 78);
+  --border: oklch(35% 0.012 72);
+  --border-soft: oklch(27% 0.01 72);
+  --border-strong: oklch(47% 0.05 72);
 
-  --text: oklch(84% 0.026 82);
-  --text-dim: oklch(71% 0.024 82);
-  --text-muted: oklch(60% 0.024 82);
-  --text-bright: oklch(94% 0.018 82);
+  --text: oklch(84% 0.018 78);
+  --text-dim: oklch(70% 0.016 78);
+  --text-muted: oklch(58% 0.014 78);
+  --text-bright: oklch(93% 0.014 78);
 
-  --accent: oklch(73% 0.14 72);
-  --accent-deep: oklch(62% 0.12 72);
-  --accent-soft: oklch(73% 0.14 72 / 0.14);
-  --accent-strong: oklch(82% 0.12 76);
+  --accent: oklch(70% 0.105 72);
+  --accent-deep: oklch(56% 0.085 72);
+  --accent-soft: oklch(70% 0.105 72 / 0.11);
+  --accent-strong: oklch(78% 0.088 76);
 
-  --mint: oklch(74% 0.095 158);
-  --cyan: oklch(73% 0.095 220);
-  --violet: oklch(75% 0.085 292);
-  --rose: oklch(72% 0.11 20);
+  --mint: oklch(70% 0.055 150);
+  --cyan: oklch(70% 0.055 220);
+  --violet: oklch(70% 0.05 292);
+  --rose: oklch(68% 0.07 20);
 
   --mono: 'Azeret Mono', 'Menlo', 'Consolas', monospace;
   --serif: 'Source Serif 4', 'Georgia', serif;
@@ -77,7 +77,7 @@ body {
   line-height: 1.7;
   color: var(--text);
   background:
-    linear-gradient(180deg, oklch(18% 0.018 165) 0%, var(--bg) 38rem),
+    linear-gradient(180deg, oklch(16.8% 0.006 72) 0%, var(--bg) 26rem),
     var(--bg);
 }
 
@@ -88,10 +88,10 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background-image:
-    linear-gradient(90deg, oklch(100% 0 0 / 0.025) 1px, transparent 1px),
-    linear-gradient(0deg, oklch(100% 0 0 / 0.025) 1px, transparent 1px);
+    linear-gradient(90deg, oklch(100% 0 0 / 0.018) 1px, transparent 1px),
+    linear-gradient(0deg, oklch(100% 0 0 / 0.018) 1px, transparent 1px);
   background-size: 1.5rem 1.5rem;
-  mask-image: linear-gradient(180deg, black, transparent 85%);
+  mask-image: linear-gradient(180deg, black, transparent 65%);
 }
 
 ::selection {
@@ -189,7 +189,7 @@ blockquote {
   padding: var(--space-md) var(--space-lg);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
-  background: oklch(21% 0.018 165 / 0.72);
+  background: oklch(20% 0.007 72 / 0.72);
   color: var(--text-dim);
   font-style: italic;
 }
@@ -394,7 +394,7 @@ tr:hover td {
   inset: var(--header-h) 0 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.62;
+  opacity: 0.5;
 }
 
 .hero-scene::before {
@@ -402,8 +402,7 @@ tr:hover td {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 64% 30%, oklch(73% 0.095 220 / 0.16), transparent 18rem),
-    linear-gradient(90deg, var(--bg) 0%, oklch(16% 0.015 165 / 0.66) 45%, transparent 100%);
+    linear-gradient(90deg, var(--bg) 0%, oklch(15.5% 0.006 72 / 0.82) 45%, transparent 100%);
 }
 
 .scene-card {
@@ -412,8 +411,8 @@ tr:hover td {
   padding: var(--space-lg);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
-  background: oklch(19% 0.018 165 / 0.72);
-  box-shadow: 0 2rem 5rem oklch(5% 0.02 165 / 0.42);
+  background: oklch(18% 0.006 72 / 0.72);
+  box-shadow: 0 1rem 2.5rem oklch(5% 0.004 72 / 0.28);
   transform: rotate(var(--tilt, 0deg));
 }
 
@@ -525,7 +524,7 @@ tr:hover td {
   padding: 0 var(--space-md);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
-  background: oklch(20% 0.018 165 / 0.8);
+  background: oklch(19.5% 0.007 72 / 0.8);
   color: var(--text);
   font-family: var(--mono);
   font-size: 0.82rem;
@@ -568,7 +567,7 @@ tr:hover td {
 
 .btn-ghost {
   color: var(--text);
-  background: oklch(19% 0.018 165 / 0.64);
+  background: oklch(18.5% 0.007 72 / 0.64);
   border-color: var(--border);
 }
 
@@ -619,7 +618,7 @@ tr:hover td {
   padding: var(--space-lg);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--bg-panel), var(--bg-elevated));
+  background: var(--bg-elevated);
 }
 
 .proof-step code {
@@ -874,7 +873,7 @@ tr:hover td {
   width: 0.34rem;
   height: 0.34rem;
   border-radius: 50%;
-  background: var(--mint);
+  background: var(--border-strong);
 }
 
 .eco-link {
@@ -1105,7 +1104,7 @@ tr:hover td {
     transform: translateX(-110%);
     transition: transform 280ms var(--ease-out);
     border-right: 1px solid var(--border);
-    box-shadow: 1.5rem 0 3rem oklch(4% 0.02 165 / 0.5);
+    box-shadow: 1.5rem 0 3rem oklch(4% 0.006 72 / 0.45);
   }
 
   .spec-sidebar.open {
@@ -1122,7 +1121,7 @@ tr:hover td {
     z-index: 40;
     display: block;
     border: 0;
-    background: oklch(7% 0.02 165 / 0.64);
+    background: oklch(7% 0.006 72 / 0.64);
   }
 
   .sidebar-scrim[hidden] {
@@ -1289,7 +1288,7 @@ tr:hover td {
 
 @media print {
   body {
-    color: oklch(18% 0.015 165);
+    color: oklch(18% 0.006 72);
     background: oklch(98% 0.01 82);
   }
 

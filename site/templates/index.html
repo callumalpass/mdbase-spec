@@ -20,7 +20,7 @@
       mdbase
     </a>
     <nav class="landing-nav" aria-label="Primary">
-      <a href="#principles" class="hide-mobile">Principles</a>
+      <a href="#principles" class="hide-mobile">Constraints</a>
       <a href="#examples" class="hide-mobile">Examples</a>
       <a href="#implementors" class="hide-mobile">Implementors</a>
       <a href="ecosystem.html">Ecosystem</a>
@@ -71,14 +71,15 @@ order_by:
         </div>
         <h1>Typed Markdown <span class="accent">Collections</span></h1>
         <p class="hero-sub">
-          mdbase turns a folder of Markdown files into a typed, queryable collection:
-          schemas live beside records, validation is portable, and every conforming
-          tool reads the same plain-text contract.
+          mdbase specifies how Markdown files with YAML frontmatter are discovered,
+          typed, validated, queried, linked, and updated. The durable state remains
+          ordinary files on disk.
         </p>
         <ul class="hero-proof" aria-label="Specification coverage">
+          <li>collection layout</li>
           <li>schema files</li>
-          <li>frontmatter validation</li>
-          <li>queries and links</li>
+          <li>validation</li>
+          <li>queries</li>
           <li>conformance tests</li>
         </ul>
         <div class="hero-actions">
@@ -92,39 +93,40 @@ order_by:
     </section>
 
     <section class="landing-section" id="quick-model">
-      <div class="section-kicker">Mental model</div>
-      <h2 class="section-title">One folder, one contract, many tools</h2>
+      <div class="section-kicker">Collection layout</div>
+      <h2 class="section-title">A collection is a directory with mdbase.yaml</h2>
       <p class="section-intro">
-        A collection is just files. mdbase specifies the rules that let CLIs,
-        editors, agents, and apps agree on types, validation, queries, links,
-        references, caching, and watching.
+        The spec defines collection boundaries, type definition files, record
+        discovery, effective frontmatter, and operation behavior. Implementations
+        can claim the conformance level they support.
       </p>
 
       <div class="proof-flow">
         <div class="proof-step">
           <code>_types/task.md</code>
-          <h3>Define the shape</h3>
-          <p>Type files document fields, inheritance, generated values, matching rules, and strictness.</p>
+          <h3>Type definitions</h3>
+          <p>Fields, inheritance, generated values, matching rules, and strictness are specified in Markdown files.</p>
         </div>
         <div class="proof-step">
           <code>tasks/fix-bug.md</code>
-          <h3>Validate records</h3>
-          <p>Markdown records stay human-readable while tools enforce the effective schema.</p>
+          <h3>Record validation</h3>
+          <p>Records are ordinary Markdown files with effective frontmatter derived from matching types.</p>
         </div>
         <div class="proof-step">
           <code>query.where</code>
-          <h3>Ask structured questions</h3>
-          <p>Expressions, ordering, body search, and link traversal work across conforming implementations.</p>
+          <h3>Queries and expressions</h3>
+          <p>Filtering, ordering, body search, and link traversal are defined by the query and expression sections.</p>
         </div>
       </div>
     </section>
 
     <section class="landing-section" id="principles">
-      <div class="section-kicker">Principles</div>
-      <h2 class="section-title">Designed for plain-text systems</h2>
+      <div class="section-kicker">Design constraints</div>
+      <h2 class="section-title">Files stay authoritative</h2>
       <p class="section-intro">
-        mdbase is strict where tools need agreement and humble where files need
-        to remain ordinary Markdown.
+        Durable state is represented as Markdown and YAML. Derived indexes,
+        caches, views, and watchers are implementation details, not replacement
+        storage formats.
       </p>
 
       <div class="principles">
@@ -146,7 +148,7 @@ order_by:
         <div class="principle">
           <div class="principle-num">04</div>
           <h3>Portable by default</h3>
-          <p>Collections work with any conforming tool. Templates, plugins, and agents share one contract.</p>
+          <p>Collections work with any conforming tool. Templates, plugins, and agents rely on the same specified behavior.</p>
         </div>
         <div class="principle">
           <div class="principle-num">05</div>
@@ -237,7 +239,7 @@ priority ?? <span class="number">3</span></code></pre>
 
     <section class="landing-section" id="conformance">
       <div class="section-kicker">Conformance</div>
-      <h2 class="section-title">Six levels, from core CRUD to full watch mode</h2>
+      <h2 class="section-title">Conformance levels</h2>
       <p class="section-intro">Implementations claim conformance at the level they support. Each level includes every level before it.</p>
 
       <div class="levels" aria-label="Conformance levels">
@@ -252,8 +254,8 @@ priority ?? <span class="number">3</span></code></pre>
 
     <section class="landing-section" id="implementors">
       <div class="section-kicker">Implementors</div>
-      <h2 class="section-title">Build a conforming implementation quickly</h2>
-      <p class="section-intro">Start with the quickstart and adapter template, then run the shared conformance runner.</p>
+      <h2 class="section-title">Implementation resources</h2>
+      <p class="section-intro">The repository includes adapter documentation, a reference runner, fixtures, and lookup material for implementors.</p>
 
       <div class="eco-grid">
         <div class="eco-card">
