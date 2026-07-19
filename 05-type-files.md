@@ -2,11 +2,15 @@
 
 ## Purpose
 
-A v0.3 type file is a Markdown file that wraps a JSON Schema and mdbase collection
-semantics.
+A type file connects three parts of the mdbase model:
 
-The YAML frontmatter is machine-readable. The Markdown body documents the type
-for humans and tools.
+- a rule for selecting records
+- a JSON Schema for validating their persisted frontmatter
+- collection behavior such as defaults, links, lifecycle assignments, and path
+  policy
+
+The YAML frontmatter is the machine-readable definition. The Markdown body can
+document the type for people and tools.
 
 ## Minimal Type
 
@@ -39,6 +43,39 @@ schema:
 Task records live under `tasks/`.
 ```
 
+## Type Evaluation Model
+
+Type processing has a collection-load phase and a record-evaluation phase.
+
+During collection load, an implementation:
+
+1. discovers candidate type files under the configured types folder
+2. validates each file against the built-in type-file schema
+3. canonicalizes type names for lookup and detects name conflicts
+4. resolves the embedded or referenced JSON Schema
+5. validates and compiles that schema against the v0.3 JSON Schema profile
+
+Each valid definition then enters the collection's type registry. Diagnostics
+for an invalid definition identify the type-file path and the failing section.
+
+For each record, an implementation:
+
+1. parses the record path and raw persisted frontmatter
+2. determines its matched types using Chapter 07
+3. validates the raw frontmatter against every matched JSON Schema
+4. evaluates every matched type's collection validators
+5. constructs effective read values, including compatible read defaults and
+   projections supported by the implementation
+
+Type selection and record validation are separate operations. An explicit type
+declaration selects a type and still subjects the record to that type's schema
+and collection rules.
+
+Write operations use the same model around lifecycle processing: determine
+membership from the requested draft, run the applicable lifecycle assignments,
+then confirm membership once before final validation. The complete write order
+is defined in Chapters 09 and 12.
+
 ## Required Frontmatter
 
 A type file MUST include:
@@ -55,7 +92,9 @@ Type names are stable identifiers. They SHOULD use lower-case ASCII names with
 letters, numbers, `_`, and `-`.
 
 Tools MUST compare type names case-insensitively for matching and conflict
-detection, but SHOULD preserve author-written casing when displaying a type.
+detection. Displays SHOULD preserve the casing written by the author.
+
+Two type files whose names differ only by case are conflicting definitions.
 
 ## Schema Section
 
@@ -85,12 +124,14 @@ schema:
   ref: "../schemas/task.schema.json"
 ```
 
-Tools implementing external references MUST define resolution relative to the
-type file path and MUST prevent path traversal outside allowed collection or
-package roots.
+External references resolve relative to the type-file path. Resolution MUST
+remain within the collection or installed pack root that owns the schema.
 
-If both `value` and `ref` are present, the type is invalid unless a future
-extension explicitly defines merge behavior.
+Exactly one of `value` and `ref` is required. A type containing both is invalid.
+
+The JSON Schema validates raw persisted frontmatter. Read defaults,
+projections, and lifecycle values enter at the stages defined by their own
+chapters.
 
 ## mdbase Sections
 
@@ -98,108 +139,92 @@ The following top-level sections are defined by v0.3:
 
 | Section | Purpose |
 | --- | --- |
-| `match` | decide which records the type applies to |
-| `collection` | markdown-aware collection semantics |
-| `lifecycle` | mutation-time managed field policy |
-| `runtime` | runtime-related annotations for this type |
-| `migrations` | explicit type version migration steps |
+| `match` | select records for inferred type membership |
+| `collection` | define Markdown-aware collection semantics |
+| `lifecycle` | assign managed values during mutations |
+| `runtime` | attach runtime annotations to the type |
+| `migrations` | declare explicit type-version migration steps |
 
-Domain tools SHOULD use explicit extension namespaces rather than adding
-domain-specific keys inside JSON Schema properties. Portable v0.3 type-file
-validation allows standard core keys plus `x-*` extension sections for local,
-provider-specific, or domain-specific metadata.
-
-Example:
+Portable type-file validation accepts the core sections and `x-*` extension
+sections. Domain and provider metadata belongs under an extension name:
 
 ```yaml
 x-local:
   owner: research-team
 
-x-tasknotes:
-  contract: tasknotes.task
+x-example-app:
+  contract: example.task
 ```
 
-This is stricter than accepting every unknown lowercase key. It lets the meta
-schema catch typos such as `collecton` instead of treating them as domain
-metadata.
-
-Core mdbase MUST NOT privilege application names such as `tasknotes` in the
-portable type-file schema. A future extension registry MAY define named
-extension schemas, but until that mechanism exists those annotations use `x-*`.
+This naming rule lets the type-file schema diagnose misspelled core keys such as
+`collecton`.
 
 ## Meta Type
 
 Implementations MUST have a built-in schema for validating v0.3 type files.
 
 `init` or equivalent tooling SHOULD materialize `_types/meta.md` for inspection.
-That file is itself a v0.3 type file matching `_types/**/*.md` and validating type
-file frontmatter against the v0.3 type-file JSON Schema.
+That file is itself a v0.3 type file matching `_types/**/*.md` and validating
+type-file frontmatter against the v0.3 type-file JSON Schema.
 
-The built-in meta schema is authoritative during bootstrap. The materialized
-`_types/meta.md` documents and mirrors that behavior.
+The built-in schema is authoritative during bootstrap. A materialized
+`_types/meta.md` mirrors and documents that behavior.
 
-## Type Matching
+## Type Membership
 
-Type files MAY declare `match`.
+Records may select types explicitly or through inferred matching. Chapter 07
+defines the decision process, the structured match language, and the optional
+CEL Match profile.
 
-If a record explicitly declares a type through a configured explicit type key,
-that declaration controls matching and inferred match rules are skipped.
+Matched type order is deterministic:
 
-If a record does not explicitly declare a type, tools evaluate type `match`
-rules to determine the matched set.
+- explicit declarations retain declaration order after case-insensitive
+  de-duplication
+- inferred matches are ordered by canonical lower-case type name
 
 ## Multiple Matched Types
 
-v0.3 removes v0.2.x constraint merging.
+If a record matches several types, the implementation validates it independently
+against every matched type schema and collection validator. The record is valid
+only when all of those validations pass.
 
-If a record matches multiple types, tools validate it against every matched
-type schema and every matched type's collection validators. The record is valid
-only if all validations pass.
-
-Matched type order is deterministic. Explicit declarations retain declaration
-order after case-insensitive de-duplication. Inferred matches are ordered by
-canonical lower-case type name.
-
-Collection behavior from multiple matched types composes as follows:
+Collection behavior composes as follows:
 
 - uniqueness rules are additive and are each evaluated in the type that
   declared them
 - identical read defaults, link rules, path policies, lifecycle assignments,
   and projections coalesce
 - different values for the same read-default field, link selector, path policy,
-  lifecycle event/field, or projection name are `type_conflict` errors
-- display metadata remains per-type; a flattened UI representation uses the
-  first explicit type, or the first canonical inferred type
+  lifecycle event and field, or projection name produce `type_conflict`
+- display metadata remains associated with its declaring type; a flattened
+  display uses the first explicit type or first canonical inferred type
 
-Implementations MUST detect these conflicts before a write and MUST NOT resolve
-them by load order.
+Implementations MUST detect these conflicts before applying the affected
+behavior. A write fails before mutation. A read or query reports the conflict
+and leaves the conflicted derived value unavailable. The result is independent
+of filesystem load order.
 
-For a uniqueness rule with `scope: type`, the comparison set is every record
-that matches the type which declared the rule. A record matching several types
-therefore participates independently in each declaring type's uniqueness set.
+For a uniqueness rule with `scope: type`, the comparison set contains every
+record that matches the declaring type. A record matching several types
+participates independently in each declaring type's uniqueness set.
 
 ## Write-Time Type Membership
 
-Write operations determine type membership from the requested draft and target
-path before lifecycle runs. Explicit type declarations continue to suppress
-inferred matching.
+Write operations determine membership from the requested draft and target path
+before lifecycle runs. Explicit declarations use the same precedence as reads.
 
-After lifecycle has run, the implementation MUST evaluate membership again. If
-the final membership differs from the pre-lifecycle membership, the operation
-fails with `type_membership_changed`; implementations MUST NOT repeatedly apply
-lifecycle until a fixed point. This prevents generated values from silently
-changing which policies govern the operation.
+After lifecycle has run, the implementation MUST evaluate membership once more.
+If the final membership differs from the pre-lifecycle membership, the operation
+fails with `type_membership_changed`. Lifecycle is applied once per operation.
 
-An operation that intentionally changes type membership does so in its input
-patch or explicit type list, not as a lifecycle side effect.
+An operation that changes membership intentionally expresses that change in its
+input patch, target path, or explicit type list.
 
-## Type Inheritance
+## Reusable Schema Composition
 
-v0.3 does not define custom type inheritance.
-
-Reusable shape should use JSON Schema `$defs`, `$ref`, `allOf`, `anyOf`, and
-`oneOf`. Reusable collection behavior should be copied, generated, or provided
-through future named packs rather than hidden inheritance.
+Reusable record shapes use JSON Schema `$defs`, `$ref`, `allOf`, `anyOf`, and
+`oneOf`. Reusable collection behavior can be generated or supplied by a named
+pack or extension.
 
 ## Display Metadata
 
@@ -212,5 +237,5 @@ collection:
     icon: check-circle
 ```
 
-JSON Schema `title` and `description` remain useful schema annotations, but
-they do not define mdbase collection behavior.
+JSON Schema `title` and `description` remain schema annotations.
+`collection.display` supplies the collection-specific presentation hints.

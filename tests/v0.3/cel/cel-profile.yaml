@@ -33,6 +33,26 @@ groups:
             read_defaults:
               status: open
           ---
+        cel-matched.md: |
+          ---
+          kind: mdbase.type
+          name: cel_matched
+          version: 1
+          match:
+            path_glob: "cel-matched/**/*.md"
+            expr:
+              $expr: 'present.raw.marker && marker == "selected" && status == null'
+          schema:
+            dialect: json-schema-2020-12
+            value:
+              type: object
+              properties:
+                marker: { type: string }
+                status: { type: string }
+          collection:
+            read_defaults:
+              status: open
+          ---
       files:
         tasks/open.md: |
           ---
@@ -55,8 +75,25 @@ groups:
           title: Null status
           status:
           ---
+        cel-matched/selected.md: |
+          ---
+          marker: selected
+          ---
+        cel-matched/rejected.md: |
+          ---
+          marker: other
+          ---
+        other/selected.md: |
+          ---
+          marker: selected
+          ---
     tests:
       - name: "query where uses CEL over effective values"
+        id: cel.query_effective_values
+        covers:
+          - cel.portable_evaluation
+          - cel_query.query_context
+          - cel_query.query_filtering
         operation: query
         input:
           where: 'status == "open"'
@@ -68,6 +105,10 @@ groups:
             - path: "tasks/open.md"
 
       - name: "presence maps distinguish missing from effective default"
+        id: cel.presence_maps
+        covers:
+          - cel.context_bindings
+          - cel.missing_and_null
         operation: evaluate_cel
         input:
           path: "tasks/open.md"
@@ -86,6 +127,10 @@ groups:
           value: true
 
       - name: "type errors return null in query expressions"
+        id: cel.query_evaluation_error
+        covers:
+          - cel.expression_diagnostics
+          - cel_query.query_evaluation_diagnostics
         operation: evaluate_cel
         input:
           path: "tasks/open.md"
@@ -124,6 +169,37 @@ groups:
           results:
             - path: "tasks/open.md"
           body_returned: false
+
+      - name: "CEL match evaluates raw candidate fields before read defaults"
+        id: cel_match.raw_candidate
+        covers:
+          - cel_match.raw_candidate_context
+          - cel_match.boolean_match_result
+        operation: get_types
+        input:
+          path: "cel-matched/selected.md"
+        expect:
+          valid: true
+          types: [cel_matched]
+
+      - name: "CEL match false result is a non-match"
+        id: cel_match.false_result
+        operation: get_types
+        input:
+          path: "cel-matched/rejected.md"
+        expect:
+          valid: true
+          types: []
+
+      - name: "CEL match combines with structured match members using AND"
+        id: cel_match.combined_match
+        covers: [cel_match.combined_match_semantics]
+        operation: get_types
+        input:
+          path: "other/selected.md"
+        expect:
+          valid: true
+          types: []
 
   - name: "runtime expression host bindings"
     setup:

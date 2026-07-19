@@ -2,6 +2,10 @@
 
 Portable TypeScript package for mdbase runtime profile `0.1.0`.
 
+The entry-point, browser, and API guarantees in this document belong to this
+package. mdbase Runtime Contracts conformance is behavior-based, and other
+implementations may use any language or package structure.
+
 The main export is browser-safe. It provides runtime contract types and the
 reference in-memory provider host without importing Node, Obsidian, or
 TaskNotes APIs:

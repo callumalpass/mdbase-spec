@@ -4,10 +4,8 @@
 
 `lifecycle` defines deterministic mutation-time behavior for managed fields.
 
-It replaces v0.2.x generated field keywords.
-
-Lifecycle is part of write-capable mdbase behavior. It does not require the
-workflow runtime.
+Lifecycle is part of Core Write behavior and runs independently of the workflow
+runtime.
 
 ## Events
 
@@ -63,7 +61,7 @@ lifecycle:
         dateModified: { now: true }
 ```
 
-If guards are supported, they use the mdbase CEL profile with these bindings:
+Lifecycle guards use the mdbase CEL profile with these bindings:
 
 - current draft frontmatter fields
 - `old` for the previous raw frontmatter on update
@@ -109,8 +107,8 @@ Normative rule:
 - conflicting assignments are `type_conflict` errors before write
 - diagnostics MUST report the type names and lifecycle paths involved
 
-Future pack composition may define precedence, but v0.3 core MUST NOT silently
-choose one policy over another.
+v0.3 core MUST report the conflict. Future pack composition may define explicit
+precedence.
 
 A lifecycle guard that fails to compile or raises an evaluation error fails the
 operation with `lifecycle_expression_error`. A guard that evaluates normally to

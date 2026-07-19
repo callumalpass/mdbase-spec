@@ -2,130 +2,285 @@
 
 ## Abstract
 
-mdbase v0.3 defines a protocol for treating a folder of Markdown files as a typed,
-queryable, link-aware data collection.
-
-The v0.3 design has four layers:
-
-1. Markdown records provide durable, human-readable storage.
-2. JSON Schema validates persisted YAML frontmatter shape.
-3. mdbase collection semantics define behavior JSON Schema cannot know:
-   matching, links, effective read defaults, uniqueness, paths, operations, and
-   watches.
-4. Runtime contracts define optional active behavior: providers, events,
-   workflows, actions, capabilities, policies, runs, and checkpoints.
-
-This replaces the v0.2.x custom field grammar with a narrower wrapper around
-JSON Schema plus explicit mdbase sections.
-
-## One-Sentence Model
-
-JSON Schema answers "is this frontmatter object shaped correctly"; mdbase
-answers "what does this Markdown file mean inside this collection"; runtimes
-answer "what behavior should happen when events occur."
+This specification defines the behavior of tools that treat folders of
+Markdown files as typed, queryable, link-aware data collections. It covers
+collection discovery, JSON Schema types, validation, links, CEL queries, record
+operations, lifecycle policy, and optional runtime workflows.
 
 ## Motivation
 
-Markdown plus YAML frontmatter is already used as a lightweight database by
-static site generators, Obsidian vaults, agent workspaces, documentation
-systems, and personal knowledge tools. The problem is not storage. The problem
-is that every tool reconstructs structure and behavior differently.
+Markdown files with YAML frontmatter are a common way to store structured
+content. The pattern appears in static site generators, knowledge management
+tools such as Obsidian, documentation systems, agent workspaces, and AI agent
+frameworks that use Markdown for persistent state.
 
-Earlier mdbase drafts solved this by defining a custom field grammar in
-Markdown type files. That gave mdbase a compact authoring syntax, but it also
-made mdbase a schema language, a collection policy language, and a mutation
-policy language at the same time.
+These ecosystems need consistent conventions for frontmatter structure,
+validation, querying, links, and updates. This specification defines one
+coherent set of behaviors so that:
 
-v0.3 makes the boundary sharper:
+- a CLI tool and an editor plugin can operate on the same files with consistent
+  semantics
+- an AI agent can read and write Markdown files that a human can inspect and
+  edit
+- tool authors can implement a shared behavior contract
+- collections can move between conforming tools
 
-- use existing JSON Schema tooling for record shape
-- keep mdbase-specific semantics visible outside the schema
-- move mutation behavior into lifecycle and runtime contracts
-- standardize expressions on CEL
-- keep Markdown files as the authoring and documentation surface
+### Intended implementers
 
-## What v0.3 Defines
+**CLI tools** for querying, validating, and manipulating Markdown collections
+from the command line.
 
-v0.3 defines:
+**Editor plugins** for applications such as Obsidian and VS Code that provide
+validation, completion, navigation, and query interfaces.
 
-- how a collection is discovered and scanned
-- how Markdown records are parsed
-- how type files wrap JSON Schema
-- how files match types
-- how records are validated
-- how links are parsed and resolved
-- how queries evaluate records
-- how create, update, delete, rename, and batch operations behave
-- how lifecycle policy materializes managed values
-- how portable expressions are written in CEL
-- how runtime contracts describe providers, events, actions, capabilities,
-  policies, and workflows
-- how conformance profiles can be claimed independently
+**Libraries** in different languages that applications can use to work with
+typed Markdown.
 
-## What v0.3 Does Not Define
+**AI agent frameworks** that need structured, human-readable persistent
+storage.
 
-v0.3 does not require every tool to implement every layer.
+**Runtime hosts** that connect collection events to declared actions and
+workflows.
 
-Read-only tools can load collections, validate records, resolve links, and run
-queries without supporting mutation or workflows.
+## What a conforming tool does
 
-Write-capable tools can implement lifecycle policy without becoming workflow
-engines.
+Depending on its conformance profiles, a tool implementing this specification:
 
-Workflow runtimes can execute declared behavior, but action implementations,
-sandboxing, scheduling, agent orchestration, network access, and provider APIs
-remain runtime responsibilities.
+1. **Recognizes collections** by the presence of an `mdbase.yaml` configuration
+   file.
+2. **Loads type definitions** from Markdown files that wrap JSON Schema.
+3. **Matches records to types** through explicit declarations or configured
+   match rules.
+4. **Validates frontmatter** against matched schemas and collection-aware
+   rules.
+5. **Resolves links** between records and exposes link-aware metadata.
+6. **Executes queries** using CEL expressions for filtering, ordering, and
+   projection.
+7. **Performs record operations** with validation, reference handling, and
+   lifecycle-managed values.
+8. **Loads runtime contracts and workflows** when it supports active behavior.
 
-v0.3 is not an OpenAPI dialect. JSON Schema is used for data shape, not for
-describing HTTP services.
+Conformance profiles define the expected behavior for each capability and its
+dependencies.
 
 ## Design Principles
 
-**Files are the source of truth.** Persistent user intent lives in text files.
-Indexes, caches, run queues, and derived databases are disposable unless the
-runtime explicitly materializes them as records.
+**Files are the source of truth.** Tools read from and write to the filesystem.
+Indexes, caches, and derived databases can be rebuilt from collection state.
 
-**Use standard shape tooling.** A frontmatter schema should be understandable by
-JSON Schema validators, editors, language servers, generators, and codegen
-tools.
+**Human-readable first.** Persistent collection data uses open text formats. A
+user with a text editor can read and modify every record and type file.
 
-**Keep collection semantics explicit.** Links, uniqueness, matching, paths,
-read defaults, and lifecycle behavior are not JSON Schema validation. They have
-their own named sections.
+**Progressive strictness.** A collection can begin with untyped records. Types,
+validation, link rules, and lifecycle policy can be introduced incrementally.
 
-**Mutation is runtime behavior.** Generated values, timestamp updates,
-cross-record effects, and workflow actions happen during operations or runtime
-execution. They are not hidden inside field definitions.
+**Portable.** Conforming tools share the same record and collection semantics.
+Implementation-specific features use explicit extension namespaces.
 
-**Markdown stays inspectable.** Type files, workflow files, action contracts,
-event contracts, policy records, run records, and checkpoint records can all be
-ordinary Markdown files with YAML frontmatter and explanatory body text.
+**Git-friendly.** Durable collection state is stored as text that can be
+reviewed in diffs and versioned with the rest of a project.
 
-**Conformance is layered.** A simple validator should not need to implement a
-workflow engine. A workflow runtime should still share the same record and
-contract model.
+**Standard building blocks.** JSON Schema describes frontmatter shape. CEL
+provides portable expressions. Named mdbase sections describe behavior that
+depends on collection context.
 
-## Major Changes From v0.2.x
+## How It Works
 
-| v0.2.x concept | v0.3 destination |
+### A collection is a folder with an `mdbase.yaml` marker
+
+```text
+my-project/
+├── mdbase.yaml            # marks this folder as a collection
+├── _types/                # type definitions
+│   ├── task.md
+│   └── person.md
+├── tasks/
+│   ├── fix-bug.md         # a task record
+│   └── write-docs.md
+└── people/
+    └── alice.md           # a person record
+```
+
+The minimal configuration declares the specification version:
+
+```yaml
+# mdbase.yaml
+spec_version: "0.3.0"
+```
+
+### Types are defined as Markdown files
+
+A type describes a category of records. Type files usually live in `_types/`.
+Their frontmatter contains a JSON Schema and optional mdbase collection rules;
+their body documents the type for people and tools.
+
+```markdown
+---
+kind: mdbase.type
+name: task
+version: 1
+
+match:
+  path_glob: "tasks/**/*.md"
+
+schema:
+  dialect: json-schema-2020-12
+  value:
+    $schema: "https://json-schema.org/draft/2020-12/schema"
+    type: object
+    required: [type, title]
+    additionalProperties: false
+    properties:
+      type:
+        const: task
+      title:
+        type: string
+        minLength: 1
+      status:
+        enum: [open, in_progress, done]
+      priority:
+        type: integer
+        minimum: 1
+        maximum: 5
+      assignee:
+        type: string
+      tags:
+        type: array
+        items: { type: string }
+
+collection:
+  read_defaults:
+    status: open
+  links:
+    assignee:
+      target_type: person
+      validate_exists: true
+---
+
+# Task
+
+A task represents a unit of work. Set `status` to track progress.
+```
+
+JSON Schema validates the persisted frontmatter object. The `collection`
+section supplies rules that require collection context, including effective
+read defaults, links, uniqueness, and path policy.
+
+### Records are Markdown files with typed frontmatter
+
+A record provides field values in frontmatter and free-form Markdown in its
+body. Records may declare a type explicitly or match a type through configured
+rules.
+
+```markdown
+---
+type: task
+title: Fix the login bug
+status: in_progress
+priority: 4
+assignee: "[[alice]]"
+tags: [bug, auth]
+---
+
+The login form rejects addresses containing a `+` character.
+```
+
+### Queries filter and sort records with CEL
+
+Queries are YAML objects with optional clauses for filtering, ordering,
+projection, and pagination:
+
+```yaml
+types: [task]
+where: 'status != "done" && priority >= 3'
+order_by:
+  - field: priority
+    direction: desc
+limit: 20
+```
+
+CEL expressions can access frontmatter values, file metadata, dates, lists,
+and resolved links:
+
+```cel
+status == "open" && "urgent" in tags
+due_date < today()
+assignee.asFile().team == "engineering"
+```
+
+### Validation is progressive
+
+Files in a collection can remain untyped records. Types can be added
+incrementally, and validation severity is configurable as `off`, `warn`, or
+`error`. JSON Schema controls field shape and unknown-property handling.
+Collection rules add checks that depend on other records or paths.
+
+### Links connect records across the collection
+
+Records can reference each other with wikilinks such as `[[alice]]`, Markdown
+links such as `[Alice](../people/alice.md)`, or declared path values. Link-aware
+tools resolve targets, extract links and tags from record bodies, traverse
+links in queries, and can update references during rename operations.
+
+### Lifecycle policy manages values during writes
+
+Lifecycle policy can assign IDs, timestamps, slugs, copied values, and literals
+during create and update operations. Lifecycle runs before final validation, so
+managed fields participate in the same schema and collection checks as supplied
+frontmatter.
+
+### Runtime contracts describe active behavior
+
+Optional runtime records describe providers, events, actions, capabilities,
+policies, workflows, runs, and checkpoints. A runtime host loads these
+contracts, validates their data, and connects declared workflows to available
+event and action implementations.
+
+### Conformance is profile-based
+
+Implementations claim the profiles they support, such as Core Read, Collection
+Semantics, Links, Query, Core Write, Lifecycle, Runtime Contracts, Workflow,
+and Watch. Profile dependencies keep those claims precise and independently
+testable.
+
+## Specification Structure
+
+| Document | Description |
 | --- | --- |
-| `fields` grammar | JSON Schema under `schema.value` |
-| per-field `required` | JSON Schema root `required` |
-| enum `values` | JSON Schema `enum` |
-| `strict` | JSON Schema `additionalProperties` |
-| field `default` | JSON Schema `default` annotation plus `collection.read_defaults` when effective reads are desired |
-| `type: link` | string/array schema plus `collection.links` |
-| `unique` | `collection.unique` |
-| `generated` | `lifecycle` |
-| `computed` | query projection, collection projection, or runtime workflow |
-| custom expression language | mdbase CEL profile |
-| constraint merging | validate all matched schemas |
-| generated behavior inside type shape | lifecycle or runtime policy |
-| action/event shape in custom fields | JSON Schema contracts in runtime records |
+| [01-concepts.md](./01-concepts.md) | Core terminology and data model |
+| [02-collection-layout.md](./02-collection-layout.md) | Collection discovery, paths, and reserved state |
+| [03-records-and-frontmatter.md](./03-records-and-frontmatter.md) | Markdown parsing and YAML value semantics |
+| [04-configuration.md](./04-configuration.md) | The `mdbase.yaml` configuration file |
+| [05-type-files.md](./05-type-files.md) | JSON Schema type wrappers and metadata |
+| [06-json-schema-profile.md](./06-json-schema-profile.md) | Supported JSON Schema vocabulary and reference rules |
+| [07-collection-semantics.md](./07-collection-semantics.md) | Matching, defaults, uniqueness, links, and paths |
+| [08-links.md](./08-links.md) | Link syntax, resolution, traversal, and backlinks |
+| [09-lifecycle.md](./09-lifecycle.md) | Managed values and mutation-time policy |
+| [10-cel-profile.md](./10-cel-profile.md) | Portable expressions and host bindings |
+| [11-querying.md](./11-querying.md) | Filters, ordering, projection, and result envelopes |
+| [12-operations.md](./12-operations.md) | Read and write operations, concurrency, and diagnostics |
+| [13-runtime-contracts.md](./13-runtime-contracts.md) | Providers, events, actions, capabilities, and policy |
+| [14-workflows.md](./14-workflows.md) | Workflow records and execution semantics |
+| [15-migrations-and-compatibility.md](./15-migrations-and-compatibility.md) | Migration from earlier versions and compatibility |
+| [16-conformance.md](./16-conformance.md) | Profiles, claims, fixtures, and runners |
+
+## Versioning
+
+This specification uses semantic versioning. The current version is **0.3.0**.
+Collections declare their specification version with `spec_version` in
+`mdbase.yaml`. Tools declare the profiles and versions they implement.
+
+The optional runtime-contract and workflow vocabulary has an independent
+profile version. The runtime profile defined by this specification is
+**0.1.0**.
 
 ## Normative Language
 
 The keywords `MUST`, `MUST NOT`, `SHOULD`, `SHOULD NOT`, and `MAY` are to be
 interpreted as described in RFC 2119.
 
-Draft notes use ordinary prose and are not normative.
+Draft notes use ordinary prose and are non-normative.
+
+## License
+
+This specification is released under the [MIT License](https://opensource.org/licenses/MIT).

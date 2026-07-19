@@ -33,7 +33,7 @@ SHOULD treat it as empty frontmatter and report a warning.
 
 ## Missing, Null, And Empty
 
-v0.3 preserves the v0.2.x distinction:
+Frontmatter has four distinct states:
 
 - missing means a key is not present in persisted frontmatter
 - null means a key is present with YAML null
@@ -89,7 +89,7 @@ Write-capable tools SHOULD preserve unrelated body text and line ending style.
 
 When serializing frontmatter, tools SHOULD:
 
-- omit missing values rather than writing bare nulls
+- omit missing values; bare nulls represent explicit null values
 - quote empty strings
 - preserve array/object structure
 - produce deterministic key ordering when the operation rewrites a generated
@@ -111,4 +111,3 @@ data model before JSON Schema validation. Non-JSON YAML values such as NaN,
 Infinity, binary values, and timestamps with parser-specific objects MUST be
 handled by the mdbase YAML profile before schema validation or rejected with a
 clear diagnostic.
-

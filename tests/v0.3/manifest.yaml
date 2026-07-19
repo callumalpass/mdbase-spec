@@ -38,13 +38,36 @@ claim_profiles:
       - simple_path_policy
       - display_metadata
       - independent_multi_type_validation
+  - id: cel
+    status: draft
+    requires: []
+    requirements:
+      - portable_evaluation
+      - context_bindings
+      - missing_and_null
+      - date_and_duration
+      - operational_limits
+      - expression_diagnostics
+  - id: cel_match
+    status: draft
+    requires: [core_read, cel]
+    requirements:
+      - expression_preflight
+      - raw_candidate_context
+      - combined_match_semantics
+      - boolean_match_result
+      - match_evaluation_diagnostics
   - id: cel_query
     status: draft
-    requires: [core_read]
-    requirements: []
+    requires: [core_read, cel]
+    requirements:
+      - query_context
+      - query_filtering
+      - query_projections
+      - query_evaluation_diagnostics
   - id: links
     status: draft
-    requires: [collection_semantics, cel_query]
+    requires: [collection_semantics, cel]
     requirements: []
   - id: core_write
     status: draft
@@ -52,20 +75,29 @@ claim_profiles:
     requirements: []
   - id: lifecycle
     status: draft
-    requires: [core_write, cel_query]
+    requires: [core_write, cel]
     requirements: []
   - id: runtime_contracts/0.1
     status: draft
-    requires: [core_read]
+    requires: []
     requirements: []
   - id: workflow/0.1
     status: draft
-    requires: [runtime_contracts/0.1, cel_query]
+    requires: [runtime_contracts/0.1, cel]
     requirements: []
   - id: watch
     status: draft
     requires: [core_read]
-    requirements: []
+    requirements:
+      - notification_shape
+      - collection_scope
+      - logical_change_notifications
+      - effective_frontmatter_snapshots
+      - changed_fields
+      - consistent_state_delivery
+      - per_subject_ordering
+      - notification_coalescing
+      - listener_isolation
 
 fixture_sets:
   - id: schema_artifacts
@@ -91,7 +123,7 @@ fixture_sets:
       - lifecycle/lifecycle.yaml
   - id: cel
     description: mdbase CEL host bindings and missing/null behavior.
-    coverage_targets: [cel_query]
+    coverage_targets: [cel, cel_match, cel_query, links]
     files:
       - cel/cel-profile.yaml
   - id: runtime_contracts

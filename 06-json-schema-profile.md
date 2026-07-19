@@ -57,8 +57,8 @@ Core v0.3 JSON Schema support includes:
 - local `$ref`
 - `title`, `description`, `default`, `examples`, and other annotations
 
-Tools MAY support more of JSON Schema 2020-12, but v0.3 conformance tests SHOULD
-stay within the required profile unless an optional profile is named.
+Tools MAY support more of JSON Schema 2020-12. The required profile defines the
+portable baseline for Core Read conformance.
 
 ## Discriminated Unions
 
@@ -103,8 +103,9 @@ of embedding every action union directly in the workflow schema.
 
 ## Defaults
 
-JSON Schema `default` is an annotation. It does not mutate records and does not
-satisfy `required` during validation.
+JSON Schema `default` is an annotation. Record mutation occurs through create,
+lifecycle, or explicit default materialization, and `required` evaluates the raw
+record during validation.
 
 Tools MAY use `default` as a create/editor hint.
 
@@ -115,7 +116,7 @@ Dynamic defaults such as `now`, `uuid`, `ulid`, and `slugify` belong in
 
 ## Format
 
-JSON Schema `format` is an annotation in the base dialect, but the mdbase v0.3
+JSON Schema `format` is an annotation in the base dialect. The mdbase v0.3
 profile requires assertion behavior for:
 
 - `format: date`
@@ -127,8 +128,8 @@ Schema. `date-time` values MUST contain `Z` or a numeric UTC offset. Invalid
 values produce `format_invalid` diagnostics.
 
 Other formats such as `email`, `uri`, and `uuid` MAY be asserted by
-implementations, but portable conformance tests SHOULD not depend on them unless
-the profile is extended.
+implementations. Collections that require them depend on implementation-specific
+behavior until a conformance profile defines their semantics.
 
 ## References
 
@@ -140,22 +141,21 @@ resolved file MUST remain inside the collection root or inside the installed
 pack root that supplied the type. Symlinks are resolved before this boundary
 check. Escapes produce `schema_ref_forbidden`.
 
-Nested file-to-file `$ref` references are the optional feature
-`external_schema_refs`; they are not an atomic conformance profile. An
-implementation supporting the feature lists it under `optional_features` in
-its claim document. Such references use the containing schema document as
-their base URI, obey the same owning-root boundary, detect cycles, and produce
-`schema_ref_unresolved` or `schema_ref_cycle` diagnostics. Implementations that
-do not support the feature report `unsupported_profile` before invoking a
-resolver.
+Nested file-to-file `$ref` references use the optional feature identifier
+`external_schema_refs`. An implementation supporting the feature lists it under
+`optional_features` in its claim document. Such references use the containing
+schema document as their base URI, obey the same owning-root boundary, detect
+cycles, and produce `schema_ref_unresolved` or `schema_ref_cycle` diagnostics.
+Implementations that do not support the feature report `unsupported_profile`
+before invoking a resolver.
 
 Core tools MUST NOT fetch network references during collection validation.
 Canonical `https://mdbase.dev/schemas/...` identifiers resolve only from the
 tool's bundled schema registry. Other HTTP(S) references are
 `schema_ref_forbidden` unless a non-portable extension explicitly enables them.
 
-An embedded `$id` changes JSON Schema identifier resolution but does not widen
-the allowed filesystem or network boundary.
+An embedded `$id` changes JSON Schema identifier resolution. The owning-root and
+network boundaries continue to apply.
 
 ## Canonical Schema Identity
 
@@ -171,8 +171,9 @@ Runtime profile schemas use their independently versioned namespace:
 https://mdbase.dev/schemas/runtime/v0.1/
 ```
 
-Implementations MUST validate against the schema contents shipped for the exact
-declared spec/profile version rather than resolving `latest` aliases.
+Implementations MUST validate against the canonical schema contents associated
+with the exact declared spec/profile version. `latest` aliases are unsuitable
+for validation.
 
 ## Validation Result
 
@@ -198,8 +199,5 @@ Strictness is expressed with JSON Schema `additionalProperties`.
 additionalProperties: false
 ```
 
-Configured explicit type keys such as `type` and `types` are not automatically
-allowed by JSON Schema. If a type expects records to persist those keys, the
-schema MUST include them.
-
-This is a deliberate change from v0.2.x strict-mode magic.
+A type that persists configured explicit keys such as `type` and `types` MUST
+include them in its JSON Schema.

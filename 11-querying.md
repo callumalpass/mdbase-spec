@@ -44,7 +44,8 @@ select:
 
 Projection expressions use CEL.
 
-Computed projection values are query results. They are not persisted.
+Computed projection values belong to the query result. Persistence requires an
+explicit write operation.
 
 ## Ordering
 
@@ -67,7 +68,8 @@ When all ordering fields compare equal, tools MUST tie-break by ascending
 
 `limit` and `offset` apply after filtering and sorting.
 
-`limit: 0` returns no records but still reports total count metadata.
+`limit: 0` returns an empty result page. Total count metadata still describes
+the complete match set.
 
 ## Body Search
 

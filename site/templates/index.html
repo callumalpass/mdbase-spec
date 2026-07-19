@@ -222,7 +222,7 @@ order_by:
 status == <span class="string">"open"</span> && tags.contains(<span class="string">"urgent"</span>)
 
 <span class="comment"># Date arithmetic</span>
-due_date < today() + <span class="string">"7d"</span>
+due_date < today() + duration(<span class="string">"P7D"</span>)
 
 <span class="comment"># Link traversal</span>
 assignee.asFile().team == <span class="string">"engineering"</span>
@@ -238,15 +238,18 @@ priority ?? <span class="number">3</span></code></pre>
       <h2 class="section-title">Independent conformance profiles</h2>
       <p class="section-intro">Implementations claim only the portable behavior they verify, with dependencies between profiles declared explicitly.</p>
 
-      <div class="levels" aria-label="Conformance levels">
+      <div class="levels" aria-label="Conformance profiles">
         <div class="level"><span class="level-num">01</span><span class="level-name">core_read</span></div>
         <div class="level"><span class="level-num">02</span><span class="level-name">collection_semantics</span></div>
-        <div class="level"><span class="level-num">03</span><span class="level-name">cel_query</span></div>
-        <div class="level"><span class="level-num">04</span><span class="level-name">links</span></div>
-        <div class="level"><span class="level-num">05</span><span class="level-name">core_write</span></div>
-        <div class="level"><span class="level-num">06</span><span class="level-name">lifecycle</span></div>
-        <div class="level"><span class="level-num">07</span><span class="level-name">runtime_contracts</span></div>
-        <div class="level"><span class="level-num">08</span><span class="level-name">workflow</span></div>
+        <div class="level"><span class="level-num">03</span><span class="level-name">cel</span></div>
+        <div class="level"><span class="level-num">04</span><span class="level-name">cel_match</span></div>
+        <div class="level"><span class="level-num">05</span><span class="level-name">cel_query</span></div>
+        <div class="level"><span class="level-num">06</span><span class="level-name">links</span></div>
+        <div class="level"><span class="level-num">07</span><span class="level-name">core_write</span></div>
+        <div class="level"><span class="level-num">08</span><span class="level-name">lifecycle</span></div>
+        <div class="level"><span class="level-num">09</span><span class="level-name">runtime_contracts/0.1</span></div>
+        <div class="level"><span class="level-num">10</span><span class="level-name">workflow/0.1</span></div>
+        <div class="level"><span class="level-num">11</span><span class="level-name">watch</span></div>
       </div>
     </section>
 

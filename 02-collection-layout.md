@@ -35,8 +35,7 @@ collection/
     example.md
 ```
 
-Only `mdbase.yaml` is required. A collection with no types is still a valid
-collection of untyped records.
+Only `mdbase.yaml` is required. Untyped records form a valid collection.
 
 ## Reserved Paths
 
@@ -48,9 +47,9 @@ The following paths are reserved by default:
 - nested collection roots
 
 Runtime folders such as `providers/`, `actions/`, `events/`, `workflows/`,
-`capabilities/`, `policies/`, `runs/`, and `checkpoints/` are not globally
-reserved. They contain ordinary records unless excluded by configuration. Their
-meaning comes from their type files and runtime contracts.
+`capabilities/`, `policies/`, `runs/`, and `checkpoints/` contain ordinary
+records unless excluded by configuration. Their meaning comes from their type
+files and runtime contracts.
 
 ## Record Discovery
 
@@ -87,7 +86,8 @@ They MUST NOT treat type files as data records.
 
 Runtime records are discovered like ordinary records. A workflow record is a
 record whose effective type is `workflow`. An action contract is a record whose
-effective type is `action`. The folder name is conventional, not authoritative.
+effective type is `action`. The effective type is authoritative; folder names
+are conventions.
 
 Tools SHOULD preserve common folder names for portability:
 

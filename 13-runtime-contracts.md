@@ -2,239 +2,238 @@
 
 ## Purpose
 
-Runtime contracts let a collection describe active behavior without baking that
-behavior into every tool.
+Runtime contracts let a collection describe event-driven behavior through
+portable records. They give providers, events, actions, capabilities, policies,
+and workflows stable identities and data shapes.
 
-The v0.3 runtime vocabulary is:
+Contract records describe the interfaces and policy that a runtime uses. The
+runtime supplies event delivery, action handlers, authorization, scheduling,
+and execution.
 
-- provider
-- event
-- action
-- workflow
-- capability
-- runtime policy
-- runtime run
-- runtime checkpoint
-- runtime diagnostic
+This chapter defines runtime profile `0.1.0`. Chapter 14 defines workflow
+execution using the contracts introduced here. The runtime profile is versioned
+independently from the mdbase collection specification.
 
-Contracts do not implement handlers, schedulers, agents, shell execution,
-provider APIs, or sandboxing.
+## Runtime Model
 
-This chapter defines runtime profile `0.1.0`. Runtime profile stability is
-independent from the mdbase collection specification version.
+A runtime turns declared contracts into active behavior through this sequence:
+
+1. Providers supply descriptors and the event, action, and capability contracts
+   they own.
+2. The runtime validates those contracts and composes an effective registry.
+3. Workflow preflight resolves event, action, provider, and capability
+   references against the registry.
+4. A delivered event resolves to an event contract and validates against its
+   payload schema.
+5. The runtime evaluates matching workflows, and runtime policy selects the
+   executor and available capabilities.
+6. Immediately before an action runs, the runtime validates its evaluated input
+   and authorizes its effects in the current dispatch context.
+7. The runtime validates the action output and any emitted events, and can
+   materialize run, checkpoint, or diagnostic records.
+
+The examples in this chapter follow one small system:
+
+```text
+canvas-ui provider
+  emits canvas.drop
+    triggers canvas.zone.set-status workflow
+      calls mdbase.record.patch
+        requires mdbase.record.write
+          authorized by local.runtime policy
+```
+
+## Contract Vocabulary
+
+| Contract | Purpose |
+| --- | --- |
+| provider | identifies a live source of event, action, and capability contracts |
+| event | defines the payload delivered when something happens |
+| action | defines a callable operation, its input/output, and its effects |
+| capability | names a permission or risk atom used by actions and policy |
+| runtime policy | selects executors, allows or denies capabilities, and sets limits |
+| workflow | connects events to actions; defined in Chapter 14 |
+| runtime run | records one workflow execution attempt |
+| runtime checkpoint | stores resumable workflow state |
+| runtime diagnostic | records a validation or execution issue |
+
+Provider, event, action, capability, policy, and workflow contracts form the
+effective registry. Runs, checkpoints, and diagnostics are runtime state
+records.
 
 ## Contract Records
 
-Runtime contracts may be ordinary Markdown records:
+Contracts can be ordinary Markdown records:
 
 ```text
-providers/mdbase.md
-actions/mdbase.record.patch.md
+providers/canvas-ui.md
 events/canvas.drop.md
+actions/mdbase.record.patch.md
 capabilities/mdbase.record.write.md
-workflows/canvas-zone-set-status.md
 policies/local-runtime.md
+workflows/canvas-zone-set-status.md
 ```
 
-The folder name is conventional. The record type is authoritative.
-
-Every runtime primitive may exist in the effective registry without being
-materialized as a Markdown record. Materialized records are for inspection,
-documentation, local override, or collection-defined custom contracts.
+The folder names are conventional. Each record's `type` determines its meaning.
 
 Contract record schemas are strict. Unknown top-level fields are errors unless
-their names begin with `x-`. Runtime-specific or provider-specific metadata
-belongs under those `x-*` extension keys.
+their names begin with `x-`. Runtime-specific and provider-specific metadata
+belongs under `x-*` extension keys.
 
 Action and event contracts contain embedded JSON Schemas. Implementations MUST
-validate those embedded schemas before dispatching a workflow. A malformed
-action input schema or event payload schema is a contract error, not an action
-runtime error.
+validate those schemas before the contracts enter the effective registry. A
+malformed action input, action output, or event payload schema is a contract
+error.
 
-## Runtime Contract Packages
+## Effective Registry
 
-v0.3 SHOULD ship small helper packages that expose canonical schemas, types,
-registry utilities, and a reference provider host:
+The effective registry is the complete set of contracts available for
+resolution and preflight in one runtime context.
 
-- `@callumalpass/mdbase-runtime`
-- `mdbase-runtime-contracts-rs`
+### Contract Sources
 
-The TypeScript package main export MUST be browser-safe. Node-specific Markdown
-loading and materialization belong behind an explicit `./node` export. The Rust
-package may begin as a fixture-compatible validation harness, but it should
-load the same schemas and examples so Rust consumers are not downstream
-afterthoughts.
+Contracts enter the registry from four sources:
 
-The main TypeScript export MUST carry the exact canonical schemas for the
-declared mdbase and runtime profile versions. Consumers MUST NOT need a source
-checkout or filesystem access to validate an in-memory provider. Schema access
-APIs MUST return immutable values or isolated copies so one consumer cannot
-alter validation behavior for another.
-
-Responsibilities:
-
-- load explicit contracts from collection files or packs
-- expose implicit runtime contracts supplied by a conforming runtime
-- compose the effective registry
-- validate event envelopes and payloads
-- validate evaluated action inputs and action outputs
-- resolve workflow `trigger.event`, `step.action`, and
-  `requires.capabilities`
-- resolve `requires.providers` against providers present in the effective
-  registry
-- optionally materialize implicit contracts and run/checkpoint/result records
-- register and remove providers atomically
-- provide a default-deny reference host for validated event delivery and action
-  dispatch
-
-Non-responsibilities:
-
-- implementing provider action handlers
-- scheduling timers
-- watching files
-- running shell commands
-- calling provider APIs
-- executing agents
-- deciding approval policy
-
-## Registry Composition
-
-Effective registries are composed deterministically:
-
-```text
-built-in mdbase contracts
-+ runtime/provider implicit contracts
-+ installed pack contracts
-+ collection-local explicit contracts
-```
-
-Registry types:
-
-- provider registry
-- event registry
-- action registry
-- capability catalog and effective capability ID set
-- policy registry
-- workflow set
-
-Duplicate IDs with incompatible versions MUST be errors. Duplicate IDs with the
-same version and canonically identical content coalesce while preserving all
-origins for diagnostics. Any non-identical duplicate is `contract_conflict`.
-
-Runtime profile 0.1 does not define semantic override precedence. Built-ins,
-providers, packs, and collection files therefore cannot silently replace one
-another. An implementation-specific override requires an `x-*` extension and
-MUST make the effective contract and its origin inspectable; it is not portable
-runtime-profile behavior.
-
-Registry composition order is used only for deterministic diagnostics and
-materialization: built-ins, provider contracts ordered by provider ID,
-installed packs ordered by pack ID, then collection files ordered by path.
-Resolution never depends on filesystem enumeration order.
-
-## Materialization
-
-Implicit runtime contracts can be materialized as Markdown records.
-
-Materialization modes:
-
-| Mode | Meaning |
+| Source | Description |
 | --- | --- |
-| `mirror` | exported runtime truth; semantic edits are drift |
-| `annotate` | runtime truth plus local documentation fields/body |
-| `override` | requested runtime-specific override; non-portable in profile 0.1 |
-| `custom` | collection-defined contract under its own ID |
+| built-in | core contracts supplied by the runtime |
+| provider | implicit contracts supplied by registered live providers |
+| installed pack | contracts supplied by an installed collection or runtime pack |
+| collection | explicit contract records stored in the collection |
 
-Materializing an action, event, provider, capability, policy, run, checkpoint,
-or diagnostic record does not implement runtime behavior. It makes runtime
-interfaces or state inspectable.
+An implicit contract can participate in the registry without a corresponding
+Markdown file. Materialization can create an inspectable Markdown
+representation later in the lifecycle.
 
-## Provider Contract
+### Composition Rules
 
-A provider contract describes a source of implicit runtime contracts.
+Registry composition is deterministic. Sources are processed in this order for
+diagnostics and materialization:
+
+1. built-in contracts
+2. provider contracts ordered by provider ID
+3. installed packs ordered by pack ID
+4. collection records ordered by collection path
+
+Resolution MUST NOT depend on filesystem enumeration order.
+
+Duplicate contracts with the same ID, version, and canonically identical
+content coalesce. The registry preserves every origin for diagnostics.
+Duplicate IDs with different versions or content MUST produce a
+`contract_conflict` error.
+
+Runtime profile 0.1 treats non-identical duplicate definitions as conflicts. A
+runtime-specific override uses an `x-*` extension and MUST make the effective
+contract and its origin inspectable.
+
+The registry contains separate indexes for providers, events, actions,
+capabilities, policies, and workflows. Capability resolution also produces the
+effective set of capability IDs supplied by providers, actions, and policy.
+
+## Providers
+
+### Provider Contract
+
+A provider contract identifies the source and ownership of implicit contracts:
 
 ```yaml
 type: provider
-id: canvas-bases
+id: canvas-ui
 version: 1
-name: Canvas Bases
+name: Canvas UI
 provider_version: "1.4.0"
 contracts:
   events:
     - canvas.drop
 ```
 
-Providers are first-class because they explain where implicit contracts come
-from and let workflows or policies require a provider without requiring every
-provider-owned contract to be written into the collection.
-
 `version` is the provider contract-shape revision. `provider_version` is the
-provider implementation's SemVer version. A provider MUST NOT advertise a
-contract ID it cannot dispatch or emit at the declared contract version.
+provider implementation's SemVer version.
 
-Provider requirements accept a string shorthand or an object:
+A provider MUST advertise every contract it supplies and MUST NOT advertise a
+contract ID it cannot emit or dispatch at the declared contract version.
+
+### Provider Requirements
+
+Workflows, actions, and policies can require a provider. Requirements accept a
+string shorthand or an object with a SemVer range:
 
 ```yaml
 requires:
   providers:
-    - id: tasknotes
+    - id: issue-tracker
       version: ">=4.12.0 <5.0.0"
 ```
 
-The string shorthand `tasknotes` means any available provider version. Version
-ranges use the SemVer comparator grammar. An unavailable or incompatible
-provider is a preflight error.
+The string shorthand `issue-tracker` accepts any available provider version.
+Object version ranges use the SemVer comparator grammar. An unavailable or
+incompatible provider is a preflight error.
 
-## Provider Host Interface
+### Live Provider Registration
 
-A live provider exposes the same registry shape as materialized records:
+A live provider supplies:
 
-```ts
-interface RuntimeProvider {
-  descriptor(): ProviderContract | Promise<ProviderContract>;
-  contracts(): RuntimeContractSet | Promise<RuntimeContractSet>;
-  readiness(): ProviderReadiness | Promise<ProviderReadiness>;
-  subscribe(eventId: string, handler: EventHandler): Disposable;
-  dispatch(actionId: string, input: unknown, context: DispatchContext): Promise<unknown>;
-  dispose(): void | Promise<void>;
-}
-```
+- one provider descriptor
+- every contract advertised by that descriptor
+- its readiness state
+- event subscriptions for event contracts it owns
+- action dispatch for action contracts it owns
+- a way to release its resources
 
-Registration MUST be atomic: contracts are not added to the effective registry
-until the provider reports ready. Provider removal invalidates dependent
-workflow preflight and prevents new dispatches.
+Registration MUST be atomic. Before a provider becomes visible, the runtime
+MUST:
 
-Before registration becomes visible, the host MUST validate the provider
-descriptor and every supplied contract against the canonical schema for its
-record type, compile every embedded action/event schema, verify advertised
-contract lists, and reject ownership conflicts. Failure leaves the effective
-registry unchanged and disposes the rejected provider.
+1. validate the provider descriptor
+2. validate every supplied contract against its canonical record schema
+3. compile every embedded event and action schema
+4. verify that the supplied contracts match the advertised contract lists
+5. reject contract ownership conflicts
+6. confirm that the provider is ready
 
-## Event Contract
+Failure leaves the effective registry unchanged and releases the rejected
+provider's resources.
 
-An event contract declares event payload shape.
+Removing a provider removes its contracts from the effective registry,
+invalidates dependent workflow preflight, and prevents new dispatches to that
+provider.
+
+## Events
+
+### Event Contract
+
+An event contract identifies the owning provider and defines the payload shape:
 
 ```yaml
 type: event
 id: canvas.drop
 version: 1
-provider: canvas-bases
+provider: canvas-ui
 name: Canvas drop
 schemas:
   dialect: json-schema-2020-12
   payload:
     type: object
-    required: [board, position]
+    required: [board, file, zone, position]
     properties:
       board:
         type: object
+      file:
+        type: object
+        required: [path]
+        properties:
+          path: { type: string }
+      zone:
+        type: object
+        required: [id]
+        properties:
+          id: { enum: [todo, doing, done] }
       position:
         type: object
 ```
 
-## Event Envelope
+### Event Envelope
 
-Delivered events use a stable envelope:
+Every delivered event uses the canonical envelope:
 
 ```yaml
 type: canvas.drop
@@ -242,38 +241,46 @@ contract_version: 1
 id: evt_01H...
 occurred_at: "2026-06-14T12:00:00Z"
 source:
-  runtime: canvas-bases
+  runtime: canvas-ui
 payload:
   board:
     path: boards/work.md
+  file:
+    path: tasks/card-001.md
+  zone:
+    id: doing
   position:
     x: 120
     y: 320
 ```
 
-The envelope `type` resolves against the event registry. The `payload` validates
-against the event contract payload schema.
+Event validation proceeds in this order:
 
-The complete envelope MUST first validate against the canonical event-envelope
-schema. Payload validation and provider/version checks happen only after that
-structural validation succeeds.
+1. validate the complete envelope against the canonical event-envelope schema
+2. resolve `type` against the event registry
+3. require `contract_version` to equal the resolved event contract version
+4. verify provider provenance when `source.provider` is present
+5. validate `payload` against the event contract's payload schema
 
+The complete envelope MUST pass structural validation before contract
+resolution, provider checks, or payload validation proceed.
 `contract_version` is required and MUST equal the resolved event contract
-version. Event IDs are unique within the delivering runtime's deduplication
-window.
+version.
 
-The envelope source object uses known keys plus `x-*` extension keys. Event
-payloads remain governed by the event contract payload schema. If
-`source.provider` is present, it MUST match the resolved event contract's
-`provider`.
+The `source` object accepts its defined fields and `x-*` extension fields. When
+`source.provider` is present, it MUST equal the provider declared by the event
+contract.
 
+Event IDs MUST be unique within the delivering runtime's deduplication window.
 `trace.correlation_id` groups related work. `trace.causation_id` identifies the
-event or run that directly caused this event. Runtimes MUST preserve both when
-dispatching actions and emitting follow-up events.
+event or run that directly caused the event. Runtimes MUST preserve both trace
+values when dispatching actions and emitting follow-up events.
 
-## Action Contract
+## Actions And Authorization
 
-An action contract declares a workflow-callable operation.
+### Action Contract
+
+An action contract defines a workflow-callable operation:
 
 ```yaml
 type: action
@@ -301,30 +308,14 @@ emits:
   - mdbase.record.modified
 ```
 
-A runtime may execute an action only if it has a handler for that action ID and
-the caller is authorized for the required capabilities/effects.
+The action ID resolves to a handler owned by the declared provider. The runtime
+validates evaluated input against `schemas.input` before dispatch and validates
+the returned value against `schemas.output`. Events named by `emits` validate
+before delivery.
 
-Preflight capability resolution is advisory, not authorization. Immediately
-before dispatch, the runtime MUST authorize the evaluated input and dispatch
-context, including actor, workflow origin, provider, requested effects, and
-resource scope. Actions with effects are denied unless an effective selected
-policy explicitly allows every required capability.
+### Capabilities
 
-The dispatch context contains at least:
-
-```yaml
-actor: { id: local-user, kind: user }
-origin: { workflow: canvas.zone.set-status, path: workflows/canvas-zone-set-status.md }
-run_id: run_01j0
-correlation_id: corr_01j0
-causation_id: evt_01j0
-executor: obsidian
-```
-
-## Capability Contract
-
-A capability is a permission or risk atom. Capability records are optional
-catalog entries.
+A capability names a permission or risk atom:
 
 ```yaml
 type: capability
@@ -335,16 +326,16 @@ risk: medium
 description: Allows modifying Markdown record frontmatter.
 ```
 
-Runtimes use capabilities for preflight, local policy, and risk reporting.
+Capability records are optional catalog entries used for display and risk
+reporting. The effective capability ID set comes from providers, actions, and
+runtime policy. A missing materialized capability record MUST NOT invalidate a
+workflow. A required capability that is absent from the effective set or denied
+by policy is a preflight error.
 
-Missing materialized capability records MUST NOT by itself make a workflow
-invalid. Preflight checks the effective capability IDs supplied by providers,
-actions, and policy. A missing or forbidden capability in that effective runtime
-registry is an error.
+### Runtime Policy
 
-## Runtime Policy Contract
-
-Runtime policy records describe local deployment policy:
+A runtime policy selects executors, decides capability access, and sets local
+limits:
 
 ```yaml
 type: runtime_policy
@@ -352,9 +343,9 @@ id: local.runtime
 version: 1
 name: Local runtime policy
 executors:
-  default: obsidian
+  default: desktop
   workflows:
-    canvas.zone.set-status: obsidian
+    canvas.zone.set-status: desktop
 capabilities:
   mdbase.record.write:
     mode: allow
@@ -362,33 +353,75 @@ limits:
   workflow_timeout: 30s
 ```
 
-Policy is where local executor selection belongs. Workflow records do not name
-their executor. Capability policy can allow or deny a capability and attach
-runtime-enforced limits. Approval-specific behavior belongs in runtime/provider
-extensions rather than the core policy schema.
+Workflow records identify execution semantics; runtime policy selects the local
+executor. Capability entries can allow or deny a capability and attach limits
+that the runtime enforces.
 
-Runtime policies are inert until selected by local runtime configuration. A
-synced collection policy file MUST NOT automatically authorize actions on a new
-machine. `runtime.policy` selects one effective policy record; zero or multiple
-selected policies are preflight errors for side-effecting workflows.
+Runtime policy becomes effective when selected by local `runtime.policy`
+configuration. A policy record arriving through collection synchronization
+MUST NOT authorize actions until the local configuration selects it. A
+side-effecting workflow with zero or multiple selected policies fails
+preflight.
 
-## Run And Checkpoint Records
+Approval behavior can be defined by runtime or provider extensions.
 
-Runtimes MAY materialize run state:
+### Dispatch Authorization
 
-- run record: one workflow execution attempt
-- checkpoint record: durable resumable state
-- embedded step result entry: one step outcome in a run record
-- diagnostic record: validation or execution issue
+Preflight resolves providers and capabilities and reports whether the workflow
+is ready for the current runtime. Immediately before dispatch, the runtime MUST
+authorize the evaluated input and current dispatch context.
 
-v0.3 defines schemas for these records so runtimes can share logs, but core
-collection conformance does not require storing every transient event.
+The dispatch context contains at least:
 
-Operational run/checkpoint data defaults to `.mdbase/runtime/`, which is
-excluded from ordinary collection scanning and workflow triggers. Runtimes MAY
-materialize human-significant summaries as ordinary records, but MUST redact
-secrets, apply retention policy, and mark their event origin so self-trigger
-loops can be prevented.
+```yaml
+actor: { id: local-user, kind: user }
+origin: { workflow: canvas.zone.set-status, path: workflows/canvas-zone-set-status.md }
+run_id: run_01j0
+correlation_id: corr_01j0
+causation_id: evt_01j0
+executor: desktop
+```
+
+Authorization considers the actor, workflow origin, provider, requested
+effects, resource scope, and applicable policy limits. An action with effects
+MUST be denied unless the selected policy explicitly allows every required
+capability. Dispatch also requires a registered handler for the action ID.
+
+## Materialization
+
+Materialization writes an implicit contract or runtime state value as a
+Markdown record. It supports inspection, documentation, collection-defined
+custom contracts, and runtime-specific overrides.
+
+| Mode | Meaning |
+| --- | --- |
+| `mirror` | exported runtime truth; semantic edits are drift |
+| `annotate` | runtime truth plus local documentation fields or body text |
+| `override` | runtime-specific override request using an extension mechanism |
+| `custom` | collection-defined contract under its own ID |
+
+Materialized contracts remain subject to the same schema validation and
+registry conflict rules as other contracts. Materialization records an
+interface or state value; executable behavior continues to come from the
+registered provider or runtime.
+
+## Runtime State Records
+
+Runtimes MAY materialize state using the canonical runtime record schemas:
+
+| Record | Meaning |
+| --- | --- |
+| runtime run | one workflow execution attempt, including step results |
+| runtime checkpoint | durable state for waiting or resuming a workflow |
+| runtime diagnostic | a validation or execution issue |
+
+Operational run and checkpoint data defaults to `.mdbase/runtime/`. That path
+is excluded from ordinary collection scanning and workflow triggers.
+
+Runtimes MAY materialize human-significant summaries as ordinary collection
+records. Such records MUST redact secrets, follow the runtime's retention
+policy, and identify their event origin so the runtime can prevent self-trigger
+loops.
 
 Example run:
 
@@ -397,7 +430,7 @@ type: runtime_run
 id: run_01j0
 workflow: canvas.zone.set-status
 trigger_event: canvas.drop
-executor: obsidian
+executor: desktop
 idempotency_key: canvas.zone.set-status:evt_01j0:drop
 status: succeeded
 started_at: "2026-06-15T08:00:00Z"
@@ -408,21 +441,31 @@ steps:
     status: succeeded
 ```
 
-Checkpoints are for durable waiting or resumable state, such as waiting for a
-provider-specific approval response. They are not the same as claims or leases.
+Checkpoint records support durable waiting and resumable state. Claim and lease
+coordination uses runtime extensions.
 
-## Non-Core Primitive Patterns
+## Workflow Integration
 
-The following ideas are intentionally not core v0.3 runtime primitives:
+The effective registry includes workflow records alongside their referenced
+event, action, provider, and capability contracts. Runtime Contracts preflight
+validates the workflow record and resolves those references.
 
-| Idea | v0.3 pattern | Reason |
-| --- | --- | --- |
-| schedule | timer/provider event | workflows already subscribe to events |
-| approval | checkpoint plus policy/provider action | approval systems differ by runtime |
-| secret | secret reference value handled by runtime | persisted secret records are risky |
-| lease/lock | optional cooperative runtime extension | not needed for the lightweight baseline |
-| artifact | action output or ordinary file | shared artifact browsing can wait |
-| subscription | workflow trigger | triggers already declare event interest |
+Chapter 14 defines trigger matching, expression evaluation, step dispatch,
+iteration, concurrency, executor coordination, and error handling. Workflow
+execution is covered by the separate Workflow conformance profile.
 
-Future versions may standardize any of these if real runtimes need a portable
-record shape.
+## Extension Patterns
+
+Runtime profile 0.1 represents adjacent concerns with the following patterns:
+
+| Concern | Profile 0.1 pattern |
+| --- | --- |
+| schedule | event emitted by a timer provider |
+| approval | checkpoint plus policy or provider action |
+| secret | runtime-managed secret reference value |
+| lease or lock | cooperative runtime extension |
+| artifact | action output or ordinary file |
+| subscription | workflow trigger |
+
+Future runtime profiles can define additional portable record shapes for these
+concerns.

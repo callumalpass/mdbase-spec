@@ -1,62 +1,163 @@
-# mdbase specification
+# mdbase
 
-mdbase defines a portable way to treat a folder of Markdown files with YAML
-frontmatter as a typed, queryable collection.
+Portable types, queries, and automation for Markdown collections.
 
-The current collection protocol is **v0.3.0**. Implementations may still be
-distributed as prerelease packages while they complete platform qualification;
-package version and protocol version are intentionally independent.
+mdbase is an open specification for tools that work with structured Markdown.
+It gives editors, command-line tools, plugins, and agents a shared way to
+discover records, validate YAML frontmatter, resolve links, run queries, and
+update files safely.
 
-**Read the published site:** [mdbase.dev](https://mdbase.dev)
+The durable data stays in ordinary Markdown files. Collections remain readable
+in a text editor, reviewable in Git, and usable across conforming tools.
 
-## Design
+The current specification is **v0.3.0**.
 
-> JSON Schema validates persisted frontmatter shape. mdbase defines the
-> Markdown collection behavior around that shape. CEL is the portable
-> expression language. Runtime behavior is declared through typed Markdown
-> contracts and executed by conforming runtimes.
+[Read the overview](./00-overview.md) ·
+[Visit mdbase.dev](https://mdbase.dev) ·
+[Explore an example collection](./examples/v0.3/canvas-runtime/)
 
-The specification covers collection boundaries, record parsing, JSON Schema
-type wrappers, matching and defaults, links, lifecycle behavior, CEL queries,
-CRUD operations, runtime providers, workflows, migration, and conformance.
+## What mdbase Provides
 
-## Specification
+- JSON Schema types for YAML frontmatter
+- path and frontmatter rules for matching records to types
+- collection-aware defaults, uniqueness rules, and validation
+- portable links between Markdown records
+- CEL expressions for filtering, ordering, and projections
+- consistent create, read, update, delete, rename, and batch operations
+- lifecycle policies for IDs, timestamps, slugs, and managed values
+- optional runtime contracts for events, actions, capabilities, and workflows
+- conformance profiles that show which features each tool supports
 
-| Section | File | Purpose |
-| --- | --- | --- |
-| 00 | [Overview](./00-overview.md) | scope, profiles, and design split |
-| 01 | [Concepts](./01-concepts.md) | terminology and data model |
-| 02 | [Collection Layout](./02-collection-layout.md) | discovery, paths, and reserved state |
-| 03 | [Records And Frontmatter](./03-records-and-frontmatter.md) | Markdown and YAML value semantics |
-| 04 | [Configuration](./04-configuration.md) | `mdbase.yaml` v0.3 configuration |
-| 05 | [Type Files](./05-type-files.md) | JSON Schema wrappers and type metadata |
-| 06 | [JSON Schema Profile](./06-json-schema-profile.md) | supported 2020-12 vocabulary and `$ref` rules |
-| 07 | [Collection Semantics](./07-collection-semantics.md) | matching, defaults, uniqueness, links, and paths |
-| 08 | [Links](./08-links.md) | link values, parsing, and resolution |
-| 09 | [Lifecycle](./09-lifecycle.md) | managed values and mutation-time policy |
-| 10 | [CEL Profile](./10-cel-profile.md) | portable expressions and host bindings |
-| 11 | [Querying](./11-querying.md) | filters, ordering, and result envelopes |
-| 12 | [Operations](./12-operations.md) | read/write behavior and diagnostics |
-| 13 | [Runtime Contracts](./13-runtime-contracts.md) | providers, actions, events, capabilities, and policy |
-| 14 | [Workflows](./14-workflows.md) | workflow records and execution semantics |
-| 15 | [Migrations And Compatibility](./15-migrations-and-compatibility.md) | safe v0.2 migration and compatibility |
-| 16 | [Conformance](./16-conformance.md) | profiles, claims, fixtures, and runners |
+## A Collection At A Glance
 
-The complete v0.2.1 specification and its implementer material remain available
-in the [v0.2 archive](./v0.2/README.md). Legacy `tests/level-*` fixtures remain in
-place for compatibility runners and are labeled in [tests/README.md](./tests/README.md).
+An mdbase collection starts with an `mdbase.yaml` file:
 
-## Artifacts
+```text
+project/
+├── mdbase.yaml
+├── _types/
+│   └── task.md
+└── tasks/
+    └── write-docs.md
+```
 
-- `schemas/v0.3/` contains the canonical JSON Schemas.
-- `tests/v0.3/` contains shared v0.3 conformance fixtures.
-- `examples/v0.3/` contains runtime and migration proof collections.
-- `packages/runtime-contracts/` contains the browser-safe TypeScript runtime
-  contract package and explicit Node loader export.
-- `packages/runtime-contracts-rs/` validates the same contracts in Rust.
-- `release/v0.3.0.md` is the auditable ecosystem release contract.
+The minimal configuration declares the specification version:
 
-## Verification
+```yaml
+spec_version: "0.3.0"
+```
+
+A type file associates records with a JSON Schema:
+
+```markdown
+---
+kind: mdbase.type
+name: task
+
+match:
+  path_glob: "tasks/**/*.md"
+
+schema:
+  dialect: json-schema-2020-12
+  value:
+    type: object
+    required: [title]
+    properties:
+      title:
+        type: string
+        minLength: 1
+      status:
+        enum: [open, in_progress, done]
+      priority:
+        type: integer
+        minimum: 1
+        maximum: 5
+---
+
+# Task
+
+Task records live under `tasks/`.
+```
+
+Records stay recognizable as ordinary Markdown:
+
+```markdown
+---
+title: Write the documentation
+status: in_progress
+priority: 2
+---
+
+Explain how to create a first collection.
+```
+
+A query can select matching records with a CEL expression:
+
+```yaml
+types: [task]
+where: 'status != "done" && priority <= 2'
+order_by:
+  - field: priority
+    direction: asc
+```
+
+## Where To Start
+
+| Goal | Start here |
+| --- | --- |
+| Understand the model | [Overview](./00-overview.md) and [Concepts](./01-concepts.md) |
+| Create a collection | [Collection Layout](./02-collection-layout.md), [Configuration](./04-configuration.md), and [Type Files](./05-type-files.md) |
+| Validate or query records | [JSON Schema Profile](./06-json-schema-profile.md), [CEL Profile](./10-cel-profile.md), and [Querying](./11-querying.md) |
+| Add links or managed fields | [Links](./08-links.md) and [Lifecycle](./09-lifecycle.md) |
+| Define automation | [Runtime Contracts](./13-runtime-contracts.md) and [Workflows](./14-workflows.md) |
+| Migrate a v0.2 collection | [Migrations And Compatibility](./15-migrations-and-compatibility.md) |
+| Build a conforming tool | [Conformance](./16-conformance.md), [canonical schemas](./schemas/v0.3/), and [test fixtures](./tests/v0.3/) |
+
+## Implementations
+
+Choose an implementation based on how you want to work with a collection:
+
+| Project | Role |
+| --- | --- |
+| [mdbase](https://github.com/callumalpass/mdbase) | TypeScript collection library and migration engine |
+| [mdbase-rs](https://github.com/callumalpass/mdbase-rs) | Rust collection library |
+| [mdbase-cli](https://github.com/callumalpass/mdbase-cli) | Command-line collection operations and migration |
+| [mdbase-lsp](https://github.com/callumalpass/mdbase-lsp) | Editor diagnostics and language-server support |
+| [mdbase-obsidian](https://github.com/callumalpass/mdbase-obsidian) | Obsidian integration and runtime host adapter |
+
+Implementations declare conformance profiles independently, so their supported
+features may differ. Package versions and specification versions advance
+independently.
+
+## Specification Guide
+
+The specification is organized by topic:
+
+- Chapters 00–04 introduce the model, records, collection layout, and
+  configuration.
+- Chapters 05–09 define types, schemas, collection semantics, links, and
+  lifecycle policy.
+- Chapters 10–12 define CEL expressions, queries, and record operations.
+- Chapters 13–14 define optional runtime contracts and workflows.
+- Chapters 15–16 cover migration, compatibility, and conformance.
+
+The [v0.2.1 archive](./v0.2/README.md) preserves the earlier specification and
+implementer material. Legacy fixtures are documented in
+[tests/README.md](./tests/README.md).
+
+## Repository Contents
+
+- [`schemas/v0.3/`](./schemas/v0.3/) contains the canonical JSON Schemas.
+- [`tests/v0.3/`](./tests/v0.3/) contains shared conformance fixtures.
+- [`examples/v0.3/`](./examples/v0.3/) contains example and migration
+  collections.
+- [`packages/`](./packages/) contains CEL and runtime support packages.
+- [`site/`](./site/) contains the mdbase.dev static site.
+
+## Repository Verification
+
+Run the relevant checks after changing specification artifacts or support
+packages:
 
 ```bash
 python3 scripts/check_v03_tests.py
@@ -67,16 +168,6 @@ npm test --prefix packages/cel-host
 npm test --prefix packages/runtime-executor
 npm run build --prefix site
 ```
-
-## Implementations
-
-| Project | Language | Role |
-| --- | --- | --- |
-| [mdbase](https://github.com/callumalpass/mdbase) | TypeScript | collection implementation and migration engine |
-| [mdbase-rs](https://github.com/callumalpass/mdbase-rs) | Rust | independent collection implementation |
-| [mdbase-cli](https://github.com/callumalpass/mdbase-cli) | TypeScript | command-line operations and reviewed migration |
-| [mdbase-lsp](https://github.com/callumalpass/mdbase-lsp) | Rust | editor diagnostics from Rust semantics |
-| [mdbase-obsidian](https://github.com/callumalpass/mdbase-obsidian) | TypeScript | Obsidian collection and runtime host adapter |
 
 ## License
 

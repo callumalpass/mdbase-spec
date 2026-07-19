@@ -1,0 +1,31 @@
+kind: mdbase.conformance
+status: verified
+implementation:
+  id: dependency-fixture
+  name: Valid dependency fixture
+  version: 0.0.0-test
+spec_version: 0.3.0
+runtime_profile_version: 0.1.0
+profiles:
+  - core_read
+  - collection_semantics
+  - cel
+  - cel_match
+  - cel_query
+  - links
+  - core_write
+  - lifecycle
+  - runtime_contracts/0.1
+  - workflow/0.1
+  - watch
+json_schema:
+  dialect: https://json-schema.org/draft/2020-12/schema
+  keywords: []
+  formats: []
+  remote_refs: false
+limits: {}
+evidence:
+  - kind: conformance_suite
+    command: fixture-only
+    result: pass
+    verified_at: "2026-07-19T10:00:00+10:00"

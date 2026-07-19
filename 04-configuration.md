@@ -50,8 +50,11 @@ Pre-1.0 draft versions MAY be accepted by explicit compatibility setting.
 | `settings.include_subfolders` | boolean | `true` | whether record scanning recurses |
 | `settings.exclude` | list of globs | implementation default | excluded paths |
 
-Unknown config keys MUST be ignored with a warning, not rejected, unless the
-tool is running in an explicit strict-config mode.
+`settings.explicit_type_keys` replaces the default key list. An empty list makes
+all type membership inferred.
+
+Unknown config keys MUST produce a warning while normal config loading
+continues. An explicit strict-config mode MAY reject them.
 
 ## Runtime Config
 
@@ -73,14 +76,14 @@ runtime:
 | --- | --- |
 | `runtime` | resolve contracts from the effective runtime registry; default |
 | `materialized` | prefer materialized contract records where available |
-| `strict` | require explicit collection or pack contracts for portable workflow packages |
+| `strict` | require explicit collection or pack contracts for portable workflows |
 
 `runtime.policy` is the collection-relative path of the locally selected
 runtime policy record. Tools MUST NOT infer authorization merely because a
 policy record exists in the collection.
 
-Core read/write tools MAY ignore `runtime` except to preserve it during config
-updates.
+Core Read and Core Write claims remain independent of runtime profiles. Config
+updates preserve the `runtime` section.
 
 `runtime.profile_version` versions the optional runtime-contract and workflow
 profile independently from the collection specification. A runtime-aware tool
@@ -91,9 +94,9 @@ workflows. Core-only tools do not need to support this profile.
 
 Portable v0.3 expressions are CEL. No config key is required to opt into CEL.
 
-Tools MAY support non-portable UI expression dialects, but portable stored v0.3
-files MUST use the mdbase CEL profile unless a feature explicitly declares a
-different extension namespace.
+Tools MAY support non-portable UI expression dialects. Portable stored v0.3
+files MUST use the mdbase CEL profile unless a feature declares a different
+extension namespace.
 
 ## Version Compatibility
 
@@ -104,8 +107,6 @@ when rejecting a collection.
 
 ## Environment And Includes
 
-v0.3 core does not require config includes or environment substitution.
-
-Implementations MAY provide local config expansion, but expanded values MUST be
-the values used for validation and query behavior. Non-portable config
-extensions SHOULD use a namespaced key.
+Config includes and environment substitution are optional local extensions.
+Expanded values MUST be the values used for validation and query behavior.
+Non-portable config extensions SHOULD use a namespaced key.

@@ -1,160 +1,209 @@
 # 10. CEL Profile
 
-## Portable Expression Language
+## Purpose
 
-Portable v0.3 expressions use CEL.
+Portable v0.3 expressions use CEL. This chapter defines the data available to an
+expression, mdbase host functions, missing-value behavior, limits, and error
+handling.
 
-Stored v0.3 files SHOULD NOT use Obsidian Bases expressions, JavaScript, Python,
-SQL fragments, or implementation-specific expression languages unless the
-containing feature explicitly declares a non-portable extension namespace.
+The base `cel` conformance profile covers this shared expression model. Features
+that embed CEL add their own context requirements: `cel_match`, `cel_query`,
+Lifecycle, and Workflow.
 
-Obsidian-facing tools MAY accept Bases formulas in their UI and translate them
-to CEL before writing portable mdbase files.
+Each containing object defines how source text is stored. Query `where` uses a
+string, while `match.expr` and workflow expression values use an object such as:
+
+```yaml
+$expr: 'status == "open"'
+```
+
+Plain strings in workflow inputs remain literal strings.
 
 ## Expression Locations
 
-CEL expressions appear in:
+CEL appears in:
 
-- query `where`
-- query projections
-- collection projections, if supported
+- `match.expr`
+- query filters and projections
+- collection projections
 - lifecycle guards
-- workflow trigger conditions
-- workflow step conditions
-- workflow step input templates
-- runtime policy predicates
+- workflow variables, conditions, inputs, iteration, and run policy
 
-`match.where` is not CEL in v0.3 core.
+`match.where` uses the structured predicate language from Chapter 07.
 
-## Host Bindings
+Tools may translate another user-interface expression language to CEL before
+writing portable records. A stored alternate dialect uses an `x-*` extension
+whose owner defines its semantics.
 
-The mdbase CEL profile defines these bindings where relevant:
+## Evaluation Contexts
 
-| Binding | Meaning |
+Every expression location has a context contract. A host supplies exactly the
+system bindings listed for that context, along with the applicable top-level
+record fields.
+
+| Context | Available values |
 | --- | --- |
-| frontmatter field names | effective record values in query context |
-| `record` | effective frontmatter object |
-| `raw` | persisted frontmatter object |
-| `present` | boolean presence maps for record fields |
-| `file` | file metadata and link/tag helpers |
-| `note` | alias for the current record value where useful for compatibility |
-| `this` | current embedding record for embedded query contexts |
-| `old` | previous raw frontmatter during update lifecycle and record-change events |
-| `event` | runtime event envelope |
-| `steps` | prior workflow step results |
-| `vars` | workflow variables |
-| `item` | current item in workflow iteration |
+| inferred match | candidate raw fields at top level; `record`, `raw`, `present`, `file`, `note` |
+| query or projection | effective fields at top level; `record`, `raw`, `present`, `file`, `note`; `this` for an embedded query |
+| lifecycle guard | current draft fields at top level; `record`, `raw`, `present`, `old`, `file`, `operation` |
+| workflow variable, trigger, or workflow condition | `event`, `workflow`, `trigger`, `vars` |
+| workflow step condition or input | `event`, `workflow`, `trigger`, `steps`, `vars`; `item` during iteration |
+| workflow run-policy expression | `event`, `workflow`, `trigger`, `vars` |
 
-Bindings by expression location are normative:
+An unavailable system binding is a compile or preflight diagnostic. For example,
+`steps` is unavailable to a trigger condition because no step has run.
 
-| Location | Bindings |
-| --- | --- |
-| query, projection, `match.expr` | top-level effective fields, `record`, `raw`, `present`, `file`, `note`; optional `this` only for embedded queries |
-| lifecycle guard | top-level draft fields, `record`, `raw`, `present`, `old`, `file`, `operation` |
-| workflow trigger | `event`, `vars` |
-| workflow step condition/input | `event`, `steps`, `vars`, and `item` during iteration |
-| runtime policy predicate | `event`, `workflow`, `action`, `actor`, `runtime` |
+The system names `record`, `raw`, `present`, `file`, `note`, `this`, `old`,
+`operation`, `event`, `workflow`, `trigger`, `steps`, `vars`, and `item` are
+reserved. A frontmatter field with one of those names remains available through
+`record.<field>` and `raw.<field>`.
 
-An unavailable binding is a compile/preflight diagnostic, not a null value.
+### Query Context
 
-System bindings (`file`, `raw`, `record`, `note`, `present`, `this`, `event`,
-`steps`, `vars`, and `item`) are reserved at the top level. If frontmatter uses
-one of those names, tools MUST expose the frontmatter value through
-`record.<field>` and `raw.<field>` rather than allowing it to replace the system
-binding.
+In a query, top-level fields and `record` contain effective values. `raw`
+contains persisted frontmatter. `note` is an alias for `record`.
 
-## Null And Missing
+```cel
+present.raw.status == false && record.status == "open"
+```
 
-The profile must preserve the mdbase distinction between missing and null.
+`file` supplies the metadata and helpers defined by the collection, query, and
+link profiles. An embedded query may receive `this`, which refers to its
+containing record.
 
-Rules:
+### Matching Context
 
-- top-level field names evaluate against effective record values for ergonomic
-  expressions such as `status == "open"`
-- `record` contains effective frontmatter after read defaults
-- `raw` contains only persisted frontmatter
-- `present.raw.<field>` is true when the field exists in persisted
-  frontmatter, even when its value is null
-- `present.record.<field>` is true when the field exists in the effective
-  record, including values supplied by `collection.read_defaults`
-- implementations SHOULD materialize `present.*` entries for all schema-known
-  fields, persisted fields, and defaulted fields so missing fields evaluate to
-  boolean false rather than a host-engine field error
-- property access through null returns null rather than aborting the whole query
-- type errors in query filters evaluate to null, and null is treated as false
-  for filtering
+In `match.expr`, the candidate has not yet acquired a type. `record`, `raw`,
+`note`, and top-level field names therefore refer to the same raw frontmatter
+object. `present.record` and `present.raw` contain the same values.
 
-Bare `has(status)` is not portable v0.3 CEL. `has(raw.status)` is also
-insufficient for mdbase record presence because CEL engines can treat null map
-values as not present. The portable record-presence contract is the `present`
-binding.
+```cel
+file.inFolder("tasks") && present.raw.tags && tags.exists(t, t == "task")
+```
+
+Read defaults and projections enter after matching and are absent from this
+context.
+
+### Lifecycle Context
+
+Lifecycle expressions evaluate against the current write draft. Top-level
+fields, `record`, and `raw` contain that draft. On update, `old` contains the
+previous raw frontmatter. `operation` describes the active create or update and
+`file` describes its target path and available metadata.
+
+```cel
+old.status != status
+```
+
+### Workflow Context
+
+Workflow expressions use the validated event envelope and workflow metadata.
+Trigger and run-policy expressions execute before steps. Step expressions also
+receive the standard results of completed steps. Iteration adds the current
+item under the configured iteration name, with `item` as the default.
+
+```cel
+event.payload.zone.id
+```
+
+```cel
+steps.patch_status.output.path
+```
+
+Chapter 14 defines when each workflow expression is evaluated.
+
+## Missing And Null
+
+mdbase preserves four observable record states:
+
+| Raw state | Effective state | `present.raw` | `present.record` | Top-level query value |
+| --- | --- | --- | --- | --- |
+| missing, no default | missing | `false` | `false` | `null` |
+| missing, read default | default value | `false` | `true` | default value |
+| explicit null | null | `true` | `true` | `null` |
+| persisted value | persisted value | `true` | `true` | persisted value |
+
+Hosts MUST make missing record fields evaluate to null and presence entries
+evaluate to false. `present` includes schema-known, persisted, and defaulted field
+names so these checks do not depend on host map-access behavior.
+
+Property access through null returns null. Type errors in query evaluation also
+yield null and produce an expression diagnostic; a query filter includes only a
+record whose condition evaluates to boolean true.
+
+Portable frontmatter-presence checks use `present.raw.<field>`.
+`present.record.<field>` tests effective presence. CEL's `has()` macro remains
+available for objects whose host representation has ordinary CEL presence
+semantics, such as event payload objects.
 
 ## Date And Duration
 
-The profile defines host functions:
+The profile defines these host functions:
 
 - `now()`
 - `today()`
 - `duration(string)`
 
-Date, timestamp, time, and duration values MUST have stable comparison and
-serialization rules. Timestamp comparisons are by instant. Date comparisons are
-calendar-date comparisons.
-
 `now()` returns an RFC 3339 UTC date-time. `today()` returns the calendar date in
-the runtime's declared timezone. Runtimes MUST declare that timezone in
-operation/runtime context; silently using a machine-local timezone is not
-portable. `duration(string)` accepts ISO 8601 durations only in portable files.
+the runtime's declared timezone. The operation or runtime context MUST declare
+that timezone. `duration(string)` accepts ISO 8601 durations in portable stored
+expressions.
+
+Timestamp comparison uses the represented instant. Date comparison uses the
+calendar date. Date, time, timestamp, and duration values have stable
+serialization across reads and query results.
 
 ## File And Link Helpers
 
-The profile defines:
+Core Read supplies file metadata and:
+
+- `file.inFolder(path)`
+
+The Links profile adds:
 
 - `link(value)`
 - `file.hasTag(tag)`
 - `file.hasLink(linkValue)`
-- `file.inFolder(path)`
 - `file.asLink()`
 - `linkValue.asFile()`
 
-`asFile()` returns null for broken links and MUST enforce a traversal depth
-limit to prevent unbounded graph walks.
+`asFile()` returns null for an unresolved link. Traversal depth is bounded as
+described below. Expressions can use helpers supplied by every profile in the
+implementation's conformance claim.
 
-## Cost Limits
+## Limits
 
-Tools SHOULD enforce:
+Implementations MUST bound expression source size, AST depth, evaluation work,
+and link traversal. The portable minimum supported limits are:
 
-- maximum expression length
-- maximum AST depth
-- maximum link traversal depth
-- maximum list iteration count
-- timeout or evaluation budget for user-authored expressions
+| Limit | Minimum supported value |
+| --- | --- |
+| expression source | 64 KiB |
+| AST depth | 100 |
+| link traversal depth | 10 |
 
-Exceeded limits produce diagnostics rather than partial silent results.
+Hosts SHOULD also bound list iteration, elapsed evaluation time, and memory.
+Operational limits are reported in conformance claims. Exceeding a limit
+produces a diagnostic identifying the limit and configured value.
 
-## Diagnostics
+## Compilation And Evaluation Errors
 
-Expression diagnostics SHOULD include:
+All stored expressions MUST compile during preflight of their containing type,
+query, lifecycle policy, workflow, or runtime object. Parse and type errors
+invalidate that containing object.
 
-- expression source
-- line and column or byte range when available
-- code
-- message
-- host binding or function name when relevant
+Evaluation outcomes depend on context:
 
-Runtime tools SHOULD distinguish parse/type errors from evaluation errors.
+| Context | Evaluation error |
+| --- | --- |
+| inferred match | report a diagnostic and treat the candidate as a non-match |
+| query filter or projection | yield null for that record and report a diagnostic |
+| lifecycle guard | fail the write operation with `lifecycle_expression_error` |
+| workflow trigger or workflow condition | create a failed-run diagnostic |
+| workflow step or run policy | fail the step or run with a runtime diagnostic |
 
-All stored expressions MUST compile during type, query, workflow, or policy
-preflight. Compile and type errors invalidate the containing object. During
-evaluation:
+A condition that evaluates normally to false or null does not match or execute.
 
-- a query evaluation error yields null for that record and emits a diagnostic
-- a lifecycle evaluation error fails the operation
-- a workflow trigger or step evaluation error fails the run or step; it is not
-  treated as an ordinary false condition
-- a normally evaluated false or null condition does not match
-
-Implementations MUST bound expression size, AST depth, evaluation work, and
-link traversal. The portable minimum limits are 64 KiB source text, AST depth
-100, and link traversal depth 10. Tools MAY enforce lower operational time or
-memory budgets only when they report the limit in diagnostics.
+Diagnostics SHOULD include the source, code, message, context name, and line,
+column, or byte range when available. Parse/type diagnostics and runtime
+evaluation diagnostics use distinct codes.

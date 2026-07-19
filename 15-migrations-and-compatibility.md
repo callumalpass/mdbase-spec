@@ -2,8 +2,9 @@
 
 ## Migration Philosophy
 
-v0.3 is a source-level revision. It should not preserve every v0.2.x feature by
-adding compatibility magic to the new core.
+v0.3 uses the source model defined by Chapters 01–14. Migration translates
+v0.2.x collections into that model and reports features that need adapter-owned
+handling.
 
 Migration tooling should produce:
 
@@ -12,9 +13,9 @@ Migration tooling should produce:
 - explicit unsupported-feature notes
 - generated output only with user approval or generated-file detection
 
-Migration is collection-wide analysis, not only type-file rewriting. Before a
-write, tooling MUST validate every existing record against the proposed target
-types and include incompatible records in the report.
+Migration analyzes the complete collection. Before a write, tooling MUST
+validate every existing record against the proposed target types and include
+incompatible records in the report.
 
 ## Type Mapping
 
@@ -68,9 +69,7 @@ Generated fields migrate to lifecycle:
 
 ## Computed Fields
 
-Computed fields do not migrate to JSON Schema.
-
-Migration should emit one of:
+Computed fields migrate to one of:
 
 - query projection suggestion
 - `collection.projections` when the target tool supports it
@@ -82,9 +81,9 @@ Migration should emit one of:
 
 Current mdbase expressions migrate to CEL where possible.
 
-Obsidian Bases expressions should be treated as an adapter concern. Obsidian
-tools may translate Bases formulas to CEL for portable storage and translate
-back for UI/export where possible.
+Tool-specific expression dialects are adapter concerns. Tools may translate
+them to CEL for portable storage and translate them back for user interfaces or
+exports.
 
 ## Runtime Workflows
 
@@ -103,7 +102,7 @@ Application-specific field annotations migrate to namespaced sections.
 Example:
 
 ```yaml
-x-tasknotes:
+x-example-app:
   fields:
     status:
       role: status
@@ -148,29 +147,12 @@ backup hashes from the manifest before replacing current files and MUST require
 explicit approval when invoked as a separate command.
 
 Repeated analysis of unchanged inputs MUST produce the same report. Re-applying
-an already migrated type is rejected rather than rewriting it again.
+an already migrated type MUST fail without writing.
 
 Unknown source metadata is preserved under `x-legacy-v0.2` with its original
 key paths unless a named migration adapter handles it. YAML comments and style
-preservation are best effort, but Markdown bodies MUST be preserved byte for
-byte.
+preservation are best effort. Markdown bodies MUST be preserved byte for byte.
 
 The report includes source and target hashes, generated-file evidence, exact
 mappings, warnings, unsupported constructs, invalid record paths, proposed file
 operations, backup location, and post-apply validation status.
-
-## Downstream Strategy
-
-Recommended migration order:
-
-1. promoted `mdbase-spec` prose, schemas, fixtures, and examples
-2. shared schemas and runtime contract helper packages
-3. TypeScript and Rust core readers
-4. CLI validation and migration dry-run
-5. LSP schema/workflow diagnostics
-6. TaskNotes generated export
-7. TaskNotes workflow/runtime projects
-8. Canvas Bases runtime workflow integration
-9. Pickle and other mdbase-backed apps
-
-Generated type files should migrate before user-authored vault files.

@@ -55,6 +55,8 @@ EXECUTABLE_OPERATIONS = {
 CONFORMANCE_PROFILES = {
     "core_read",
     "collection_semantics",
+    "cel",
+    "cel_match",
     "cel_query",
     "links",
     "core_write",

@@ -28,8 +28,8 @@ A type is a Markdown file, usually under `_types/`, whose frontmatter has
 `kind: mdbase.type`. The type frontmatter wraps a JSON Schema and optional
 mdbase sections.
 
-Types do not execute behavior. They define shape and collection semantics for
-records that match them.
+Types define shape and collection semantics for matching records. Runtime
+providers and workflows supply executable behavior.
 
 ## Schema
 
@@ -62,7 +62,7 @@ runtime context. Examples:
 - type matching
 - path safety
 
-These rules are not JSON Schema validation.
+These rules extend record validation with collection context.
 
 ## Lifecycle
 
@@ -70,8 +70,8 @@ Lifecycle policy runs during mutating operations. It can materialize managed
 values such as IDs, creation timestamps, modification timestamps, slugs, and
 simple transforms.
 
-Lifecycle policy is deterministic operation behavior. It is smaller than the
-workflow runtime and does not require action/event contracts.
+Lifecycle policy is deterministic operation behavior within Core Write. It runs
+from type policy during the active mutation.
 
 ## Expression
 
@@ -79,8 +79,8 @@ Portable v0.3 expressions use the mdbase CEL profile. Expressions appear in
 queries, projections, runtime conditions, workflow input templates, and optional
 lifecycle guards.
 
-`match.where` is intentionally a small structured predicate language and does
-not require the full CEL engine.
+`match.where` uses the standalone structured predicate language defined in
+Chapter 07.
 
 ## Link
 
@@ -105,8 +105,8 @@ A contract is a typed record or virtual registry entry describing the interface
 of a provider, event, action, capability, policy, run, checkpoint, diagnostic,
 or workflow.
 
-Contracts describe interfaces. They do not by themselves implement action
-handlers, watchers, schedulers, agents, or provider APIs.
+Contracts describe the interfaces used by action handlers, event sources,
+watchers, schedulers, agents, and provider APIs supplied by a runtime.
 
 ## Explicit And Implicit Contracts
 

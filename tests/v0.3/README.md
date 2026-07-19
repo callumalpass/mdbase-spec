@@ -13,6 +13,13 @@ The tests below are grouped into six fixture sets for the rollout plan:
 5. `cel`
 6. `runtime_contracts`
 
+The suite covers JSON Schema artifacts, type wrappers, collection semantics,
+CEL host bindings, lifecycle operations, runtime contract registries, workflow
+preflight, and execution cases for available adapters. Compatible v0.2 fixtures
+remain useful for frontmatter parsing, missing/null semantics, links, operation
+safety, and watch ordering. Tests tied to the earlier custom field grammar are
+migrated into the v0.3 fixture sets.
+
 ## Format
 
 Each suite file is YAML with:
@@ -87,4 +94,10 @@ Future v0.3 adapters should support these operations:
 
 The repository also includes `scripts/check_v03_tests.py`, which validates the
 suite structure and executes local artifact checks that do not require a full
-v0.3 implementation.
+v0.3 implementation. It also runs the prototype TaskNotes migration checks for
+`examples/v0.3/tasknotes-migration`.
+
+Artifact checks cover schemas, examples, and migration output. Core operations,
+lifecycle behavior, CEL evaluation, runtime dispatch, and workflow execution
+use adapters or local prototype implementations. Stable-release adapter gates
+are tracked in [release/v0.3.0.md](../../release/v0.3.0.md).

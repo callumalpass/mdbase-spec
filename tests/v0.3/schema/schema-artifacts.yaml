@@ -2,7 +2,7 @@ name: "v0.3 schema artifact conformance"
 spec_version: "0.3.0"
 fixture_set: schema_artifacts
 category: schema_artifacts
-spec_ref: "v0.3/05, v0.3/06, v0.3/13, v0.3/14"
+spec_ref: "v0.3/04, v0.3/05, v0.3/06, v0.3/13, v0.3/14, v0.3/16"
 
 groups:
   - name: "canonical schemas"
@@ -33,12 +33,30 @@ groups:
         expect:
           valid: true
 
+      - name: "config schema accepts inferred-only type membership"
+        operation: yaml_document_schema_validate
+        input:
+          schema: "schemas/v0.3/config.schema.json"
+          paths:
+            - "tests/v0.3/fixtures/config-inferred-only.yml"
+        expect:
+          valid: true
+
       - name: "conformance claim schema validates a complete core-read claim"
         operation: yaml_document_schema_validate
         input:
           schema: "schemas/v0.3/conformance-claim.schema.json"
           paths:
             - "tests/v0.3/fixtures/conformance/valid-core-read.yml"
+        expect:
+          valid: true
+
+      - name: "conformance claim schema accepts the complete profile dependency graph"
+        operation: yaml_document_schema_validate
+        input:
+          schema: "schemas/v0.3/conformance-claim.schema.json"
+          paths:
+            - "tests/v0.3/fixtures/conformance/valid-all-profile-dependencies.yml"
         expect:
           valid: true
 

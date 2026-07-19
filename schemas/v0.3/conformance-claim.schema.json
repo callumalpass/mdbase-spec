@@ -103,8 +103,30 @@
       "then": { "properties": { "profiles": { "contains": { "const": "core_read" } } } }
     },
     {
+      "if": { "properties": { "profiles": { "contains": { "const": "cel_match" } } } },
+      "then": {
+        "properties": {
+          "profiles": {
+            "allOf": [
+              { "contains": { "const": "core_read" } },
+              { "contains": { "const": "cel" } }
+            ]
+          }
+        }
+      }
+    },
+    {
       "if": { "properties": { "profiles": { "contains": { "const": "cel_query" } } } },
-      "then": { "properties": { "profiles": { "contains": { "const": "core_read" } } } }
+      "then": {
+        "properties": {
+          "profiles": {
+            "allOf": [
+              { "contains": { "const": "core_read" } },
+              { "contains": { "const": "cel" } }
+            ]
+          }
+        }
+      }
     },
     {
       "if": { "properties": { "profiles": { "contains": { "const": "links" } } } },
@@ -113,7 +135,7 @@
           "profiles": {
             "allOf": [
               { "contains": { "const": "collection_semantics" } },
-              { "contains": { "const": "cel_query" } }
+              { "contains": { "const": "cel" } }
             ]
           }
         }
@@ -130,7 +152,7 @@
           "profiles": {
             "allOf": [
               { "contains": { "const": "core_write" } },
-              { "contains": { "const": "cel_query" } }
+              { "contains": { "const": "cel" } }
             ]
           }
         }
@@ -139,8 +161,7 @@
     {
       "if": { "properties": { "profiles": { "contains": { "const": "runtime_contracts/0.1" } } } },
       "then": {
-        "required": ["runtime_profile_version"],
-        "properties": { "profiles": { "contains": { "const": "core_read" } } }
+        "required": ["runtime_profile_version"]
       }
     },
     {
@@ -151,7 +172,7 @@
           "profiles": {
             "allOf": [
               { "contains": { "const": "runtime_contracts/0.1" } },
-              { "contains": { "const": "cel_query" } }
+              { "contains": { "const": "cel" } }
             ]
           }
         }
@@ -171,6 +192,8 @@
       "enum": [
         "core_read",
         "collection_semantics",
+        "cel",
+        "cel_match",
         "cel_query",
         "links",
         "core_write",

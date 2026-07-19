@@ -50,7 +50,6 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
           },
           "explicit_type_keys": {
             "type": "array",
-            "minItems": 1,
             "uniqueItems": true,
             "items": {
               "type": "string",
@@ -313,6 +312,35 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
           "properties": {
             "profiles": {
               "contains": {
+                "const": "cel_match"
+              }
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "profiles": {
+              "allOf": [
+                {
+                  "contains": {
+                    "const": "core_read"
+                  }
+                },
+                {
+                  "contains": {
+                    "const": "cel"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "if": {
+          "properties": {
+            "profiles": {
+              "contains": {
                 "const": "cel_query"
               }
             }
@@ -321,9 +349,18 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
         "then": {
           "properties": {
             "profiles": {
-              "contains": {
-                "const": "core_read"
-              }
+              "allOf": [
+                {
+                  "contains": {
+                    "const": "core_read"
+                  }
+                },
+                {
+                  "contains": {
+                    "const": "cel"
+                  }
+                }
+              ]
             }
           }
         }
@@ -349,7 +386,7 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
                 },
                 {
                   "contains": {
-                    "const": "cel_query"
+                    "const": "cel"
                   }
                 }
               ]
@@ -398,7 +435,7 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
                 },
                 {
                   "contains": {
-                    "const": "cel_query"
+                    "const": "cel"
                   }
                 }
               ]
@@ -419,14 +456,7 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
         "then": {
           "required": [
             "runtime_profile_version"
-          ],
-          "properties": {
-            "profiles": {
-              "contains": {
-                "const": "core_read"
-              }
-            }
-          }
+          ]
         }
       },
       {
@@ -453,7 +483,7 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
                 },
                 {
                   "contains": {
-                    "const": "cel_query"
+                    "const": "cel"
                   }
                 }
               ]
@@ -491,6 +521,8 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
         "enum": [
           "core_read",
           "collection_semantics",
+          "cel",
+          "cel_match",
           "cel_query",
           "links",
           "core_write",

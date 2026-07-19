@@ -45,9 +45,9 @@ Pipeline:
 10. update derived indexes
 11. emit watch/runtime events after state is consistent
 
-Static JSON Schema defaults MAY be used by editor/create UI, but they are not
-validation-time mutation unless explicitly copied into the draft by the create
-operation.
+Static JSON Schema defaults MAY be used by editor and create interfaces.
+Validation-time mutation occurs when the create operation explicitly copies a
+default into the draft.
 
 ## Update
 
@@ -77,8 +77,7 @@ Delete removes a record.
 Tools supporting link/reference profiles SHOULD optionally report broken
 backlinks before deleting.
 
-Workflow runtimes MAY listen for delete events, but delete itself is a core
-operation.
+Delete is a Core Write operation and MAY emit an event for workflow runtimes.
 
 ## Rename
 
@@ -90,8 +89,8 @@ If reference updating is enabled, link updates SHOULD preserve link style,
 alias, and anchor where possible. ID-based links SHOULD not be rewritten if the
 target ID did not change.
 
-Rename with reference updates is not required to be atomic across all files
-unless an implementation claims a transaction profile.
+Atomic reference updates across all affected files belong to a transaction
+profile.
 
 ## Batch
 
@@ -109,8 +108,8 @@ Recommended behavior:
 Write-capable tools SHOULD detect external modification between read and write
 using mtime, content hash, version token, or platform-specific file identity.
 
-On conflict, tools MUST report a concurrency diagnostic instead of silently
-overwriting unrelated changes.
+On conflict, tools MUST preserve the current file and report a concurrency
+diagnostic.
 
 Successful reads MUST return a stable `revision` token derived from the raw
 file state. Write operations MUST accept an optional `if_revision` token and
@@ -135,7 +134,5 @@ change files, indexes, runtime state, or revisions.
 ## Events
 
 After a successful mutation, tools MAY emit watch/runtime events. Events MUST be
-delivered after the derived read/query state is consistent.
-
-Core operations do not require the workflow runtime, but workflow runtimes may
-subscribe to the same event stream.
+delivered after the derived read/query state is consistent. Watch consumers and
+workflow runtimes may subscribe to the same stream.

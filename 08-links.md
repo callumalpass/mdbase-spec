@@ -10,9 +10,8 @@ mdbase recognizes three link syntaxes:
 | Markdown link | `[Alice](people/alice.md)` |
 | Bare path | `people/alice.md` |
 
-A field becomes link-aware through `collection.links`, not through JSON Schema.
-
-The JSON Schema shape is usually `string` or `array` of `string`.
+`collection.links` makes a field link-aware. JSON Schema validates its local
+shape, usually `string` or an array of strings.
 
 ## Link Components
 
@@ -98,8 +97,8 @@ body extraction.
 Inline tags must begin at the start of a line or after whitespace. URL
 fragments MUST NOT be treated as tags.
 
-`file.hasTag("project")` matches `#project` and `#project/alpha`, but not
-`#projection`.
+`file.hasTag("project")` uses complete tag-segment prefixes. It matches
+`#project` and `#project/alpha`; its result for `#projection` is false.
 
 ## Link Host Functions
 
