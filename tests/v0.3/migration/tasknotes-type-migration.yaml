@@ -1,0 +1,112 @@
+name: "v0.3 TaskNotes type migration conformance"
+spec_version: "0.3.0"
+fixture_set: migration
+category: migration
+spec_ref: "v0.3/15"
+
+groups:
+  - name: "TaskNotes generated type migration"
+    setup:
+      source_collection: "examples/v0.3/tasknotes-migration/current-v0.2"
+      expected_collection: "examples/v0.3/tasknotes-migration/v0.3"
+      expected_report: "examples/v0.3/tasknotes-migration/migration-report.json"
+    tests:
+      - name: "migration detects the old TaskNotes generated type"
+        operation: migrate_type
+        input:
+          source: "current-v0.2/_types/task.md"
+          mode: dry_run
+        expect:
+          valid: true
+          detected_source_version: "0.2.1"
+          detected_generator: tasknotes
+
+      - name: "fields convert to JSON Schema properties"
+        operation: migrate_type
+        input:
+          source: "current-v0.2/_types/task.md"
+          mode: dry_run
+        expect:
+          report_contains:
+            mappings:
+              - from: "fields.title"
+                to: ["schema.value.properties.title", "x-tasknotes.field_roles.title"]
+              - from: "fields.status.values"
+                to: "schema.value.properties.status.enum"
+
+      - name: "field defaults move to JSON Schema annotations and read defaults"
+        operation: migrate_type
+        input:
+          source: "current-v0.2/_types/task.md"
+          mode: dry_run
+        expect:
+          report_contains:
+            summary:
+              defaults_moved_to_read_defaults:
+                - status
+                - priority
+                - recurrenceAnchor
+
+      - name: "generated fields move to lifecycle"
+        operation: migrate_type
+        input:
+          source: "current-v0.2/_types/task.md"
+          mode: dry_run
+        expect:
+          report_contains:
+            summary:
+              generated_fields_moved_to_lifecycle:
+                - dateCreated
+                - dateModified
+
+      - name: "link fields move to collection links"
+        operation: migrate_type
+        input:
+          source: "current-v0.2/_types/task.md"
+          mode: dry_run
+        expect:
+          report_contains:
+            summary:
+              link_fields_moved_to_collection_links:
+                - "projects[]"
+                - recurrenceParent
+                - occurrenceTemplate
+                - "blockedBy[].uid"
+
+      - name: "target type file validates against the v0.3 type-file schema"
+        operation: markdown_frontmatter_schema_validate
+        input:
+          schema: "schemas/v0.3/type-file.schema.json"
+          paths:
+            - "examples/v0.3/tasknotes-migration/v0.3/_types/task.md"
+        expect:
+          valid: true
+
+      - name: "target task JSON Schema is valid JSON Schema 2020-12"
+        operation: embedded_json_schema_validate
+        input:
+          paths:
+            - "examples/v0.3/tasknotes-migration/v0.3/_types/task.md"
+          pointer: "/schema/value"
+        expect:
+          valid: true
+
+      - name: "migration report is valid JSON"
+        operation: json_document_valid
+        input:
+          paths:
+            - "examples/v0.3/tasknotes-migration/migration-report.json"
+        expect:
+          valid: true
+
+      - name: "TaskNotes semantic metadata stays outside JSON Schema properties"
+        operation: inspect_yaml
+        input:
+          path: "examples/v0.3/tasknotes-migration/v0.3/_types/task.md"
+        expect:
+          has:
+            - "/x-tasknotes/field_roles/status"
+            - "/x-tasknotes/archive/archived_tag"
+          not_has:
+            - "/schema/value/properties/status/tn_role"
+            - "/schema/value/properties/status/tn_completed_values"

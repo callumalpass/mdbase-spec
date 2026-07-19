@@ -1,0 +1,15 @@
+spec_version: "0.2.1"
+name: Pickle
+description: Local mdbase collection for Pickle requests and responses.
+settings:
+  types_folder: "_types"
+  default_validation: "error"
+  default_strict: false
+  exclude:
+    - ".git"
+    - "node_modules"
+    - ".mdbase"
+    - "attachments/**"
+  include_subfolders: true
+  explicit_type_keys: ["type", "types"]
+  cache_folder: ".mdbase"

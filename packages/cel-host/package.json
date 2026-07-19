@@ -1,0 +1,28 @@
+{
+  "name": "@mdbase/cel-host",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Prototype mdbase v0.3 CEL host activation and evaluation fixtures.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@bufbuild/cel": "^0.6.0",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^6.0.3"
+  }
+}
+

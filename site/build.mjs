@@ -24,25 +24,46 @@ const STATIC = join(__dirname, 'static');
 
 const SPEC_FILES = [
   { file: '00-overview.md',               num: '00', title: 'Overview',             id: 'section-00' },
-  { file: '01-terminology.md',            num: '01', title: 'Terminology',          id: 'section-01' },
+  { file: '01-concepts.md',               num: '01', title: 'Concepts',             id: 'section-01' },
   { file: '02-collection-layout.md',      num: '02', title: 'Collection Layout',    id: 'section-02' },
-  { file: '03-frontmatter.md',            num: '03', title: 'Frontmatter',          id: 'section-03' },
+  { file: '03-records-and-frontmatter.md', num: '03', title: 'Records & Frontmatter', id: 'section-03' },
   { file: '04-configuration.md',          num: '04', title: 'Configuration',        id: 'section-04' },
-  { file: '05-types.md',                  num: '05', title: 'Types',                id: 'section-05' },
-  { file: '06-matching.md',               num: '06', title: 'Matching',             id: 'section-06' },
-  { file: '07-field-types.md',            num: '07', title: 'Field Types',          id: 'section-07' },
+  { file: '05-type-files.md',             num: '05', title: 'Type Files',           id: 'section-05' },
+  { file: '06-json-schema-profile.md',    num: '06', title: 'JSON Schema Profile',  id: 'section-06' },
+  { file: '07-collection-semantics.md',   num: '07', title: 'Collection Semantics', id: 'section-07' },
   { file: '08-links.md',                  num: '08', title: 'Links',                id: 'section-08' },
-  { file: '09-validation.md',             num: '09', title: 'Validation',           id: 'section-09' },
-  { file: '10-querying.md',               num: '10', title: 'Querying',             id: 'section-10' },
-  { file: '11-expressions.md',            num: '11', title: 'Expressions',          id: 'section-11' },
+  { file: '09-lifecycle.md',              num: '09', title: 'Lifecycle',            id: 'section-09' },
+  { file: '10-cel-profile.md',            num: '10', title: 'CEL Profile',          id: 'section-10' },
+  { file: '11-querying.md',               num: '11', title: 'Querying',             id: 'section-11' },
   { file: '12-operations.md',             num: '12', title: 'Operations',           id: 'section-12' },
-  { file: '13-caching.md',                num: '13', title: 'Caching',              id: 'section-13' },
-  { file: '14-conformance.md',            num: '14', title: 'Conformance',          id: 'section-14' },
-  { file: '15-watching.md',               num: '15', title: 'Watching',             id: 'section-15' },
-  { file: 'appendix-a-examples.md',       num: 'A',  title: 'Examples',             id: 'appendix-a', group: 'Appendices' },
-  { file: 'appendix-b-expression-grammar.md', num: 'B', title: 'Expression Grammar', id: 'appendix-b', group: 'Appendices' },
-  { file: 'appendix-c-error-codes.md',    num: 'C',  title: 'Error Codes',          id: 'appendix-c', group: 'Appendices' },
-  { file: 'appendix-d-compatibility.md',  num: 'D',  title: 'Compatibility',        id: 'appendix-d', group: 'Appendices' },
+  { file: '13-runtime-contracts.md',      num: '13', title: 'Runtime Contracts',    id: 'section-13' },
+  { file: '14-workflows.md',              num: '14', title: 'Workflows',            id: 'section-14' },
+  { file: '15-migrations-and-compatibility.md', num: '15', title: 'Migrations & Compatibility', id: 'section-15' },
+  { file: '16-conformance.md',            num: '16', title: 'Conformance',          id: 'section-16' },
+];
+
+const LEGACY_SPEC_FILES = [
+  { file: 'v0.2/00-overview.md',               num: '00', title: 'Overview',             id: 'section-00' },
+  { file: 'v0.2/01-terminology.md',            num: '01', title: 'Terminology',          id: 'section-01' },
+  { file: 'v0.2/02-collection-layout.md',      num: '02', title: 'Collection Layout',    id: 'section-02' },
+  { file: 'v0.2/03-frontmatter.md',            num: '03', title: 'Frontmatter',          id: 'section-03' },
+  { file: 'v0.2/04-configuration.md',          num: '04', title: 'Configuration',        id: 'section-04' },
+  { file: 'v0.2/05-types.md',                  num: '05', title: 'Types',                id: 'section-05' },
+  { file: 'v0.2/06-matching.md',               num: '06', title: 'Matching',             id: 'section-06' },
+  { file: 'v0.2/07-field-types.md',            num: '07', title: 'Field Types',          id: 'section-07' },
+  { file: 'v0.2/08-links.md',                  num: '08', title: 'Links',                id: 'section-08' },
+  { file: 'v0.2/09-validation.md',             num: '09', title: 'Validation',           id: 'section-09' },
+  { file: 'v0.2/10-querying.md',               num: '10', title: 'Querying',             id: 'section-10' },
+  { file: 'v0.2/11-expressions.md',            num: '11', title: 'Expressions',          id: 'section-11' },
+  { file: 'v0.2/12-operations.md',             num: '12', title: 'Operations',           id: 'section-12' },
+  { file: 'v0.2/13-caching.md',                num: '13', title: 'Caching',              id: 'section-13' },
+  { file: 'v0.2/14-conformance.md',            num: '14', title: 'Conformance',          id: 'section-14' },
+  { file: 'v0.2/15-watching.md',               num: '15', title: 'Watching',             id: 'section-15' },
+  { file: 'v0.2/16-runtime-profile.md',        num: '16', title: 'Runtime Profile',      id: 'section-16' },
+  { file: 'v0.2/appendix-a-examples.md',       num: 'A',  title: 'Examples',             id: 'appendix-a', group: 'Appendices' },
+  { file: 'v0.2/appendix-b-expression-grammar.md', num: 'B', title: 'Expression Grammar', id: 'appendix-b', group: 'Appendices' },
+  { file: 'v0.2/appendix-c-error-codes.md',    num: 'C',  title: 'Error Codes',          id: 'appendix-c', group: 'Appendices' },
+  { file: 'v0.2/appendix-d-compatibility.md',  num: 'D',  title: 'Compatibility',        id: 'appendix-d', group: 'Appendices' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -125,20 +146,38 @@ function build() {
   writeFileSync(join(DIST, 'ecosystem.html'), ecosystemHtml);
   console.log('  Built ecosystem.html');
 
+  // Copy runtime.html
+  const runtimeHtml = readFileSync(join(TEMPLATES, 'runtime.html'), 'utf-8');
+  writeFileSync(join(DIST, 'runtime.html'), runtimeHtml);
+  console.log('  Built runtime.html');
+
   // Build spec page
-  buildSpec();
+  buildSpec({
+    entries: SPEC_FILES,
+    output: 'spec.html',
+    title: 'Specification',
+    version: 'v0.3.0',
+    switchLink: '<a href="spec-v0.2.html">v0.2 archive</a>',
+  });
+  buildSpec({
+    entries: LEGACY_SPEC_FILES,
+    output: 'spec-v0.2.html',
+    title: 'Specification v0.2 archive',
+    version: 'v0.2.1 archive',
+    switchLink: '<a href="spec.html">Current v0.3</a>',
+  });
 
   console.log('\nDone! Output in site/dist/');
 }
 
-function buildSpec() {
+function buildSpec({ entries, output: outputFile, title, version, switchLink }) {
   const specTemplate = readFileSync(join(TEMPLATES, 'spec.html'), 'utf-8');
 
   // Build sidebar links
   let sidebarHtml = '';
   let currentGroup = null;
 
-  for (const entry of SPEC_FILES) {
+  for (const entry of entries) {
     if (entry.group && entry.group !== currentGroup) {
       currentGroup = entry.group;
       sidebarHtml += `</div>\n<div class="sidebar-group">\n`;
@@ -151,11 +190,10 @@ function buildSpec() {
   // Build spec content sections
   let contentHtml = '';
 
-  for (const entry of SPEC_FILES) {
+  for (const entry of entries) {
     const filePath = join(ROOT, entry.file);
     if (!existsSync(filePath)) {
-      console.warn(`  Warning: ${entry.file} not found, skipping`);
-      continue;
+      throw new Error(`Required specification file is missing: ${entry.file}`);
     }
 
     const raw = readFileSync(filePath, 'utf-8');
@@ -170,12 +208,15 @@ function buildSpec() {
   }
 
   // Inject into template
-  let output = specTemplate
+  const rendered = specTemplate
+    .replace('{{SPEC_TITLE}}', title)
+    .replace('{{SPEC_VERSION}}', version)
+    .replaceAll('{{SPEC_SWITCH_LINK}}', switchLink)
     .replace('{{SIDEBAR_LINKS}}', sidebarHtml)
     .replace('{{SPEC_CONTENT}}', contentHtml);
 
-  writeFileSync(join(DIST, 'spec.html'), output);
-  console.log('  Built spec.html');
+  writeFileSync(join(DIST, outputFile), rendered);
+  console.log(`  Built ${outputFile}`);
 }
 
 build();

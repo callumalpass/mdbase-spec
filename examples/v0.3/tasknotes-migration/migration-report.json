@@ -1,0 +1,83 @@
+{
+  "source": "current-v0.2/_types/task.md",
+  "target": "v0.3/_types/task.md",
+  "source_version": "0.2.1",
+  "target_version": "0.3.0",
+  "summary": {
+    "fields_converted": 20,
+    "required_fields": ["title", "status", "dateCreated"],
+    "defaults_moved_to_read_defaults": [
+      "status",
+      "priority",
+      "recurrenceAnchor"
+    ],
+    "generated_fields_moved_to_lifecycle": [
+      "dateCreated",
+      "dateModified"
+    ],
+    "link_fields_moved_to_collection_links": [
+      "projects[]",
+      "recurrenceParent",
+      "occurrenceTemplate",
+      "blockedBy[].uid"
+    ],
+    "tasknotes_annotations_moved": true
+  },
+  "mappings": [
+    {
+      "from": "fields.title",
+      "to": ["schema.value.properties.title", "x-tasknotes.field_roles.title"]
+    },
+    {
+      "from": "fields.status.values",
+      "to": "schema.value.properties.status.enum"
+    },
+    {
+      "from": "fields.status.default",
+      "to": ["schema.value.properties.status.default", "collection.read_defaults.status", "x-tasknotes.status.default"]
+    },
+    {
+      "from": "fields.status.tn_completed_values",
+      "to": "x-tasknotes.status.completed_values"
+    },
+    {
+      "from": "fields.dateCreated.generated",
+      "to": "lifecycle.on_create.set.dateCreated"
+    },
+    {
+      "from": "fields.dateModified.generated",
+      "to": "lifecycle.on_update.set.dateModified"
+    },
+    {
+      "from": "fields.projects.items.type",
+      "to": ["schema.value.properties.projects.items.type", "collection.links.projects[]"]
+    },
+    {
+      "from": "fields.blockedBy.items.fields.uid.type",
+      "to": ["schema.value.properties.blockedBy.items.properties.uid.type", "collection.links.blockedBy[].uid"]
+    },
+    {
+      "from": "display_name_key",
+      "to": "collection.display.name_field"
+    },
+    {
+      "from": "path_pattern",
+      "to": "collection.path"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "path_policy_runtime_owned",
+      "message": "TaskNotes filename templates may use runtime values that are not schema fields, so the v0.3 target records the path policy as TaskNotes runtime metadata rather than only collection.path.pattern."
+    },
+    {
+      "code": "additional_properties_true",
+      "message": "The migrated schema allows additional properties because TaskNotes supports user-defined fields."
+    },
+    {
+      "code": "reminders_added_as_v03_shape_example",
+      "message": "The v0.3 target includes reminder discriminated unions to show the intended post-v0.3 shape even though the representative v0.2 source did not model reminders accurately."
+    }
+  ],
+  "unsupported": []
+}

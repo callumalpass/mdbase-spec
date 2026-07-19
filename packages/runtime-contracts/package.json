@@ -1,0 +1,54 @@
+{
+  "name": "@callumalpass/mdbase-runtime",
+  "version": "0.1.0-alpha.1",
+  "type": "module",
+  "description": "Portable mdbase runtime contracts, provider host, validation, and Node loaders.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/callumalpass/mdbase-spec.git",
+    "directory": "packages/runtime-contracts"
+  },
+  "bugs": {
+    "url": "https://github.com/callumalpass/mdbase-spec/issues"
+  },
+  "homepage": "https://mdbase.dev/runtime.html",
+  "main": "./dist/browser.js",
+  "types": "./dist/browser.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js",
+      "require": "./dist/browser.cjs"
+    },
+    "./node": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "generate:schemas": "node scripts/generate-schema-module.mjs",
+    "build": "npm run generate:schemas && tsc -p tsconfig.json && esbuild src/browser.ts --bundle --platform=node --format=cjs --target=node18 --external:ajv --external:ajv/* --external:ajv-formats --external:semver --outfile=dist/browser.cjs",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "semver": "^7.8.5",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "@types/semver": "^7.7.1",
+    "esbuild": "^0.25.9",
+    "typescript": "^6.0.3"
+  }
+}

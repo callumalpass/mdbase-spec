@@ -1,0 +1,61 @@
+name: "v0.3 Pickle collection migration conformance"
+spec_version: "0.3.0"
+fixture_set: migration
+category: migration
+spec_ref: "v0.3/15"
+
+groups:
+  - name: "Pickle built-in type migration"
+    setup:
+      source_collection: "examples/v0.3/pickle-migration/current-v0.2"
+      expected_collection: "examples/v0.3/pickle-migration/v0.3"
+      expected_report: "examples/v0.3/pickle-migration/migration-report.json"
+    tests:
+      - name: "all migrated Pickle type wrappers validate"
+        operation: markdown_frontmatter_schema_validate
+        input:
+          schema: "schemas/v0.3/type-file.schema.json"
+          paths:
+            - "examples/v0.3/pickle-migration/v0.3/_types/pickle_request.md"
+            - "examples/v0.3/pickle-migration/v0.3/_types/pickle_response_approval.md"
+            - "examples/v0.3/pickle-migration/v0.3/_types/pickle_response_ack.md"
+        expect:
+          valid: true
+
+      - name: "all migrated Pickle embedded schemas are valid JSON Schema"
+        operation: embedded_json_schema_validate
+        input:
+          paths:
+            - "examples/v0.3/pickle-migration/v0.3/_types/pickle_request.md"
+            - "examples/v0.3/pickle-migration/v0.3/_types/pickle_response_approval.md"
+            - "examples/v0.3/pickle-migration/v0.3/_types/pickle_response_ack.md"
+          pointer: "/schema/value"
+        expect:
+          valid: true
+
+      - name: "required response link semantics are preserved"
+        operation: inspect_yaml
+        input:
+          path: "examples/v0.3/pickle-migration/v0.3/_types/pickle_response_approval.md"
+        expect:
+          has:
+            - "/schema/value/required"
+            - "/collection/links/request/target_type"
+            - "/collection/links/request/validate_exists"
+            - "/collection/unique"
+
+      - name: "open-ended request metadata remains open-ended"
+        operation: inspect_yaml
+        input:
+          path: "examples/v0.3/pickle-migration/v0.3/_types/pickle_request.md"
+        expect:
+          has:
+            - "/schema/value/properties/metadata/additionalProperties"
+
+      - name: "Pickle migration report is valid JSON"
+        operation: json_document_valid
+        input:
+          paths:
+            - "examples/v0.3/pickle-migration/migration-report.json"
+        expect:
+          valid: true

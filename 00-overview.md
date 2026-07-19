@@ -1,220 +1,131 @@
----
-type: chapter
-id: 00-overview
-title: "Overview"
-description: "Abstract, motivation, design principles, and specification structure"
-section: 0
-normative: false
----
-
-# Typed Markdown Collections Specification
-
-**Version:** 0.2.1
-**Last Updated:** 2026-02-15
-
----
+# 00. Overview
 
 ## Abstract
 
-This specification defines the behaviour of tools that treat folders of markdown files as typed, queryable data collections. It covers schema definition, field types, validation, querying, and CRUD operations.
+mdbase v0.3 defines a protocol for treating a folder of Markdown files as a typed,
+queryable, link-aware data collection.
 
----
+The v0.3 design has four layers:
+
+1. Markdown records provide durable, human-readable storage.
+2. JSON Schema validates persisted YAML frontmatter shape.
+3. mdbase collection semantics define behavior JSON Schema cannot know:
+   matching, links, effective read defaults, uniqueness, paths, operations, and
+   watches.
+4. Runtime contracts define optional active behavior: providers, events,
+   workflows, actions, capabilities, policies, runs, and checkpoints.
+
+This replaces the v0.2.x custom field grammar with a narrower wrapper around
+JSON Schema plus explicit mdbase sections.
+
+## One-Sentence Model
+
+JSON Schema answers "is this frontmatter object shaped correctly"; mdbase
+answers "what does this Markdown file mean inside this collection"; runtimes
+answer "what behavior should happen when events occur."
 
 ## Motivation
 
-Markdown files with YAML frontmatter are a common way to store structured content. The pattern appears in static site generators, knowledge management tools like Obsidian, documentation systems, and increasingly in AI agent frameworks that use markdown for persistent state.
+Markdown plus YAML frontmatter is already used as a lightweight database by
+static site generators, Obsidian vaults, agent workspaces, documentation
+systems, and personal knowledge tools. The problem is not storage. The problem
+is that every tool reconstructs structure and behavior differently.
 
-Each of these ecosystems has developed its own conventions for frontmatter structure, querying, and validation. This specification defines one coherent set of behaviours so that:
+Earlier mdbase drafts solved this by defining a custom field grammar in
+Markdown type files. That gave mdbase a compact authoring syntax, but it also
+made mdbase a schema language, a collection policy language, and a mutation
+policy language at the same time.
 
-- A CLI tool and an editor plugin can operate on the same files with consistent semantics
-- An AI agent can read and write markdown files that a human can also inspect and edit
-- Tool authors have a behaviour contract to implement against rather than inventing new conventions
+v0.3 makes the boundary sharper:
 
-### Intended implementers
+- use existing JSON Schema tooling for record shape
+- keep mdbase-specific semantics visible outside the schema
+- move mutation behavior into lifecycle and runtime contracts
+- standardize expressions on CEL
+- keep Markdown files as the authoring and documentation surface
 
-**CLI tools** for querying, validating, and manipulating markdown collections from the command line.
+## What v0.3 Defines
 
-**Editor plugins** (for Obsidian, VS Code, etc.) that provide validation, autocomplete, and query interfaces. The expression syntax is designed for compatibility with Obsidian Bases.
+v0.3 defines:
 
-**Libraries** in various languages that other applications can use to work with typed markdown.
+- how a collection is discovered and scanned
+- how Markdown records are parsed
+- how type files wrap JSON Schema
+- how files match types
+- how records are validated
+- how links are parsed and resolved
+- how queries evaluate records
+- how create, update, delete, rename, and batch operations behave
+- how lifecycle policy materializes managed values
+- how portable expressions are written in CEL
+- how runtime contracts describe providers, events, actions, capabilities,
+  policies, and workflows
+- how conformance profiles can be claimed independently
 
-**AI agent frameworks** that need structured, human-readable persistent storage.
+## What v0.3 Does Not Define
 
----
+v0.3 does not require every tool to implement every layer.
 
-## What a conforming tool does
+Read-only tools can load collections, validate records, resolve links, and run
+queries without supporting mutation or workflows.
 
-A tool implementing this specification:
+Write-capable tools can implement lifecycle policy without becoming workflow
+engines.
 
-1. **Recognises collections** by the presence of an `mdbase.yaml` config file
-2. **Loads type definitions** from markdown files in a designated folder
-3. **Matches files to types** based on explicit declaration or configurable rules
-4. **Validates frontmatter** against type schemas, reporting errors at configurable severity levels
-5. **Executes queries** using an expression language for filtering and sorting (with optional advanced features like grouping and summaries)
-6. **Performs CRUD operations** with validation, default values, and auto-generated fields
-7. **Updates references** when files are renamed, keeping links consistent across the collection
+Workflow runtimes can execute declared behavior, but action implementations,
+sandboxing, scheduling, agent orchestration, network access, and provider APIs
+remain runtime responsibilities.
 
-The specification defines the expected behaviour for each of these capabilities, along with conformance levels for partial implementations.
-
----
+v0.3 is not an OpenAPI dialect. JSON Schema is used for data shape, not for
+describing HTTP services.
 
 ## Design Principles
 
-**Files are the source of truth.** Tools read from and write to the filesystem. Indexes and caches are derived and disposable.
+**Files are the source of truth.** Persistent user intent lives in text files.
+Indexes, caches, run queues, and derived databases are disposable unless the
+runtime explicitly materializes them as records.
 
-**Human-readable first.** Tools should not require proprietary formats. A user with a text editor should be able to read and modify any file.
+**Use standard shape tooling.** A frontmatter schema should be understandable by
+JSON Schema validators, editors, language servers, generators, and codegen
+tools.
 
-**Progressive strictness.** Tools should work on collections with no schema at all. Validation is opt-in and configurable.
+**Keep collection semantics explicit.** Links, uniqueness, matching, paths,
+read defaults, and lifecycle behavior are not JSON Schema validation. They have
+their own named sections.
 
-**Portable.** Collections should work with any conforming tool. No vendor lock-in.
+**Mutation is runtime behavior.** Generated values, timestamp updates,
+cross-record effects, and workflow actions happen during operations or runtime
+execution. They are not hidden inside field definitions.
 
-**Git-friendly.** All persistent state is text files suitable for version control.
+**Markdown stays inspectable.** Type files, workflow files, action contracts,
+event contracts, policy records, run records, and checkpoint records can all be
+ordinary Markdown files with YAML frontmatter and explanatory body text.
 
----
+**Conformance is layered.** A simple validator should not need to implement a
+workflow engine. A workflow runtime should still share the same record and
+contract model.
 
-## How It Works
+## Major Changes From v0.2.x
 
-### A collection is a folder with an `mdbase.yaml` marker
+| v0.2.x concept | v0.3 destination |
+| --- | --- |
+| `fields` grammar | JSON Schema under `schema.value` |
+| per-field `required` | JSON Schema root `required` |
+| enum `values` | JSON Schema `enum` |
+| `strict` | JSON Schema `additionalProperties` |
+| field `default` | JSON Schema `default` annotation plus `collection.read_defaults` when effective reads are desired |
+| `type: link` | string/array schema plus `collection.links` |
+| `unique` | `collection.unique` |
+| `generated` | `lifecycle` |
+| `computed` | query projection, collection projection, or runtime workflow |
+| custom expression language | mdbase CEL profile |
+| constraint merging | validate all matched schemas |
+| generated behavior inside type shape | lifecycle or runtime policy |
+| action/event shape in custom fields | JSON Schema contracts in runtime records |
 
-```
-my-project/
-├── mdbase.yaml            # Marks this folder as a collection
-├── _types/                # Type definitions (schemas)
-│   ├── task.md
-│   └── person.md
-├── tasks/
-│   ├── fix-bug.md         # A record of type "task"
-│   └── write-docs.md
-└── people/
-    └── alice.md           # A record of type "person"
-```
+## Normative Language
 
-The minimal config just declares the spec version:
+The keywords `MUST`, `MUST NOT`, `SHOULD`, `SHOULD NOT`, and `MAY` are to be
+interpreted as described in RFC 2119.
 
-```yaml
-# mdbase.yaml
-spec_version: "0.2.1"
-```
-
-### Types are defined as markdown files
-
-A type is a schema for a category of files. Types live in the `_types/` folder and are themselves markdown — the frontmatter defines the schema, the body documents it.
-
-```markdown
----
-name: task
-fields:
-  title:
-    type: string
-    required: true
-  status:
-    type: enum
-    values: [open, in_progress, done]
-    default: open
-  priority:
-    type: integer
-    min: 1
-    max: 5
-  assignee:
-    type: link
-    target: person
----
-
-# Task
-
-A task represents a unit of work. Set `status` to track progress.
-```
-
-### Records are markdown files with typed frontmatter
-
-A file declares its type and provides field values in frontmatter. The body is free-form markdown.
-
-```markdown
----
-type: task
-title: Fix the login bug
-status: in_progress
-priority: 4
-assignee: "[[alice]]"
-tags: [bug, auth]
----
-
-The login form throws a validation error when the email contains a `+` character.
-```
-
-### Queries filter and sort records using expressions
-
-Queries are YAML objects with optional clauses for filtering, sorting, and pagination:
-
-```yaml
-query:
-  types: [task]
-  where:
-    and:
-      - 'status != "done"'
-      - "priority >= 3"
-  order_by:
-    - field: due_date
-      direction: asc
-  limit: 20
-```
-
-The expression language supports field access, comparison, boolean logic, string and list methods, date arithmetic, and link traversal:
-
-```
-status == "open" && tags.contains("urgent")
-due_date < today() + "7d"
-assignee.asFile().team == "engineering"
-```
-
-### Validation is progressive
-
-Collections work with no types at all — every file is an untyped record. Types can be added incrementally, and validation severity is configurable per-collection or per-type (`off`, `warn`, `error`). Strictness controls whether unknown fields are allowed, warned, or rejected.
-
-### Links connect records across the collection
-
-Records can reference each other using wikilinks (`[[alice]]`) or markdown links (`[Alice](../people/alice.md)`). When a file is renamed, conforming tools update all references automatically.
-
-### Conformance is levelled
-
-Implementations don't need to support everything. Six conformance levels let tools start with basic CRUD (Level 1) and progressively add matching, querying, links, reference updates, and caching. See [§14](./14-conformance.md) for details.
-
----
-
-## Specification Structure
-
-| Document | Description |
-|----------|-------------|
-| [01-terminology.md](./01-terminology.md) | Definitions of key terms |
-| [02-collection-layout.md](./02-collection-layout.md) | How tools identify and scan collections |
-| [03-frontmatter.md](./03-frontmatter.md) | Frontmatter parsing, null semantics, serialization |
-| [04-configuration.md](./04-configuration.md) | The `mdbase.yaml` configuration file |
-| [05-types.md](./05-types.md) | Type definitions as markdown files |
-| [06-matching.md](./06-matching.md) | How tools match files to types |
-| [07-field-types.md](./07-field-types.md) | Primitive and composite field types |
-| [08-links.md](./08-links.md) | Link syntax, parsing, resolution |
-| [09-validation.md](./09-validation.md) | Validation levels and error reporting |
-| [10-querying.md](./10-querying.md) | Query model, filters, sorting |
-| [11-expressions.md](./11-expressions.md) | Expression language for filters and formulas |
-| [12-operations.md](./12-operations.md) | Create, Read, Update, Delete, Rename |
-| [13-caching.md](./13-caching.md) | Optional caching and indexing |
-| [14-conformance.md](./14-conformance.md) | Conformance levels and testing |
-| [15-watching.md](./15-watching.md) | Watch mode and change events |
-| [Appendix A](./appendix-a-examples.md) | Complete examples |
-| [Appendix B](./appendix-b-expression-grammar.md) | Formal expression grammar |
-| [Appendix C](./appendix-c-error-codes.md) | Standard error codes |
-| [Appendix D](./appendix-d-compatibility.md) | Compatibility with existing tools |
-
----
-
-## Versioning
-
-This specification uses semantic versioning. The current version is **0.2.1**. Breaking changes may occur before 1.0.0.
-
-Tools should declare which specification version they implement and should reject configuration files with unsupported `spec_version` values.
-
----
-
-## License
-
-This specification is released under the [MIT License](https://opensource.org/licenses/MIT).
+Draft notes use ordinary prose and are not normative.

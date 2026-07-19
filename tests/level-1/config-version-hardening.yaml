@@ -45,11 +45,11 @@ groups:
           error:
             code: unsupported_version
 
-      - name: "future minor version 0.3.0 is rejected when implementation supports 0.2.x"
+      - name: "future minor version 0.4.0 is rejected when implementation supports 0.3.x"
         spec_ref: "§4.4.1"
         setup:
           config: |
-            spec_version: "0.3.0"
+            spec_version: "0.4.0"
           types: {}
           files: {}
         operation: load_config
@@ -92,7 +92,7 @@ groups:
 
     setup:
       config: |
-        spec_version: "0.3.0"
+        spec_version: "0.2.1"
       types:
         task.md: |
           ---

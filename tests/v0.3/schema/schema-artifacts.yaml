@@ -1,0 +1,145 @@
+name: "v0.3 schema artifact conformance"
+spec_version: "0.3.0"
+fixture_set: schema_artifacts
+category: schema_artifacts
+spec_ref: "v0.3/05, v0.3/06, v0.3/13, v0.3/14"
+
+groups:
+  - name: "canonical schemas"
+    tests:
+      - name: "all canonical schemas validate against JSON Schema 2020-12"
+        operation: json_schema_meta_validate
+        input:
+          paths:
+            - "schemas/v0.3/**/*.json"
+        expect:
+          valid: true
+
+      - name: "type-file schema validates the canvas runtime type files"
+        operation: markdown_frontmatter_schema_validate
+        input:
+          schema: "schemas/v0.3/type-file.schema.json"
+          paths:
+            - "examples/v0.3/canvas-runtime/_types/*.md"
+        expect:
+          valid: true
+
+      - name: "config schema validates the canvas runtime collection"
+        operation: yaml_document_schema_validate
+        input:
+          schema: "schemas/v0.3/config.schema.json"
+          paths:
+            - "examples/v0.3/canvas-runtime/mdbase.yaml"
+        expect:
+          valid: true
+
+      - name: "conformance claim schema validates a complete core-read claim"
+        operation: yaml_document_schema_validate
+        input:
+          schema: "schemas/v0.3/conformance-claim.schema.json"
+          paths:
+            - "tests/v0.3/fixtures/conformance/valid-core-read.yml"
+        expect:
+          valid: true
+
+      - name: "conformance claim schema rejects missing profile dependencies"
+        operation: yaml_document_schema_validate
+        input:
+          schema: "schemas/v0.3/conformance-claim.schema.json"
+          paths:
+            - "tests/v0.3/fixtures/conformance/invalid-missing-dependencies.yml"
+        expect:
+          valid: false
+
+      - name: "type-file schema validates the TaskNotes v0.3 type files"
+        operation: markdown_frontmatter_schema_validate
+        input:
+          schema: "schemas/v0.3/type-file.schema.json"
+          paths:
+            - "examples/v0.3/tasknotes-migration/v0.3/_types/*.md"
+        expect:
+          valid: true
+
+      - name: "embedded task schemas are themselves valid JSON Schemas"
+        operation: embedded_json_schema_validate
+        input:
+          paths:
+            - "examples/v0.3/canvas-runtime/_types/task.md"
+            - "examples/v0.3/tasknotes-migration/v0.3/_types/task.md"
+          pointer: "/schema/value"
+        expect:
+          valid: true
+
+  - name: "runtime record schemas"
+    tests:
+      - name: "provider contract records validate"
+        operation: markdown_frontmatter_schema_validate
+        input:
+          schema: "schemas/v0.3/runtime/provider.schema.json"
+          paths:
+            - "examples/v0.3/canvas-runtime/providers/*.md"
+        expect:
+          valid: true
+
+      - name: "action contract records validate"
+        operation: markdown_frontmatter_schema_validate
+        input:
+          schema: "schemas/v0.3/runtime/action.schema.json"
+          paths:
+            - "examples/v0.3/canvas-runtime/actions/*.md"
+        expect:
+          valid: true
+
+      - name: "action provider requirements accept version ranges"
+        operation: yaml_document_schema_validate
+        input:
+          schema: "schemas/v0.3/runtime/action.schema.json"
+          paths:
+            - "tests/v0.3/fixtures/runtime/valid-action-provider-range.yml"
+        expect:
+          valid: true
+
+      - name: "event contract records validate"
+        operation: markdown_frontmatter_schema_validate
+        input:
+          schema: "schemas/v0.3/runtime/event.schema.json"
+          paths:
+            - "examples/v0.3/canvas-runtime/events/*.md"
+        expect:
+          valid: true
+
+      - name: "capability records validate"
+        operation: markdown_frontmatter_schema_validate
+        input:
+          schema: "schemas/v0.3/runtime/capability.schema.json"
+          paths:
+            - "examples/v0.3/canvas-runtime/capabilities/*.md"
+        expect:
+          valid: true
+
+      - name: "workflow records validate"
+        operation: markdown_frontmatter_schema_validate
+        input:
+          schema: "schemas/v0.3/runtime/workflow.schema.json"
+          paths:
+            - "examples/v0.3/canvas-runtime/workflows/*.md"
+        expect:
+          valid: true
+
+      - name: "runtime policy records validate"
+        operation: markdown_frontmatter_schema_validate
+        input:
+          schema: "schemas/v0.3/runtime/runtime-policy.schema.json"
+          paths:
+            - "examples/v0.3/canvas-runtime/policies/*.md"
+        expect:
+          valid: true
+
+      - name: "sample event envelope validates"
+        operation: json_document_schema_validate
+        input:
+          schema: "schemas/v0.3/runtime/event-envelope.schema.json"
+          paths:
+            - "examples/v0.3/canvas-runtime/runtime-events/sample-canvas-drop-event.json"
+        expect:
+          valid: true

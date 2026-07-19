@@ -262,9 +262,9 @@ For practical implementation guidance and runnable fixtures, see:
 
 - [`IMPLEMENTING.md`](./IMPLEMENTING.md) for a Level 1 quickstart
 - [`REFERENCE-RUNNER.md`](./REFERENCE-RUNNER.md) for adapter protocol details
-- [`examples/adapter-template.py`](./examples/adapter-template.py) for a minimal adapter scaffold
+- [`examples/adapter-template.py`](../examples/adapter-template.py) for a minimal adapter scaffold
 - [`QUICK-REFERENCE.md`](./QUICK-REFERENCE.md) for a compact behavior card
-- [`examples/annotated-collection/`](./examples/annotated-collection/) for a manual test collection
+- [`examples/annotated-collection/`](../examples/annotated-collection/) for a manual test collection
 
 ---
 

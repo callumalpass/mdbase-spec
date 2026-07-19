@@ -295,9 +295,8 @@ groups:
           # code should be a UUID, not "NONE"
           frontmatter_not_match:
             code: "NONE"
-          frontmatter_written: [code]
-          # category has only default, no generated — suppressed from disk
-          frontmatter_not_written: [category]
+          frontmatter_written: [code, category]
+          # category has only default. with write_defaults=true (default), it is materialized.
 
   # =============================================================================
   # Group 6: Derived generated field with default fallback

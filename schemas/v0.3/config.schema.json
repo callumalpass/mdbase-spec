@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mdbase.dev/schemas/v0.3/config.schema.json",
+  "title": "mdbase v0.3 collection configuration",
+  "type": "object",
+  "required": ["spec_version"],
+  "properties": {
+    "spec_version": {
+      "const": "0.3.0"
+    },
+    "settings": {
+      "$ref": "#/$defs/settings"
+    },
+    "runtime": {
+      "$ref": "#/$defs/runtime"
+    }
+  },
+  "patternProperties": {
+    "^x-[A-Za-z][A-Za-z0-9._:-]{0,127}$": true
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "settings": {
+      "type": "object",
+      "properties": {
+        "types_folder": {
+          "type": "string",
+          "minLength": 1
+        },
+        "record_extensions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]+$"
+          }
+        },
+        "validation": {
+          "enum": ["off", "warn", "error"]
+        },
+        "explicit_type_keys": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "id_field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "include_subfolders": {
+          "type": "boolean"
+        },
+        "exclude": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "runtime": {
+      "type": "object",
+      "required": ["profile_version"],
+      "properties": {
+        "profile_version": {
+          "const": "0.1.0"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "contract_mode": {
+          "enum": ["runtime", "materialized", "strict"]
+        },
+        "policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "materialize": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

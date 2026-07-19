@@ -21,6 +21,7 @@
     </a>
     <nav class="landing-nav" aria-label="Primary">
       <a href="/">Home</a>
+      <a href="runtime.html">Runtime</a>
       <a href="ecosystem.html" class="nav-active">Ecosystem</a>
       <a href="https://github.com/callumalpass/mdbase-spec" class="hide-mobile">GitHub</a>
       <a href="spec.html" class="nav-cta">Read the spec</a>
@@ -39,68 +40,68 @@
 
     <section class="landing-section" id="implementor-resources">
       <div class="section-kicker">Implementors</div>
-      <h2 class="section-title">Implementation starter kit</h2>
-      <p class="section-intro">The fastest route from a blank repository to a conforming adapter.</p>
+      <h2 class="section-title">Portable implementation artifacts</h2>
+      <p class="section-intro">Normative profiles, schemas, fixtures, and runtime contracts shared by independent implementations.</p>
 
       <div class="eco-grid">
         <div class="eco-card">
           <span class="eco-lang">Guide</span>
-          <h3 class="eco-name">IMPLEMENTING.md</h3>
-          <p class="eco-desc">Walkthrough from zero to passing Level 1 conformance with concrete operation coverage.</p>
+          <h3 class="eco-name">Conformance profiles</h3>
+          <p class="eco-desc">Profile dependencies, claim requirements, diagnostic envelopes, and fixture responsibilities.</p>
           <ul class="eco-features">
-            <li>Conformance workflow</li>
-            <li>Operation checklist</li>
-            <li>Test YAML interpretation</li>
+            <li>Independent capability claims</li>
+            <li>Canonical diagnostics</li>
+            <li>Shared fixture sets</li>
           </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/IMPLEMENTING.md" class="eco-link">Open guide</a>
+          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/16-conformance.md" class="eco-link">Open conformance spec</a>
         </div>
 
         <div class="eco-card">
           <span class="eco-lang">Runner</span>
-          <h3 class="eco-name">REFERENCE-RUNNER.md</h3>
-          <p class="eco-desc">Reference adapter protocol for the shared conformance runner.</p>
+          <h3 class="eco-name">Canonical schemas</h3>
+          <p class="eco-desc">Draft 2020-12 artifacts for configuration, types, operations, claims, and runtime records.</p>
           <ul class="eco-features">
-            <li>stdin/stdout contract</li>
-            <li>Assertions and setup format</li>
-            <li>Command usage examples</li>
+            <li>Stable schema IDs</li>
+            <li>Embedded schema profile</li>
+            <li>Machine validation</li>
           </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/REFERENCE-RUNNER.md" class="eco-link">Open runner docs</a>
+          <a href="https://github.com/callumalpass/mdbase-spec/tree/main/schemas/v0.3" class="eco-link">Browse schemas</a>
         </div>
 
         <div class="eco-card">
           <span class="eco-lang">Template</span>
-          <h3 class="eco-name">adapter-template.py</h3>
-          <p class="eco-desc">Minimal shim to map runner operations into your implementation API.</p>
+          <h3 class="eco-name">Runtime package</h3>
+          <p class="eco-desc">Browser-safe provider host and canonical types, with Markdown loading isolated to the Node export.</p>
           <ul class="eco-features">
-            <li>Dispatch skeleton</li>
-            <li>Error mapping pattern</li>
-            <li>Ready to extend per level</li>
+            <li>Atomic provider registration</li>
+            <li>Default-deny policy</li>
+            <li>Validated event and action dispatch</li>
           </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/examples/adapter-template.py" class="eco-link">Open template</a>
+          <a href="https://github.com/callumalpass/mdbase-spec/tree/main/packages/runtime-contracts" class="eco-link">Open package</a>
         </div>
 
         <div class="eco-card">
           <span class="eco-lang">Fixture</span>
-          <h3 class="eco-name">annotated-collection</h3>
-          <p class="eco-desc">Runnable collection fixture for manual behavior checks outside the test suite.</p>
+          <h3 class="eco-name">Canvas runtime fixture</h3>
+          <p class="eco-desc">Runnable provider, event, action, policy, and workflow proof using the exact canonical schemas.</p>
           <ul class="eco-features">
-            <li>Config + types + records</li>
-            <li>Intentional invalid example</li>
-            <li>Manual verification checklist</li>
+            <li>Canvas drop event</li>
+            <li>Record patch action</li>
+            <li>Workflow preflight and execution</li>
           </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/tree/main/examples/annotated-collection" class="eco-link">Open fixture</a>
+          <a href="https://github.com/callumalpass/mdbase-spec/tree/main/examples/v0.3/canvas-runtime" class="eco-link">Open fixture</a>
         </div>
 
         <div class="eco-card">
           <span class="eco-lang">Cheat Sheet</span>
-          <h3 class="eco-name">QUICK-REFERENCE.md</h3>
-          <p class="eco-desc">One-page summary for operations, types, errors, and expression operators.</p>
+          <h3 class="eco-name">v0.2 archive</h3>
+          <p class="eco-desc">The prior spec, implementer guide, runner protocol, appendices, and quick reference remain intact.</p>
           <ul class="eco-features">
-            <li>Fast day-to-day lookup</li>
-            <li>Error code list</li>
-            <li>Operator precedence</li>
+            <li>Complete v0.2.1 prose</li>
+            <li>Legacy fixture compatibility</li>
+            <li>Explicit migration path</li>
           </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/QUICK-REFERENCE.md" class="eco-link">Open reference</a>
+          <a href="spec-v0.2.html" class="eco-link">Open archive</a>
         </div>
       </div>
     </section>
@@ -116,9 +117,9 @@
           <h3 class="eco-name">mdbase</h3>
           <p class="eco-desc">Reference implementation of the mdbase specification. Provides collection loading, schema validation, querying, and expression evaluation.</p>
           <ul class="eco-features">
-            <li>Full Level 6 conformance</li>
-            <li>File watching and incremental updates</li>
-            <li>Pluggable cache backends</li>
+            <li>All six collection profiles</li>
+            <li>Safe v0.2 migration</li>
+            <li>Portable runtime integration</li>
           </ul>
           <a href="https://github.com/callumalpass/mdbase" class="eco-link">callumalpass/mdbase</a>
         </div>
@@ -126,11 +127,11 @@
         <div class="eco-card">
           <span class="eco-lang">Rust</span>
           <h3 class="eco-name">mdbase-rs</h3>
-          <p class="eco-desc">High-performance Rust implementation for native tools and CLI applications where speed is critical.</p>
+          <p class="eco-desc">Independent Rust implementation used by native tools, the LSP, Pickle, and Tauri consumers.</p>
           <ul class="eco-features">
-            <li>Zero-copy YAML parsing</li>
-            <li>Parallel collection loading</li>
-            <li>C FFI bindings</li>
+            <li>Verified core_read</li>
+            <li>Verified collection_semantics</li>
+            <li>Canonical v0.3 diagnostics</li>
           </ul>
           <a href="https://github.com/callumalpass/mdbase-rs" class="eco-link">callumalpass/mdbase-rs</a>
         </div>
@@ -235,7 +236,7 @@
   </main>
 
   <footer class="landing-footer">
-    <p>mdbase specification v0.2.1 &middot; <a href="https://opensource.org/licenses/MIT">MIT License</a> &middot; <a href="https://github.com/callumalpass/mdbase-spec">Source on GitHub</a></p>
+    <p>mdbase specification v0.3.0 &middot; <a href="spec-v0.2.html">v0.2 archive</a> &middot; <a href="https://opensource.org/licenses/MIT">MIT License</a> &middot; <a href="https://github.com/callumalpass/mdbase-spec">Source on GitHub</a></p>
   </footer>
 
 </body>

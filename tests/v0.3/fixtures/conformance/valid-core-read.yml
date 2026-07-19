@@ -1,0 +1,33 @@
+kind: mdbase.conformance
+status: verified
+implementation:
+  id: fixture-validator
+  name: Conformance fixture validator
+  version: 0.0.0-test
+  language: TypeScript
+  target: test
+spec_version: 0.3.0
+profiles:
+  - core_read
+json_schema:
+  dialect: https://json-schema.org/draft/2020-12/schema
+  keywords:
+    - type
+    - properties
+    - required
+  formats:
+    - date
+    - date-time
+    - time
+  remote_refs: false
+compatibility:
+  v0_2_read: false
+  v0_2_migrate: false
+limits:
+  maximum_schema_ref_depth: 32
+evidence:
+  - kind: conformance_suite
+    command: fixture-only
+    result: pass
+    verified_at: "2026-07-16T08:00:00+10:00"
+    environment: schema fixture

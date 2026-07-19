@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mdbase.dev/schemas/v0.3/operation-result.schema.json",
+  "title": "mdbase v0.3 operation result",
+  "type": "object",
+  "required": ["valid", "result", "diagnostics"],
+  "properties": {
+    "valid": {
+      "type": "boolean"
+    },
+    "result": {},
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "diagnostic.schema.json"
+      }
+    }
+  },
+  "additionalProperties": false
+}

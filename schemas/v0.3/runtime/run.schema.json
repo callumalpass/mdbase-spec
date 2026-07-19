@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mdbase.dev/schemas/runtime/v0.1/run.schema.json",
+  "title": "mdbase runtime run record",
+  "type": "object",
+  "required": ["type", "id", "workflow", "status", "started_at"],
+  "properties": {
+    "type": {
+      "const": "runtime_run"
+    },
+    "id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "workflow": {
+      "$ref": "#/$defs/identifier"
+    },
+    "trigger_event": {
+      "$ref": "#/$defs/identifier"
+    },
+    "executor": {
+      "$ref": "#/$defs/identifier"
+    },
+    "idempotency_key": {
+      "type": "string"
+    },
+    "status": {
+      "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "action", "status"],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/identifier"
+          },
+          "action": {
+            "$ref": "#/$defs/identifier"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "running",
+              "succeeded",
+              "failed",
+              "skipped",
+              "cancelled",
+              "timed_out"
+            ]
+          },
+          "output": {},
+          "error": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "patternProperties": {
+          "^x-[A-Za-z0-9._:-]+$": true
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "patternProperties": {
+    "^x-[A-Za-z0-9._:-]+$": true
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    }
+  }
+}

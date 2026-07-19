@@ -1,0 +1,101 @@
+spec_version: "0.3.0"
+suite_version: 1
+
+claim_profiles:
+  - id: core_read
+    status: coverage_complete
+    requires: []
+    requirements:
+      - collection_discovery
+      - forward_slash_record_scan
+      - v03_type_loading
+      - json_schema_profile
+      - json_schema_type
+      - json_schema_required
+      - json_schema_properties
+      - json_schema_additional_properties
+      - json_schema_items
+      - json_schema_enum
+      - json_schema_const
+      - json_schema_combinators
+      - json_schema_conditionals
+      - json_schema_numeric_constraints
+      - json_schema_string_constraints
+      - json_schema_array_constraints
+      - json_schema_defs_and_fragment_ref
+      - json_schema_annotations
+      - json_schema_formats
+      - local_schema_ref
+      - explicit_and_basic_matching
+      - raw_schema_validation
+      - machine_readable_diagnostics
+  - id: collection_semantics
+    status: coverage_complete
+    requires: [core_read]
+    requirements:
+      - effective_read_defaults
+      - uniqueness
+      - simple_path_policy
+      - display_metadata
+      - independent_multi_type_validation
+  - id: cel_query
+    status: draft
+    requires: [core_read]
+    requirements: []
+  - id: links
+    status: draft
+    requires: [collection_semantics, cel_query]
+    requirements: []
+  - id: core_write
+    status: draft
+    requires: [collection_semantics]
+    requirements: []
+  - id: lifecycle
+    status: draft
+    requires: [core_write, cel_query]
+    requirements: []
+  - id: runtime_contracts/0.1
+    status: draft
+    requires: [core_read]
+    requirements: []
+  - id: workflow/0.1
+    status: draft
+    requires: [runtime_contracts/0.1, cel_query]
+    requirements: []
+  - id: watch
+    status: draft
+    requires: [core_read]
+    requirements: []
+
+fixture_sets:
+  - id: schema_artifacts
+    description: Canonical JSON Schemas, v0.3 type files, and example records validate.
+    coverage_targets: []
+    files:
+      - schema/schema-artifacts.yaml
+  - id: migration
+    description: v0.2 type files can be migrated to v0.3 type wrappers and reports.
+    coverage_targets: []
+    files:
+      - migration/tasknotes-type-migration.yaml
+      - migration/pickle-collection-migration.yaml
+  - id: core_collection
+    description: v0.3 type wrappers, JSON Schema validation, matching, defaults, links, uniqueness, and paths.
+    coverage_targets: [core_read, collection_semantics, links, core_write]
+    files:
+      - core/core-collection.yaml
+  - id: lifecycle
+    description: on_create/on_update managed field behavior replacing generated fields.
+    coverage_targets: [lifecycle]
+    files:
+      - lifecycle/lifecycle.yaml
+  - id: cel
+    description: mdbase CEL host bindings and missing/null behavior.
+    coverage_targets: [cel_query]
+    files:
+      - cel/cel-profile.yaml
+  - id: runtime_contracts
+    description: runtime registries, event/action validation, implicit contracts, and materialization.
+    coverage_targets: [runtime_contracts/0.1]
+    files:
+      - runtime-contracts/runtime-contracts.yaml

@@ -23,6 +23,7 @@
       <a href="#principles" class="hide-mobile">Constraints</a>
       <a href="#examples" class="hide-mobile">Examples</a>
       <a href="#implementors" class="hide-mobile">Implementors</a>
+      <a href="runtime.html">Runtime</a>
       <a href="ecosystem.html">Ecosystem</a>
       <a href="https://github.com/callumalpass/mdbase-spec" class="hide-mobile">GitHub</a>
       <a href="spec.html" class="nav-cta">Read the spec</a>
@@ -44,46 +45,47 @@
         <div class="scene-card scene-type">
           <pre><code><strong>_types/task.md</strong>
 ---
+kind: mdbase.type
 name: task
-fields:
-  status:
-    type: enum
-    values: [open, done]
-  assignee:
-    type: link
-    target: person
+schema:
+  dialect: json-schema-2020-12
+  value:
+    type: object
+    properties:
+      status: { enum: [open, done] }
 ---</code></pre>
         </div>
         <div class="scene-card scene-query">
           <pre><code><strong>query</strong>
 types: [task]
-where:
-  - 'status != "done"'
+where: 'status != "done"'
 order_by:
-  - priority desc</code></pre>
+  - field: priority
+    direction: desc</code></pre>
         </div>
       </div>
 
       <div class="hero-inner">
         <div class="hero-version">
-          <span class="tag">v0.2.1</span>
+          <span class="tag">v0.3.0</span>
           Specification
         </div>
         <h1>Typed Markdown <span class="accent">Collections</span></h1>
         <p class="hero-sub">
           mdbase specifies how Markdown files with YAML frontmatter are discovered,
-          typed, validated, queried, linked, and updated. The durable state remains
-          ordinary files on disk.
+          typed with JSON Schema, queried with CEL, linked, updated, and connected
+          to optional runtime providers. Durable state remains ordinary files.
         </p>
         <ul class="hero-proof" aria-label="Specification coverage">
           <li>collection layout</li>
-          <li>schema files</li>
-          <li>validation</li>
-          <li>queries</li>
-          <li>conformance tests</li>
+          <li>JSON Schema types</li>
+          <li>CEL queries</li>
+          <li>safe migration</li>
+          <li>runtime contracts</li>
         </ul>
         <div class="hero-actions">
           <a href="spec.html" class="btn btn-primary">Read the specification</a>
+          <a href="runtime.html" class="btn btn-ghost">See runtime mode</a>
           <a href="https://github.com/callumalpass/mdbase-spec" class="btn btn-ghost">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
             GitHub
@@ -98,14 +100,14 @@ order_by:
       <p class="section-intro">
         The spec defines collection boundaries, type definition files, record
         discovery, effective frontmatter, and operation behavior. Implementations
-        can claim the conformance level they support.
+        publish the independent conformance profiles they support.
       </p>
 
       <div class="proof-flow">
         <div class="proof-step">
           <code>_types/task.md</code>
           <h3>Type definitions</h3>
-          <p>Fields, inheritance, generated values, matching rules, and strictness are specified in Markdown files.</p>
+          <p>Each Markdown type file wraps a JSON Schema and collection-specific matching, default, link, path, and lifecycle metadata.</p>
         </div>
         <div class="proof-step">
           <code>tasks/fix-bug.md</code>
@@ -189,32 +191,26 @@ order_by:
 
         <div id="ex-type" class="example-panel" role="tabpanel" aria-labelledby="tab-type" hidden>
           <pre data-lang="yaml"><code><span class="comment">---</span>
+<span class="key">kind</span>: mdbase.type
 <span class="key">name</span>: task
-<span class="key">fields</span>:
-  <span class="key">title</span>:
-    <span class="key">type</span>: <span class="string">string</span>
-    <span class="key">required</span>: <span class="number">true</span>
-  <span class="key">status</span>:
-    <span class="key">type</span>: <span class="string">enum</span>
-    <span class="key">values</span>: [<span class="string">open</span>, <span class="string">in_progress</span>, <span class="string">done</span>]
-    <span class="key">default</span>: <span class="string">open</span>
-  <span class="key">priority</span>:
-    <span class="key">type</span>: <span class="string">integer</span>
-    <span class="key">min</span>: <span class="number">1</span>
-    <span class="key">max</span>: <span class="number">5</span>
-  <span class="key">assignee</span>:
-    <span class="key">type</span>: <span class="string">link</span>
-    <span class="key">target</span>: <span class="string">person</span>
+<span class="key">schema</span>:
+  <span class="key">dialect</span>: json-schema-2020-12
+  <span class="key">value</span>:
+    <span class="key">type</span>: object
+    <span class="key">required</span>: [title]
+    <span class="key">properties</span>:
+      <span class="key">title</span>: { <span class="key">type</span>: <span class="string">string</span> }
+      <span class="key">status</span>: { <span class="key">enum</span>: [<span class="string">open</span>, <span class="string">in_progress</span>, <span class="string">done</span>] }
+      <span class="key">priority</span>: { <span class="key">type</span>: <span class="string">integer</span>, <span class="key">minimum</span>: <span class="number">1</span>, <span class="key">maximum</span>: <span class="number">5</span> }
+<span class="key">collection</span>:
+  <span class="key">read_defaults</span>: { <span class="key">status</span>: <span class="string">open</span> }
 <span class="comment">---</span></code></pre>
         </div>
 
         <div id="ex-query" class="example-panel" role="tabpanel" aria-labelledby="tab-query" hidden>
           <pre data-lang="yaml"><code><span class="key">query</span>:
   <span class="key">types</span>: [<span class="string">task</span>]
-  <span class="key">where</span>:
-    <span class="key">and</span>:
-      - <span class="string">'status != "done"'</span>
-      - <span class="string">"priority >= 3"</span>
+  <span class="key">where</span>: <span class="string">'status != "done" &amp;&amp; priority &gt;= 3'</span>
   <span class="key">order_by</span>:
     - <span class="key">field</span>: <span class="string">due_date</span>
       <span class="key">direction</span>: <span class="string">asc</span>
@@ -239,16 +235,18 @@ priority ?? <span class="number">3</span></code></pre>
 
     <section class="landing-section" id="conformance">
       <div class="section-kicker">Conformance</div>
-      <h2 class="section-title">Conformance levels</h2>
-      <p class="section-intro">Implementations claim conformance at the level they support. Each level includes every level before it.</p>
+      <h2 class="section-title">Independent conformance profiles</h2>
+      <p class="section-intro">Implementations claim only the portable behavior they verify, with dependencies between profiles declared explicitly.</p>
 
       <div class="levels" aria-label="Conformance levels">
-        <div class="level"><span class="level-num">1</span><span class="level-name">Core</span></div>
-        <div class="level"><span class="level-num">2</span><span class="level-name">Matching</span></div>
-        <div class="level"><span class="level-num">3</span><span class="level-name">Querying</span></div>
-        <div class="level"><span class="level-num">4</span><span class="level-name">Links</span></div>
-        <div class="level"><span class="level-num">5</span><span class="level-name">References</span></div>
-        <div class="level"><span class="level-num">6</span><span class="level-name">Full</span></div>
+        <div class="level"><span class="level-num">01</span><span class="level-name">core_read</span></div>
+        <div class="level"><span class="level-num">02</span><span class="level-name">collection_semantics</span></div>
+        <div class="level"><span class="level-num">03</span><span class="level-name">cel_query</span></div>
+        <div class="level"><span class="level-num">04</span><span class="level-name">links</span></div>
+        <div class="level"><span class="level-num">05</span><span class="level-name">core_write</span></div>
+        <div class="level"><span class="level-num">06</span><span class="level-name">lifecycle</span></div>
+        <div class="level"><span class="level-num">07</span><span class="level-name">runtime_contracts</span></div>
+        <div class="level"><span class="level-num">08</span><span class="level-name">workflow</span></div>
       </div>
     </section>
 
@@ -260,62 +258,62 @@ priority ?? <span class="number">3</span></code></pre>
       <div class="eco-grid">
         <div class="eco-card">
           <span class="eco-lang">Guide</span>
-          <h3 class="eco-name">Implementing.md</h3>
-          <p class="eco-desc">Step-by-step Level 1 on-ramp: required operations, test YAML interpretation, and conformance workflow.</p>
+          <h3 class="eco-name">Conformance profiles</h3>
+          <p class="eco-desc">Normative profile dependencies, claim documents, diagnostics, and shared fixture requirements.</p>
           <ul class="eco-features">
-            <li>Zero-to-Level-1 path</li>
-            <li>Adapter contract summary</li>
-            <li>Suggested build order</li>
+            <li>Profile dependency graph</li>
+            <li>Machine-readable claims</li>
+            <li>Shared fixture sets</li>
           </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/IMPLEMENTING.md" class="eco-link">Open guide</a>
+          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/16-conformance.md" class="eco-link">Open conformance spec</a>
         </div>
 
         <div class="eco-card">
           <span class="eco-lang">Runner</span>
-          <h3 class="eco-name">Reference Runner</h3>
-          <p class="eco-desc">Canonical adapter protocol and command usage for `scripts/mdbase-test.py`.</p>
+          <h3 class="eco-name">Runtime contracts</h3>
+          <p class="eco-desc">Browser-safe schemas, provider host, validation, dispatch, and explicit Node loaders.</p>
           <ul class="eco-features">
-            <li>stdin/stdout JSON interface</li>
-            <li>Expectation model</li>
-            <li>Fixture setup behavior</li>
+            <li>Provider registration</li>
+            <li>Default-deny policy</li>
+            <li>Action and event validation</li>
           </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/REFERENCE-RUNNER.md" class="eco-link">Open runner docs</a>
+          <a href="https://github.com/callumalpass/mdbase-spec/tree/main/packages/runtime-contracts" class="eco-link">Open runtime package</a>
         </div>
 
         <div class="eco-card">
           <span class="eco-lang">Template</span>
-          <h3 class="eco-name">Adapter Template</h3>
-          <p class="eco-desc">Minimal adapter scaffold to connect your implementation to the conformance suite.</p>
+          <h3 class="eco-name">Migration guide</h3>
+          <p class="eco-desc">Analyze, review, apply, recover, and stage v0.2 collection upgrades without silent rewrites.</p>
           <ul class="eco-features">
-            <li>Single-request process model</li>
-            <li>Operation dispatch skeleton</li>
-            <li>Error shape examples</li>
+            <li>Source hashes</li>
+            <li>Backups and recovery</li>
+            <li>Partial migration policy</li>
           </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/examples/adapter-template.py" class="eco-link">Open template</a>
+          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/15-migrations-and-compatibility.md" class="eco-link">Open migration spec</a>
         </div>
 
         <div class="eco-card">
           <span class="eco-lang">Example</span>
-          <h3 class="eco-name">Annotated Collection</h3>
-          <p class="eco-desc">Runnable sample collection with valid and invalid records for manual smoke testing.</p>
+          <h3 class="eco-name">Canvas runtime fixture</h3>
+          <p class="eco-desc">Runnable v0.3 collection proving provider contracts, workflow preflight, CEL inputs, and execution.</p>
           <ul class="eco-features">
-            <li>Complete folder fixture</li>
-            <li>Type definitions and records</li>
-            <li>Manual check script in README</li>
+            <li>Canonical type wrappers</li>
+            <li>Canvas drop event</li>
+            <li>Record patch workflow</li>
           </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/tree/main/examples/annotated-collection" class="eco-link">Open example</a>
+          <a href="https://github.com/callumalpass/mdbase-spec/tree/main/examples/v0.3/canvas-runtime" class="eco-link">Open example</a>
         </div>
 
         <div class="eco-card">
           <span class="eco-lang">Cheat Sheet</span>
-          <h3 class="eco-name">Quick Reference</h3>
-          <p class="eco-desc">Compact reference for operations, field types, error codes, operators, and precedence.</p>
+          <h3 class="eco-name">v0.2 archive</h3>
+          <p class="eco-desc">The complete previous specification, implementer guide, runner protocol, appendices, and quick reference.</p>
           <ul class="eco-features">
-            <li>High-frequency lookups</li>
-            <li>Error code index</li>
-            <li>Operator precedence</li>
+            <li>Unchanged v0.2.1 prose</li>
+            <li>Stable legacy URLs</li>
+            <li>Compatibility fixtures</li>
           </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/QUICK-REFERENCE.md" class="eco-link">Open reference</a>
+          <a href="spec-v0.2.html" class="eco-link">Open archive</a>
         </div>
       </div>
     </section>
@@ -327,31 +325,28 @@ priority ?? <span class="number">3</span></code></pre>
 
       <div class="spec-toc">
         <a class="toc-item" href="spec.html#section-00"><span class="toc-num">00</span> Overview</a>
-        <a class="toc-item" href="spec.html#section-01"><span class="toc-num">01</span> Terminology</a>
+        <a class="toc-item" href="spec.html#section-01"><span class="toc-num">01</span> Concepts</a>
         <a class="toc-item" href="spec.html#section-02"><span class="toc-num">02</span> Collection Layout</a>
-        <a class="toc-item" href="spec.html#section-03"><span class="toc-num">03</span> Frontmatter</a>
+        <a class="toc-item" href="spec.html#section-03"><span class="toc-num">03</span> Records &amp; Frontmatter</a>
         <a class="toc-item" href="spec.html#section-04"><span class="toc-num">04</span> Configuration</a>
-        <a class="toc-item" href="spec.html#section-05"><span class="toc-num">05</span> Types</a>
-        <a class="toc-item" href="spec.html#section-06"><span class="toc-num">06</span> Matching</a>
-        <a class="toc-item" href="spec.html#section-07"><span class="toc-num">07</span> Field Types</a>
+        <a class="toc-item" href="spec.html#section-05"><span class="toc-num">05</span> Type Files</a>
+        <a class="toc-item" href="spec.html#section-06"><span class="toc-num">06</span> JSON Schema Profile</a>
+        <a class="toc-item" href="spec.html#section-07"><span class="toc-num">07</span> Collection Semantics</a>
         <a class="toc-item" href="spec.html#section-08"><span class="toc-num">08</span> Links</a>
-        <a class="toc-item" href="spec.html#section-09"><span class="toc-num">09</span> Validation</a>
-        <a class="toc-item" href="spec.html#section-10"><span class="toc-num">10</span> Querying</a>
-        <a class="toc-item" href="spec.html#section-11"><span class="toc-num">11</span> Expressions</a>
+        <a class="toc-item" href="spec.html#section-09"><span class="toc-num">09</span> Lifecycle</a>
+        <a class="toc-item" href="spec.html#section-10"><span class="toc-num">10</span> CEL Profile</a>
+        <a class="toc-item" href="spec.html#section-11"><span class="toc-num">11</span> Querying</a>
         <a class="toc-item" href="spec.html#section-12"><span class="toc-num">12</span> Operations</a>
-        <a class="toc-item" href="spec.html#section-13"><span class="toc-num">13</span> Caching</a>
-        <a class="toc-item" href="spec.html#section-14"><span class="toc-num">14</span> Conformance</a>
-        <a class="toc-item" href="spec.html#section-15"><span class="toc-num">15</span> Watching</a>
-        <a class="toc-item" href="spec.html#appendix-a"><span class="toc-num">A</span> Examples</a>
-        <a class="toc-item" href="spec.html#appendix-b"><span class="toc-num">B</span> Expression Grammar</a>
-        <a class="toc-item" href="spec.html#appendix-c"><span class="toc-num">C</span> Error Codes</a>
-        <a class="toc-item" href="spec.html#appendix-d"><span class="toc-num">D</span> Compatibility</a>
+        <a class="toc-item" href="spec.html#section-13"><span class="toc-num">13</span> Runtime Contracts</a>
+        <a class="toc-item" href="spec.html#section-14"><span class="toc-num">14</span> Workflows</a>
+        <a class="toc-item" href="spec.html#section-15"><span class="toc-num">15</span> Migrations &amp; Compatibility</a>
+        <a class="toc-item" href="spec.html#section-16"><span class="toc-num">16</span> Conformance</a>
       </div>
     </section>
   </main>
 
   <footer class="landing-footer">
-    <p>mdbase specification v0.2.1 &middot; <a href="https://opensource.org/licenses/MIT">MIT License</a> &middot; <a href="https://github.com/callumalpass/mdbase-spec">Source on GitHub</a></p>
+    <p>mdbase specification v0.3.0 &middot; <a href="spec-v0.2.html">v0.2 archive</a> &middot; <a href="https://opensource.org/licenses/MIT">MIT License</a> &middot; <a href="https://github.com/callumalpass/mdbase-spec">Source on GitHub</a></p>
   </footer>
 
   <script>

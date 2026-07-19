@@ -1,0 +1,28 @@
+{
+  "type": "canvas.drop",
+  "contract_version": 1,
+  "id": "evt_01J0V1CANVASDROP",
+  "occurred_at": "2026-06-14T08:15:00Z",
+  "source": {
+    "runtime": "canvas-bases",
+    "provider": "canvas-bases",
+    "collection": "examples/v0.3/canvas-runtime"
+  },
+  "payload": {
+    "board": {
+      "path": "boards/work.md",
+      "view": "Board"
+    },
+    "file": {
+      "path": "tasks/card-001.md"
+    },
+    "zone": {
+      "id": "doing",
+      "label": "Doing"
+    },
+    "position": {
+      "x": 240,
+      "y": 360
+    }
+  }
+}

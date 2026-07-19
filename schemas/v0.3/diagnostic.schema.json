@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mdbase.dev/schemas/v0.3/diagnostic.schema.json",
+  "title": "mdbase v0.3 diagnostic",
+  "type": "object",
+  "required": ["severity", "code", "message"],
+  "properties": {
+    "severity": {
+      "enum": ["info", "warning", "error"]
+    },
+    "code": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1
+    },
+    "path": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]*$"
+    },
+    "field": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "schema_location": {
+      "type": "string",
+      "format": "uri-reference"
+    },
+    "details": {}
+  },
+  "patternProperties": {
+    "^x-[A-Za-z][A-Za-z0-9._:-]{0,127}$": true
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,210 @@
+{
+  "report_version": "0.1.0",
+  "analysis_id": "2e0ed91bf5bfbb8207f8a853e022e4fde17e3b9ba243d0447c4c0072cdf9981c",
+  "source_version": "0.2.1",
+  "target_version": "0.3.0",
+  "applicable": true,
+  "operations": [
+    {
+      "path": "_types/pickle_request.md",
+      "operation": "replace",
+      "source_sha256": "09abd8d226416879a81a405f6bba2b87fea4c7b9ad54f5a5532d6ce76bcf028f",
+      "target_sha256": "0fa6b9e88f42a15304a2a0e534f65e8083589cb32e28626bc9eb280421a3ac33"
+    },
+    {
+      "path": "_types/pickle_response_ack.md",
+      "operation": "replace",
+      "source_sha256": "552db63200fd700dc86c7c4b73f8bc79b8f731ea2aa48d0db6028cfddbb131b1",
+      "target_sha256": "211d3e76a2715b776485316ed438f55032b83e0a4c4c3947e2dd31c06b00f931"
+    },
+    {
+      "path": "_types/pickle_response_approval.md",
+      "operation": "replace",
+      "source_sha256": "ad396e0ae7d31467cf4a50f8d83284cd980a56f9470d0cfa4792c4d08be1fad5",
+      "target_sha256": "3d0000337497475a2b04f58ee96f872f6a9600840c5912a1a74e6008758232c3"
+    },
+    {
+      "path": "mdbase.yaml",
+      "operation": "replace",
+      "source_sha256": "40eb325a6dd4f939129d303b7dd4f50aad4eabdc5f05c278962bc7bb1e8e0b5b",
+      "target_sha256": "ce2018b6b9525cd91614f258587ec1ee8f533c7967cb709b9619e6c4391424d2"
+    }
+  ],
+  "type_migrations": [
+    {
+      "source": "_types/pickle_request.md",
+      "target": "_types/pickle_request.md",
+      "source_version": "0.2.1",
+      "target_version": "0.3.0",
+      "summary": {
+        "fields_converted": 16,
+        "required_fields": [
+          "title",
+          "response_type"
+        ],
+        "defaults_moved_to_read_defaults": [],
+        "generated_fields_moved_to_lifecycle": [
+          "id",
+          "created_at"
+        ],
+        "link_fields_moved_to_collection_links": []
+      },
+      "mappings": [
+        {
+          "from": "fields",
+          "to": "schema.value.properties"
+        },
+        {
+          "from": "display_name_key",
+          "to": "collection.display.name_field"
+        },
+        {
+          "from": "path_pattern",
+          "to": "collection.path"
+        }
+      ],
+      "warnings": [
+        {
+          "code": "additional_properties_true",
+          "message": "The migrated schema allows additional properties because the source type was not strict."
+        }
+      ],
+      "unsupported": []
+    },
+    {
+      "source": "_types/pickle_response_ack.md",
+      "target": "_types/pickle_response_ack.md",
+      "source_version": "0.2.1",
+      "target_version": "0.3.0",
+      "summary": {
+        "fields_converted": 6,
+        "required_fields": [
+          "request"
+        ],
+        "defaults_moved_to_read_defaults": [],
+        "generated_fields_moved_to_lifecycle": [
+          "id",
+          "responded_at"
+        ],
+        "link_fields_moved_to_collection_links": [
+          "request"
+        ]
+      },
+      "mappings": [
+        {
+          "from": "fields",
+          "to": "schema.value.properties"
+        },
+        {
+          "from": "display_name_key",
+          "to": "collection.display.name_field"
+        },
+        {
+          "from": "path_pattern",
+          "to": "collection.path"
+        }
+      ],
+      "warnings": [
+        {
+          "code": "additional_properties_true",
+          "message": "The migrated schema allows additional properties because the source type was not strict."
+        }
+      ],
+      "unsupported": []
+    },
+    {
+      "source": "_types/pickle_response_approval.md",
+      "target": "_types/pickle_response_approval.md",
+      "source_version": "0.2.1",
+      "target_version": "0.3.0",
+      "summary": {
+        "fields_converted": 7,
+        "required_fields": [
+          "request",
+          "decision"
+        ],
+        "defaults_moved_to_read_defaults": [],
+        "generated_fields_moved_to_lifecycle": [
+          "id",
+          "responded_at"
+        ],
+        "link_fields_moved_to_collection_links": [
+          "request"
+        ]
+      },
+      "mappings": [
+        {
+          "from": "fields",
+          "to": "schema.value.properties"
+        },
+        {
+          "from": "display_name_key",
+          "to": "collection.display.name_field"
+        },
+        {
+          "from": "path_pattern",
+          "to": "collection.path"
+        }
+      ],
+      "warnings": [
+        {
+          "code": "additional_properties_true",
+          "message": "The migrated schema allows additional properties because the source type was not strict."
+        }
+      ],
+      "unsupported": []
+    }
+  ],
+  "generated_file_evidence": [
+    {
+      "path": "_types/pickle_request.md",
+      "recognized": false,
+      "reasons": []
+    },
+    {
+      "path": "_types/pickle_response_ack.md",
+      "recognized": true,
+      "reasons": [
+        "pickle_builtin_signature"
+      ]
+    },
+    {
+      "path": "_types/pickle_response_approval.md",
+      "recognized": true,
+      "reasons": [
+        "pickle_builtin_signature"
+      ]
+    }
+  ],
+  "warnings": [
+    {
+      "code": "additional_properties_true",
+      "message": "The migrated schema allows additional properties because the source type was not strict.",
+      "path": "_types/pickle_request.md",
+      "severity": "warning"
+    },
+    {
+      "code": "additional_properties_true",
+      "message": "The migrated schema allows additional properties because the source type was not strict.",
+      "path": "_types/pickle_response_ack.md",
+      "severity": "warning"
+    },
+    {
+      "code": "additional_properties_true",
+      "message": "The migrated schema allows additional properties because the source type was not strict.",
+      "path": "_types/pickle_response_approval.md",
+      "severity": "warning"
+    }
+  ],
+  "unsupported": [],
+  "invalid_records": [],
+  "target_diagnostics": [],
+  "backup": {
+    "required": true,
+    "location": ".mdbase/migrations/v0.3-214e01378945"
+  },
+  "post_apply_validation": {
+    "status": "not_run",
+    "diagnostics": []
+  }
+}

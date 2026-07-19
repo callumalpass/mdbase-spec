@@ -1,20 +1,26 @@
-spec_version: "0.2.1"
-name: "MDBase Specification"
-description: "The MDBase typed markdown collections specification, organized as an MDBase collection"
-
+spec_version: "0.3.0"
+name: "mdbase specification"
+description: "The current mdbase protocol chapters as a typed Markdown collection"
 settings:
+  types_folder: _types
+  record_extensions: [md]
+  validation: warn
   exclude:
-    - "README.md"
-    - "CHANGELOG.md"
-    - "POST*.md"
-    - "SPEC-*.md"
-    - "PROGRESS.md"
-    - "AGENTS.md"
-    - "PROMPT.md"
-    - "tests"
-    - "site"
-    - "obsidian-api"
-    - "obsidian-help"
-    - "*.mp4"
-    - "*.zip"
-  default_validation: warn
+    - README.md
+    - CHANGELOG.md
+    - AGENTS.md
+    - v0.2
+    - v0.3
+    - tests
+    - schemas
+    - examples
+    - packages
+    - release
+    - scripts
+    - site
+    - notes
+    - playground
+    - .ops
+    - node_modules
+    - .git
+    - .mdbase

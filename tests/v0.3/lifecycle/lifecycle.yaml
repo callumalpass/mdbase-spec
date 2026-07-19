@@ -1,0 +1,223 @@
+name: "v0.3 lifecycle conformance"
+spec_version: "0.3.0"
+fixture_set: lifecycle
+category: lifecycle
+spec_ref: "v0.3/09, v0.3/12"
+
+groups:
+  - name: "standard lifecycle providers"
+    setup:
+      config: |
+        spec_version: "0.3.0"
+        settings:
+          id_field: id
+      types:
+        task.md: |
+          ---
+          kind: mdbase.type
+          name: task
+          version: 1
+          schema:
+            dialect: json-schema-2020-12
+            value:
+              type: object
+              required: [type, id, title, dateCreated, dateModified]
+              additionalProperties: false
+              properties:
+                type: { const: task }
+                id: { type: string, minLength: 1 }
+                title: { type: string }
+                slug: { type: string }
+                dateCreated: { type: string, format: date-time }
+                dateModified: { type: string, format: date-time }
+                status: { enum: [open, done] }
+          collection:
+            read_defaults:
+              status: open
+          lifecycle:
+            on_create:
+              set:
+                id: { ulid: true }
+                slug: { slugify: title }
+                dateCreated: { now: true }
+                dateModified: { now: true }
+            on_update:
+              set:
+                dateModified: { now: true }
+          ---
+      files:
+        tasks/existing.md: |
+          ---
+          type: task
+          id: existing
+          title: Existing task
+          slug: existing-task
+          dateCreated: "2026-06-14T08:00:00Z"
+          dateModified: "2026-06-14T08:00:00Z"
+          ---
+    tests:
+      - name: "on_create runs before validation and satisfies required fields"
+        operation: create
+        input:
+          type: task
+          path: "tasks/created.md"
+          frontmatter:
+            type: task
+            title: Created task
+        expect:
+          valid: true
+          frontmatter_contains:
+            id:
+              matches: "^[0-9A-HJKMNP-TV-Z]{26}$"
+            slug: created-task
+            dateCreated:
+              format: date-time
+            dateModified:
+              format: date-time
+
+      - name: "on_update refreshes dateModified"
+        operation: update
+        input:
+          path: "tasks/existing.md"
+          patch:
+            title: Existing task renamed
+        expect:
+          valid: true
+          frontmatter_changed:
+            - dateModified
+          frontmatter:
+            dateCreated: "2026-06-14T08:00:00Z"
+
+      - name: "read defaults are not written by lifecycle"
+        operation: create
+        input:
+          type: task
+          path: "tasks/no-status.md"
+          frontmatter:
+            type: task
+            title: No status task
+        expect:
+          valid: true
+          frontmatter_not_contains:
+            - status
+
+      - name: "effective read still exposes read defaults after create"
+        operation: read
+        input:
+          path: "tasks/no-status.md"
+          effective: true
+        expect:
+          valid: true
+          frontmatter:
+            status: open
+
+  - name: "lifecycle guards and conflicts"
+    setup:
+      config: |
+        spec_version: "0.3.0"
+      types:
+        guarded.md: |
+          ---
+          kind: mdbase.type
+          name: guarded
+          version: 1
+          schema:
+            dialect: json-schema-2020-12
+            value:
+              type: object
+              required: [type, id, status]
+              properties:
+                type: { const: guarded }
+                id: { type: string }
+                status: { enum: [open, done] }
+                completedDate: { type: string, format: date }
+          lifecycle:
+            on_update:
+              - if: 'old.status != status && status == "done"'
+                set:
+                  completedDate: { today: true }
+          ---
+        conflict-a.md: |
+          ---
+          kind: mdbase.type
+          name: conflict_a
+          version: 1
+          match:
+            fields_present: [title]
+          schema:
+            dialect: json-schema-2020-12
+            value:
+              type: object
+              properties:
+                title: { type: string }
+                stamp: { type: string }
+          lifecycle:
+            on_update:
+              set:
+                stamp: { literal: a }
+          ---
+        conflict-b.md: |
+          ---
+          kind: mdbase.type
+          name: conflict_b
+          version: 1
+          match:
+            fields_present: [title]
+          schema:
+            dialect: json-schema-2020-12
+            value:
+              type: object
+              properties:
+                title: { type: string }
+                stamp: { type: string }
+          lifecycle:
+            on_update:
+              set:
+                stamp: { literal: b }
+          ---
+      files:
+        tasks/guarded.md: |
+          ---
+          type: guarded
+          id: guarded-1
+          status: open
+          ---
+        tasks/conflict.md: |
+          ---
+          title: Conflicting lifecycle
+          ---
+    tests:
+      - name: "guarded lifecycle action runs when condition becomes true"
+        operation: update
+        input:
+          path: "tasks/guarded.md"
+          patch:
+            status: done
+        expect:
+          valid: true
+          frontmatter_contains:
+            completedDate:
+              format: date
+
+      - name: "guarded lifecycle action does not run when condition is false"
+        operation: update
+        input:
+          path: "tasks/guarded.md"
+          patch:
+            status: open
+        expect:
+          valid: true
+          frontmatter_not_contains:
+            - completedDate
+
+      - name: "conflicting lifecycle assignments across matched types are errors"
+        operation: update
+        input:
+          path: "tasks/conflict.md"
+          patch:
+            title: Still conflicting
+        expect:
+          valid: false
+          issues:
+            - code: lifecycle_conflict
+              field: stamp

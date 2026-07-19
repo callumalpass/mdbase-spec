@@ -1,0 +1,691 @@
+name: "v0.3 core collection conformance"
+spec_version: "0.3.0"
+fixture_set: core_collection
+category: core_collection
+spec_ref: "v0.3/02, v0.3/03, v0.3/04, v0.3/05, v0.3/06, v0.3/07, v0.3/08, v0.3/11, v0.3/12"
+
+groups:
+  - name: "JSON Schema type wrapper and validation"
+    setup:
+      config: |
+        spec_version: "0.3.0"
+        settings:
+          types_folder: _types
+          explicit_type_keys: [type, types]
+          id_field: id
+      types:
+        task.md: |
+          ---
+          kind: mdbase.type
+          name: task
+          version: 1
+          match:
+            path_glob: "tasks/**/*.md"
+          schema:
+            dialect: json-schema-2020-12
+            value:
+              $schema: "https://json-schema.org/draft/2020-12/schema"
+              type: object
+              required: [type, id, title]
+              additionalProperties: false
+              properties:
+                type: { const: task }
+                id: { type: string }
+                title: { type: string, minLength: 1 }
+                status: { enum: [open, doing, done], default: open }
+                parent: { type: string }
+                due_date: { type: string, format: date }
+                due_time: { type: string, format: time }
+                scheduled_at: { type: string, format: date-time }
+                tags:
+                  type: array
+                  items: { type: string }
+          collection:
+            display:
+              name_field: title
+            read_defaults:
+              status: open
+            unique:
+              - field: id
+                scope: type
+            links:
+              parent:
+                target_type: task
+                validate_exists: true
+          ---
+        publishable.md: |
+          ---
+          kind: mdbase.type
+          name: publishable
+          version: 1
+          match:
+            fields_present: [title]
+          schema:
+            dialect: json-schema-2020-12
+            value:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                published: { type: boolean }
+          collection:
+            read_defaults:
+              published: false
+          ---
+        reviewable.md: |
+          ---
+          kind: mdbase.type
+          name: reviewable
+          version: 1
+          match:
+            path_glob: "notes/review*.md"
+          schema:
+            dialect: json-schema-2020-12
+            value:
+              type: object
+              required: [title, reviewStatus]
+              properties:
+                title: { type: string }
+                reviewStatus: { enum: [pending, approved] }
+          ---
+        referenced.schema.json: |
+          {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$defs": {
+              "referenced": {
+                "type": "object",
+                "required": ["type", "code"],
+                "properties": {
+                  "type": { "const": "referenced" },
+                  "code": { "$ref": "#/$defs/code" }
+                },
+                "$defs": {
+                  "code": { "type": "string", "pattern": "^[A-Z]{3}$" }
+                }
+              }
+            }
+          }
+        referenced.md: |
+          ---
+          kind: mdbase.type
+          name: referenced
+          version: 1
+          match:
+            path_glob: "refs/**/*.md"
+          schema:
+            dialect: json-schema-2020-12
+            ref: ./referenced.schema.json#/$defs/referenced
+          ---
+        schema-features.md: |
+          ---
+          kind: mdbase.type
+          name: schema_features
+          version: 1
+          match:
+            path_glob: "schema/**/*.md"
+          schema:
+            dialect: json-schema-2020-12
+            value:
+              $schema: "https://json-schema.org/draft/2020-12/schema"
+              title: Required JSON Schema profile fixture
+              description: Exercises every required validation keyword group.
+              type: object
+              required:
+                - type
+                - marker
+                - label
+                - minimum_value
+                - maximum_value
+                - multiple
+                - exclusive_min
+                - exclusive_max
+                - choice
+                - variant
+                - any_value
+                - values
+                - conditional
+                - token
+              additionalProperties: false
+              properties:
+                type: { const: schema_features }
+                marker: { const: fixed }
+                label:
+                  allOf:
+                    - { type: string }
+                    - { minLength: 3, maxLength: 8, pattern: "^[a-z]+$" }
+                  title: Lowercase label
+                  description: A constrained label.
+                  default: valid
+                  examples: [valid]
+                minimum_value: { type: number, minimum: 0 }
+                maximum_value: { type: number, maximum: 10 }
+                multiple: { type: number, multipleOf: 2 }
+                exclusive_min: { type: number, exclusiveMinimum: 0 }
+                exclusive_max: { type: number, exclusiveMaximum: 1 }
+                choice: { enum: [alpha, beta] }
+                variant:
+                  oneOf:
+                    - { type: string }
+                    - { type: integer }
+                any_value:
+                  anyOf:
+                    - { type: string }
+                    - { type: number }
+                values:
+                  type: array
+                  minItems: 1
+                  maxItems: 3
+                  uniqueItems: true
+                  items: { type: string }
+                conditional: { enum: [basic, extended] }
+                basic_value: { type: string }
+                extra: { type: string }
+                token: { $ref: "#/$defs/token" }
+              if:
+                properties:
+                  conditional: { const: extended }
+                required: [conditional]
+              then:
+                required: [extra]
+              else:
+                required: [basic_value]
+              $defs:
+                token:
+                  type: string
+                  pattern: "^tok_[a-z]+$"
+          ---
+      files:
+        tasks/valid.md: |
+          ---
+          type: task
+          id: task-1
+          title: Valid task
+          due_date: "2026-07-16"
+          due_time: "12:34:56+10:00"
+          scheduled_at: "2026-07-16T12:34:56+10:00"
+          ---
+        tasks/missing-title.md: |
+          ---
+          type: task
+          id: task-2
+          ---
+        tasks/null-status.md: |
+          ---
+          type: task
+          id: task-3
+          title: Null status
+          status:
+          ---
+        tasks/unknown-field.md: |
+          ---
+          type: task
+          id: task-4
+          title: Unknown field
+          extra: no
+          ---
+        tasks/duplicate-a.md: |
+          ---
+          type: task
+          id: duplicate
+          title: Duplicate A
+          ---
+        tasks/duplicate-b.md: |
+          ---
+          type: task
+          id: duplicate
+          title: Duplicate B
+          ---
+        tasks/child.md: |
+          ---
+          type: task
+          id: child
+          title: Child
+          parent: "[[task-1]]"
+          ---
+        tasks/broken-parent.md: |
+          ---
+          type: task
+          id: broken
+          title: Broken parent
+          parent: "[[missing-task]]"
+          ---
+        tasks/invalid-date.md: |
+          ---
+          type: task
+          id: invalid-date
+          title: Invalid date
+          due_date: "16/07/2026"
+          ---
+        tasks/invalid-time.md: |
+          ---
+          type: task
+          id: invalid-time
+          title: Invalid time
+          due_time: "12:34:56"
+          ---
+        tasks/invalid-date-time.md: |
+          ---
+          type: task
+          id: invalid-date-time
+          title: Invalid date-time
+          scheduled_at: "2026-07-16T12:34:56"
+          ---
+        notes/implicit-publishable.md: |
+          ---
+          title: Inferred publishable
+          ---
+        notes/review.md: |
+          ---
+          title: Needs independent review validation
+          ---
+        refs/valid.md: |
+          ---
+          type: referenced
+          code: ABC
+          ---
+        refs/invalid.md: |
+          ---
+          type: referenced
+          code: lower
+          ---
+        schema/valid.md: |
+          ---
+          type: schema_features
+          marker: fixed
+          label: valid
+          minimum_value: 0
+          maximum_value: 10
+          multiple: 4
+          exclusive_min: 0.1
+          exclusive_max: 0.9
+          choice: alpha
+          variant: text
+          any_value: 3
+          values: [a, b]
+          conditional: basic
+          basic_value: present
+          token: tok_valid
+          ---
+        schema/invalid-combined.md: |
+          ---
+          type: schema_features
+          marker: wrong
+          label: X
+          minimum_value: -1
+          maximum_value: 11
+          multiple: 3
+          exclusive_min: 0
+          exclusive_max: 1
+          choice: gamma
+          variant: true
+          any_value: false
+          values: [a, a, 3, d]
+          conditional: extended
+          token: invalid
+          ---
+        schema/invalid-edges.md: |
+          ---
+          type: schema_features
+          marker: fixed
+          label: toolongname
+          minimum_value: 0
+          maximum_value: 10
+          multiple: 4
+          exclusive_min: 0.1
+          exclusive_max: 0.9
+          choice: beta
+          variant: 2
+          any_value: ok
+          values: []
+          conditional: basic
+          token: tok_valid
+          ---
+    tests:
+      - name: "valid task passes JSON Schema and collection validation"
+        id: core.valid_task
+        covers:
+          - core_read.collection_discovery
+          - core_read.forward_slash_record_scan
+          - core_read.v03_type_loading
+          - core_read.json_schema_profile
+          - core_read.json_schema_type
+          - core_read.json_schema_properties
+        operation: validate
+        input:
+          path: "tasks/valid.md"
+        expect:
+          valid: true
+          issues: []
+
+      - name: "JSON Schema required fields are enforced"
+        id: core.schema_required
+        covers:
+          - core_read.raw_schema_validation
+          - core_read.machine_readable_diagnostics
+          - core_read.json_schema_required
+        operation: validate
+        input:
+          path: "tasks/missing-title.md"
+        expect:
+          valid: false
+          issues:
+            - code: schema_required
+              field: title
+
+      - name: "additionalProperties false rejects unknown fields"
+        id: core.additional_properties
+        covers: [core_read.json_schema_additional_properties]
+        operation: validate
+        input:
+          path: "tasks/unknown-field.md"
+        expect:
+          valid: false
+          issues:
+            - code: schema_additional_properties
+              field: extra
+
+      - name: "date format is asserted"
+        id: core.date_format
+        covers: [core_read.json_schema_profile, core_read.json_schema_formats]
+        operation: validate
+        input:
+          path: "tasks/invalid-date.md"
+        expect:
+          valid: false
+          issues:
+            - code: format_invalid
+              field: due_date
+
+      - name: "time format requires an RFC 3339 offset"
+        id: core.time_format
+        covers: [core_read.json_schema_profile, core_read.json_schema_formats]
+        operation: validate
+        input:
+          path: "tasks/invalid-time.md"
+        expect:
+          valid: false
+          issues:
+            - code: format_invalid
+              field: due_time
+
+      - name: "date-time format requires an RFC 3339 offset"
+        id: core.date_time_format
+        covers: [core_read.json_schema_profile, core_read.json_schema_formats]
+        operation: validate
+        input:
+          path: "tasks/invalid-date-time.md"
+        expect:
+          valid: false
+          issues:
+            - code: format_invalid
+              field: scheduled_at
+
+      - name: "local schema.ref and fragment-local refs validate records"
+        id: core.local_schema_ref
+        covers:
+          - core_read.local_schema_ref
+          - core_read.json_schema_profile
+          - core_read.json_schema_defs_and_fragment_ref
+        operation: validate
+        input:
+          path: "refs/valid.md"
+        expect:
+          valid: true
+          issues: []
+
+      - name: "local schema.ref constraints produce canonical diagnostics"
+        id: core.local_schema_ref_diagnostic
+        covers:
+          - core_read.local_schema_ref
+          - core_read.machine_readable_diagnostics
+        operation: validate
+        input:
+          path: "refs/invalid.md"
+        expect:
+          valid: false
+          issues:
+            - code: schema_pattern
+              field: code
+
+      - name: "the complete required JSON Schema profile accepts a valid record"
+        id: core.json_schema_profile_valid
+        covers:
+          - core_read.json_schema_type
+          - core_read.json_schema_required
+          - core_read.json_schema_properties
+          - core_read.json_schema_items
+          - core_read.json_schema_enum
+          - core_read.json_schema_const
+          - core_read.json_schema_combinators
+          - core_read.json_schema_conditionals
+          - core_read.json_schema_numeric_constraints
+          - core_read.json_schema_string_constraints
+          - core_read.json_schema_array_constraints
+          - core_read.json_schema_defs_and_fragment_ref
+          - core_read.json_schema_annotations
+        operation: validate
+        input:
+          path: "schema/valid.md"
+        expect:
+          valid: true
+          issues: []
+
+      - name: "required JSON Schema constraints emit keyword diagnostics"
+        id: core.json_schema_profile_constraints
+        covers:
+          - core_read.json_schema_items
+          - core_read.json_schema_enum
+          - core_read.json_schema_const
+          - core_read.json_schema_combinators
+          - core_read.json_schema_conditionals
+          - core_read.json_schema_numeric_constraints
+          - core_read.json_schema_string_constraints
+          - core_read.json_schema_array_constraints
+          - core_read.json_schema_defs_and_fragment_ref
+          - core_read.machine_readable_diagnostics
+        operation: validate
+        input:
+          path: "schema/invalid-combined.md"
+        expect:
+          valid: false
+          issues:
+            - { code: schema_const, field: marker }
+            - { code: schema_min_length, field: label }
+            - { code: schema_pattern, field: label }
+            - { code: schema_minimum, field: minimum_value }
+            - { code: schema_maximum, field: maximum_value }
+            - { code: schema_multiple_of, field: multiple }
+            - { code: schema_exclusive_minimum, field: exclusive_min }
+            - { code: schema_exclusive_maximum, field: exclusive_max }
+            - { code: schema_enum, field: choice }
+            - { code: schema_one_of, field: variant }
+            - { code: schema_any_of, field: any_value }
+            - { code: schema_max_items, field: values }
+            - { code: schema_unique_items, field: values }
+            - { code: schema_type }
+            - { code: schema_required, field: extra }
+            - { code: schema_pattern, field: token }
+
+      - name: "max length, min items, and else constraints are enforced"
+        id: core.json_schema_profile_edges
+        covers:
+          - core_read.json_schema_conditionals
+          - core_read.json_schema_string_constraints
+          - core_read.json_schema_array_constraints
+        operation: validate
+        input:
+          path: "schema/invalid-edges.md"
+        expect:
+          valid: false
+          issues:
+            - { code: schema_max_length, field: label }
+            - { code: schema_min_items, field: values }
+            - { code: schema_required, field: basic_value }
+
+      - name: "read defaults appear in effective frontmatter"
+        id: collection.effective_defaults
+        covers: [collection_semantics.effective_read_defaults]
+        operation: read
+        input:
+          path: "tasks/valid.md"
+          effective: true
+        expect:
+          valid: true
+          frontmatter:
+            status: open
+
+      - name: "read defaults do not replace explicit null"
+        id: collection.explicit_null
+        covers: [collection_semantics.effective_read_defaults]
+        operation: read
+        input:
+          path: "tasks/null-status.md"
+          effective: true
+        expect:
+          valid: true
+          frontmatter:
+            status: null
+
+      - name: "raw read does not materialize read defaults"
+        id: collection.raw_read
+        covers: [collection_semantics.effective_read_defaults]
+        operation: read
+        input:
+          path: "tasks/valid.md"
+          effective: false
+        expect:
+          valid: true
+          frontmatter_not_contains:
+            - status
+
+      - name: "collection unique detects duplicate ids"
+        id: collection.uniqueness
+        covers: [collection_semantics.uniqueness]
+        operation: validate
+        input:
+          path: "tasks/duplicate-b.md"
+        expect:
+          valid: false
+          issues:
+            - code: duplicate_value
+              field: id
+
+      - name: "collection links resolve valid ID-based link"
+        operation: validate
+        input:
+          path: "tasks/child.md"
+        expect:
+          valid: true
+          resolved_links:
+            parent: "tasks/valid.md"
+
+      - name: "collection links enforce validate_exists"
+        operation: validate
+        input:
+          path: "tasks/broken-parent.md"
+        expect:
+          valid: false
+          issues:
+            - code: link_not_found
+              field: parent
+
+      - name: "inferred match rules validate non-explicit records"
+        id: core.inferred_matching
+        covers: [core_read.explicit_and_basic_matching]
+        operation: get_types
+        input:
+          path: "notes/implicit-publishable.md"
+        expect:
+          valid: true
+          types: [publishable]
+
+      - name: "explicit type declaration skips inferred match rules"
+        id: core.explicit_matching
+        covers: [core_read.explicit_and_basic_matching]
+        operation: get_types
+        input:
+          path: "tasks/valid.md"
+        expect:
+          valid: true
+          types: [task]
+
+      - name: "type display metadata is exposed"
+        id: collection.display_metadata
+        covers: [collection_semantics.display_metadata]
+        operation: get_type
+        input:
+          name: task
+        expect:
+          valid: true
+          type:
+            name: task
+            collection:
+              display:
+                name_field: title
+
+      - name: "multiple matched types validate independently"
+        id: collection.independent_multi_type_validation
+        covers: [collection_semantics.independent_multi_type_validation]
+        operation: validate
+        input:
+          path: "notes/review.md"
+        expect:
+          valid: false
+          types: [publishable, reviewable]
+          issues:
+            - code: schema_required
+              field: reviewStatus
+
+  - name: "path policy and create behavior"
+    setup:
+      config: |
+        spec_version: "0.3.0"
+      types:
+        task.md: |
+          ---
+          kind: mdbase.type
+          name: task
+          version: 1
+          schema:
+            dialect: json-schema-2020-12
+            value:
+              type: object
+              required: [type, id, title]
+              properties:
+                type: { const: task }
+                id: { type: string }
+                title: { type: string }
+          collection:
+            path:
+              pattern: "tasks/{id}.md"
+          ---
+    tests:
+      - name: "create uses collection path pattern when path is omitted"
+        id: collection.path_pattern
+        covers: [collection_semantics.simple_path_policy]
+        operation: create
+        input:
+          type: task
+          frontmatter:
+            type: task
+            id: new-task
+            title: New task
+        expect:
+          valid: true
+          path: "tasks/new-task.md"
+
+      - name: "path policy rejects traversal"
+        id: collection.path_traversal
+        covers: [collection_semantics.simple_path_policy]
+        operation: create
+        input:
+          type: task
+          path: "../escape.md"
+          frontmatter:
+            type: task
+            id: escape
+            title: Escape
+        expect:
+          valid: false
+          error:
+            code: path_traversal

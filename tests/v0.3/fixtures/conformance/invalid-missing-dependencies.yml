@@ -1,0 +1,20 @@
+kind: mdbase.conformance
+status: verified
+implementation:
+  id: invalid-fixture
+  name: Invalid dependency fixture
+  version: 0.0.0-test
+spec_version: 0.3.0
+profiles:
+  - lifecycle
+json_schema:
+  dialect: https://json-schema.org/draft/2020-12/schema
+  keywords: []
+  formats: []
+  remote_refs: false
+limits: {}
+evidence:
+  - kind: conformance_suite
+    command: fixture-only
+    result: pass
+    verified_at: "2026-07-16T08:00:00+10:00"

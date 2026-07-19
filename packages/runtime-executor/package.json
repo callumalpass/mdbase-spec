@@ -1,0 +1,27 @@
+{
+  "name": "@mdbase/runtime-executor",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Prototype mdbase v0.3 workflow executor.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@mdbase/cel-host": "file:../cel-host",
+    "@callumalpass/mdbase-runtime": "file:../runtime-contracts"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "typescript": "^6.0.3"
+  }
+}

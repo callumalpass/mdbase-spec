@@ -4,7 +4,7 @@ category: config
 spec_ref: "§12.11, §5.8"
 
 groups:
-  - name: "init creates config and meta type"
+  - name: "legacy v0.2 init creates config and meta type"
     setup:
       config: null
       files: {}
@@ -12,7 +12,9 @@ groups:
     tests:
       - name: "init creates mdbase.yaml and meta type file"
         operation: init
-        input: {}
+        input:
+          config:
+            spec_version: "0.2.1"
         expect:
           config_path: "mdbase.yaml"
           types_folder: "_types"

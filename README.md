@@ -1,115 +1,82 @@
 # mdbase specification
 
-A specification for treating a folder of markdown files with YAML frontmatter as a typed, queryable data collection.
+mdbase defines a portable way to treat a folder of Markdown files with YAML
+frontmatter as a typed, queryable collection.
 
-Version 0.2.1.
+The current collection protocol is **v0.3.0**. Implementations may still be
+distributed as prerelease packages while they complete platform qualification;
+package version and protocol version are intentionally independent.
 
-**Read the spec:** [mdbase.dev](https://mdbase.dev)
+**Read the published site:** [mdbase.dev](https://mdbase.dev)
 
-## Motivation
+## Design
 
-If you use Obsidian (or a similar tool) and you've accumulated notes for meetings, contacts, projects, reading, journal entries, and so on, each with frontmatter fields, your vault is functioning as a database. The property system encourages this: you define fields, assign types, and the tool enforces them across files. But the tooling for managing that structure is limited. If you want all your meeting notes to have a `date`, `attendees`, and `status` field---and you want that enforced---your options are a template (which helps at creation time but not after) and perhaps a Linter rule. There is no schema file that lives alongside your notes. There is no file in your vault that says "a meeting note looks like this, with these fields, of these types."
+> JSON Schema validates persisted frontmatter shape. mdbase defines the
+> Markdown collection behavior around that shape. CEL is the portable
+> expression language. Runtime behavior is declared through typed Markdown
+> contracts and executed by conforming runtimes.
 
-This means each tool that touches your vault---Obsidian itself, an editor, a templating plugin, an AI agent---has to independently work out what your types are, or you have to tell each one separately. In practice, the same structural assumptions end up encoded in templates, Dataview queries, Linter configs, and agent prompts, and they drift apart.
+The specification covers collection boundaries, record parsing, JSON Schema
+type wrappers, matching and defaults, links, lifecycle behavior, CEL queries,
+CRUD operations, runtime providers, workflows, migration, and conformance.
 
-mdbase-spec tries to address this. The core idea is that types are defined as files---markdown files in a `_types/` folder, where the frontmatter declares the schema and the body can document the type in prose. A template becomes a consequence of a type definition rather than a substitute for one, and validation can happen at write time rather than only at creation time. Because type definitions are just files in the vault, they are versioned with everything else, human-readable, and editable in any text editor.
+## Specification
 
-The spec defines how those type files, and the collections they describe, should be interpreted, so that different tools can treat them consistently. It covers type definitions and inheritance, file-to-type matching (by explicit declaration, path globs, or field presence), an expression language for filtering and sorting (designed for compatibility with Obsidian Bases syntax), link parsing and resolution, and the semantics of create, read, update, delete, and rename operations.
+| Section | File | Purpose |
+| --- | --- | --- |
+| 00 | [Overview](./00-overview.md) | scope, profiles, and design split |
+| 01 | [Concepts](./01-concepts.md) | terminology and data model |
+| 02 | [Collection Layout](./02-collection-layout.md) | discovery, paths, and reserved state |
+| 03 | [Records And Frontmatter](./03-records-and-frontmatter.md) | Markdown and YAML value semantics |
+| 04 | [Configuration](./04-configuration.md) | `mdbase.yaml` v0.3 configuration |
+| 05 | [Type Files](./05-type-files.md) | JSON Schema wrappers and type metadata |
+| 06 | [JSON Schema Profile](./06-json-schema-profile.md) | supported 2020-12 vocabulary and `$ref` rules |
+| 07 | [Collection Semantics](./07-collection-semantics.md) | matching, defaults, uniqueness, links, and paths |
+| 08 | [Links](./08-links.md) | link values, parsing, and resolution |
+| 09 | [Lifecycle](./09-lifecycle.md) | managed values and mutation-time policy |
+| 10 | [CEL Profile](./10-cel-profile.md) | portable expressions and host bindings |
+| 11 | [Querying](./11-querying.md) | filters, ordering, and result envelopes |
+| 12 | [Operations](./12-operations.md) | read/write behavior and diagnostics |
+| 13 | [Runtime Contracts](./13-runtime-contracts.md) | providers, actions, events, capabilities, and policy |
+| 14 | [Workflows](./14-workflows.md) | workflow records and execution semantics |
+| 15 | [Migrations And Compatibility](./15-migrations-and-compatibility.md) | safe v0.2 migration and compatibility |
+| 16 | [Conformance](./16-conformance.md) | profiles, claims, fixtures, and runners |
 
-A spec rather than a library is deliberate. If you can reduce a problem to a spec with a test suite, you can set a coding agent loose on it and get a conforming library in whatever language you need. What is harder, and worth spending time on, is getting the semantics right, because that is what determines whether independently-built tools agree on what a "meeting note" means and how a link is resolved.
+The complete v0.2.1 specification and its implementer material remain available
+in the [v0.2 archive](./v0.2/README.md). Legacy `tests/level-*` fixtures remain in
+place for compatibility runners and are labeled in [tests/README.md](./tests/README.md).
 
-## What this defines
+## Artifacts
 
-A collection is a folder containing an `mdbase.yaml` config file, a `_types/` folder with type definitions (themselves markdown files), and any number of markdown content files. The spec defines how conforming tools should:
+- `schemas/v0.3/` contains the canonical JSON Schemas.
+- `tests/v0.3/` contains shared v0.3 conformance fixtures.
+- `examples/v0.3/` contains runtime and migration proof collections.
+- `packages/runtime-contracts/` contains the browser-safe TypeScript runtime
+  contract package and explicit Node loader export.
+- `packages/runtime-contracts-rs/` validates the same contracts in Rust.
+- `release/v0.3.0.md` is the auditable ecosystem release contract.
 
-- Parse YAML frontmatter, including null semantics and serialization rules
-- Load type definitions and resolve inheritance
-- Match files to types by explicit declaration, path globs, or field presence
-- Validate frontmatter against type schemas (12 field types, configurable strictness)
-- Evaluate an expression language for filtering and sorting
-- Execute queries with where clauses, ordering, pagination, grouping, and summaries
-- Parse and resolve links (wikilinks, markdown links, bare paths)
-- Perform create, read, update, delete, and rename operations
-- Update references when files are renamed
-- Cache and index files for query performance
-- Watch for filesystem changes
+## Verification
 
-## Spec structure
-
-| Section | File | Content |
-|---------|------|---------|
-| §0 | `00-overview.md` | Abstract, motivation, how it works |
-| §1 | `01-terminology.md` | Definitions |
-| §2 | `02-collection-layout.md` | Folder structure, file scanning |
-| §3 | `03-frontmatter.md` | YAML frontmatter parsing, null handling, serialization |
-| §4 | `04-configuration.md` | `mdbase.yaml` schema |
-| §5 | `05-types.md` | Type definitions, inheritance, computed fields |
-| §6 | `06-matching.md` | File-to-type matching rules |
-| §7 | `07-field-types.md` | string, integer, number, boolean, date, datetime, time, enum, list, object, link, tags |
-| §8 | `08-links.md` | Link syntax, resolution algorithm, traversal |
-| §9 | `09-validation.md` | Validation levels, error reporting |
-| §10 | `10-querying.md` | Query model, clauses, body search |
-| §11 | `11-expressions.md` | Operators, methods, functions, date arithmetic |
-| §12 | `12-operations.md` | CRUD, rename, batch operations, concurrency |
-| §13 | `13-caching.md` | SQLite/indexing, staleness detection |
-| §14 | `14-conformance.md` | 6 conformance levels, test suite format |
-| §15 | `15-watching.md` | Watch mode, event types, debouncing |
-| A | `appendix-a-examples.md` | Worked examples |
-| B | `appendix-b-expression-grammar.md` | Formal grammar for expressions |
-| C | `appendix-c-error-codes.md` | 34 error codes with categories |
-| D | `appendix-d-compatibility.md` | Interop with Obsidian, Hugo, etc. |
-
-## Conformance levels
-
-Implementations can claim partial conformance. Each level requires all previous levels.
-
-| Level | Name | Adds |
-|-------|------|------|
-| 1 | Core | Config, frontmatter, types, validation, CRUD |
-| 2 | Matching | Path globs, field presence, multi-type, constraint merging |
-| 3 | Querying | Expressions, queries, body search, computed fields |
-| 4 | Links | Link parsing, resolution, `asFile()` traversal |
-| 5 | References | Rename with ref updates, backlinks |
-| 6 | Full | Caching, batch ops, watch mode |
-
-## Conformance tests
-
-The `tests/` directory contains YAML test files organized by level. Each file defines setup (config, types, content files) and test cases with operations and expected results. See `14-conformance.md` §14.3 for the test format.
-
+```bash
+python3 scripts/check_v03_tests.py
+python3 scripts/prototype_tasknotes_v03_migration.py --check-fixture
+npm test --prefix packages/runtime-contracts
+cargo test --manifest-path packages/runtime-contracts-rs/Cargo.toml
+npm test --prefix packages/cel-host
+npm test --prefix packages/runtime-executor
+npm run build --prefix site
 ```
-tests/
-├── level-1/    # config, types, validation, operations, concurrency
-├── level-2/    # matching rules
-├── level-3/    # expressions, queries
-├── level-4/    # links
-├── level-5/    # references
-└── level-6/    # caching, watching
-```
-
-## Implementor resources
-
-| Resource | Purpose |
-|----------|---------|
-| [`IMPLEMENTING.md`](./IMPLEMENTING.md) | Start-from-zero guide to passing Level 1 |
-| [`QUICK-REFERENCE.md`](./QUICK-REFERENCE.md) | One-page operations/types/errors/operators cheat sheet |
-| [`REFERENCE-RUNNER.md`](./REFERENCE-RUNNER.md) | Adapter protocol + usage for `scripts/mdbase-test.py` |
-| [`examples/adapter-template.py`](./examples/adapter-template.py) | Minimal adapter shim template for the reference runner |
-| [`examples/annotated-collection/`](./examples/annotated-collection/) | Runnable example collection for manual verification |
 
 ## Implementations
 
-| Project | Language | Status |
-|---------|----------|--------|
-| [mdbase](https://github.com/callumalpass/mdbase) | TypeScript | Early release |
-| [mdbase-rs](https://github.com/callumalpass/mdbase-rs) | Rust | Early release |
-| [mdbase-lsp](https://github.com/callumalpass/mdbase-lsp) | Rust | Early release (LSP server) |
-| [mdbase-cli](https://github.com/callumalpass/mdbase-cli) | TypeScript | Early release (CLI tool with .base file support) |
-
-## Example applications
-
-| Project | Description |
-|---------|-------------|
-| [mdbase-workouts](https://github.com/callumalpass/mdbase-workouts) | Workout tracker with chat interface, built on mdbase |
+| Project | Language | Role |
+| --- | --- | --- |
+| [mdbase](https://github.com/callumalpass/mdbase) | TypeScript | collection implementation and migration engine |
+| [mdbase-rs](https://github.com/callumalpass/mdbase-rs) | Rust | independent collection implementation |
+| [mdbase-cli](https://github.com/callumalpass/mdbase-cli) | TypeScript | command-line operations and reviewed migration |
+| [mdbase-lsp](https://github.com/callumalpass/mdbase-lsp) | Rust | editor diagnostics from Rust semantics |
+| [mdbase-obsidian](https://github.com/callumalpass/mdbase-obsidian) | TypeScript | Obsidian collection and runtime host adapter |
 
 ## License
 

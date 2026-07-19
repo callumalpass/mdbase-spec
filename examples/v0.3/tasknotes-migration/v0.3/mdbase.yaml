@@ -1,0 +1,11 @@
+spec_version: "0.3.0"
+name: "TaskNotes"
+description: "Task collection managed by TaskNotes for Obsidian"
+
+settings:
+  types_folder: "_types"
+  record_extensions: [md]
+  validation: warn
+  explicit_type_keys: [type, types]
+  id_field: id
+

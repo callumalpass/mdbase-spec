@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Runtime Profile - mdbase</title>
+  <meta name="description" content="mdbase runtime profile 0.1: portable provider, action, event, workflow, capability, and policy contracts.">
+  <meta property="og:title" content="Runtime Profile - mdbase">
+  <meta property="og:description" content="Typed runtime contracts around ordinary Markdown collections.">
+  <meta property="og:url" content="https://mdbase.dev/runtime">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9670;</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="runtime-page">
+  <header class="landing-header">
+    <a href="/" class="landing-logo"><span class="dot"></span>mdbase</a>
+    <nav class="landing-nav" aria-label="Primary">
+      <a href="/">Home</a>
+      <a href="runtime.html" class="nav-active">Runtime</a>
+      <a href="ecosystem.html">Ecosystem</a>
+      <a href="https://github.com/callumalpass/mdbase-spec" class="hide-mobile">GitHub</a>
+      <a href="spec.html" class="nav-cta">Read the spec</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="runtime-hero" aria-labelledby="runtime-title">
+      <div class="runtime-hero-stage" aria-hidden="true">
+        <div class="runtime-grid-plane"></div>
+        <div class="runtime-stream stream-a"></div>
+        <div class="runtime-stream stream-b"></div>
+        <div class="runtime-stream stream-c"></div>
+        <div class="runtime-node node-event"><span>event</span><strong>canvas.drop</strong><code>contract v1</code></div>
+        <div class="runtime-node node-workflow"><span>workflow</span><strong>canvas.zone.set-status</strong><code>CEL mapping</code></div>
+        <div class="runtime-node node-contract"><span>policy</span><strong>mdbase.record.write</strong><code>default deny</code></div>
+        <div class="runtime-node node-action"><span>action</span><strong>mdbase.record.patch</strong><code>validated I/O</code></div>
+        <div class="runtime-node node-file"><span>provider</span><strong>canvas-bases</strong><code>optional adapter</code></div>
+      </div>
+      <div class="runtime-hero-copy">
+        <div class="section-kicker">Runtime profile 0.1</div>
+        <h1 id="runtime-title">Portable contracts, host-owned execution</h1>
+        <p>
+          Collections can declare events, actions, workflows, capabilities, and
+          policy as typed records. Platform hosts register live providers,
+          validate contracts, authorize effects, and execute only the behavior
+          they explicitly support.
+        </p>
+        <div class="runtime-hero-actions">
+          <a href="spec.html#section-13" class="btn btn-primary">Read runtime contracts</a>
+          <a href="spec.html#section-14" class="btn btn-ghost">Read workflows</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="runtime-section runtime-value-section">
+      <div class="section-kicker">Ownership</div>
+      <h2 class="section-title">The contract is portable; the host owns effects</h2>
+      <div class="runtime-value-grid">
+        <div class="runtime-value-card">
+          <span>01</span>
+          <h3>Providers advertise typed surfaces</h3>
+          <p>A provider descriptor names the action, event, capability, and workflow contracts it can actually serve.</p>
+        </div>
+        <div class="runtime-value-card">
+          <span>02</span>
+          <h3>Policy is default-deny</h3>
+          <p>The selected platform host validates inputs and requires explicit capability policy before effectful dispatch.</p>
+        </div>
+        <div class="runtime-value-card">
+          <span>03</span>
+          <h3>Materialization stays optional</h3>
+          <p>Implicit provider contracts can remain in memory or be written as Markdown for inspection without creating behavior by themselves.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="runtime-section" id="runtime-contracts">
+      <div class="runtime-section-head">
+        <div>
+          <div class="section-kicker">Canonical example</div>
+          <h2 class="section-title">A Canvas drop becomes a validated record patch</h2>
+        </div>
+        <p class="section-intro">
+          These records come from the checked `examples/v0.3/canvas-runtime`
+          fixture used by the TypeScript and Rust contract tests.
+        </p>
+      </div>
+
+      <div class="runtime-contract-grid">
+        <div class="runtime-contract-card">
+          <span class="runtime-contract-tag">providers/canvas-bases.md</span>
+          <h3>Provider</h3>
+          <pre data-lang="yaml"><code>type: provider
+id: canvas-bases
+version: 1
+provider_version: 0.1.0
+name: Canvas Bases
+contracts:
+  events:
+    - canvas.drop</code></pre>
+        </div>
+
+        <div class="runtime-contract-card">
+          <span class="runtime-contract-tag">events/canvas.drop.md</span>
+          <h3>Event</h3>
+          <pre data-lang="yaml"><code>type: event
+id: canvas.drop
+version: 1
+provider: canvas-bases
+schemas:
+  dialect: json-schema-2020-12
+  payload:
+    type: object
+    required: [board, file, zone, position]</code></pre>
+        </div>
+
+        <div class="runtime-contract-card">
+          <span class="runtime-contract-tag">workflows/canvas-zone-set-status.md</span>
+          <h3>Workflow</h3>
+          <pre data-lang="yaml"><code>type: workflow
+id: canvas.zone.set-status
+version: 1
+triggers:
+  - id: drop-on-status-zone
+    event: canvas.drop
+steps:
+  - id: patch-task-status
+    action: mdbase.record.patch
+    input:
+      path:
+        $expr: event.payload.file.path</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="runtime-section">
+      <div class="runtime-split">
+        <div>
+          <div class="section-kicker">Host flow</div>
+          <h2 class="section-title">Registration and dispatch fail closed</h2>
+          <p class="section-intro">
+            Provider registration is atomic. The host validates the descriptor,
+            advertised contracts, embedded JSON Schemas, readiness, ownership,
+            and selected policy before contracts become visible.
+          </p>
+        </div>
+        <div class="runtime-agent-board" aria-label="Runtime host stages">
+          <div class="runtime-agent-row"><span>register</span><code>provider + contracts + readiness</code></div>
+          <div class="runtime-agent-row"><span>compose</span><code>deterministic effective registry</code></div>
+          <div class="runtime-agent-row"><span>preflight</span><code>providers + capabilities + actions</code></div>
+          <div class="runtime-agent-row"><span>authorize</span><code>selected capability policy</code></div>
+          <div class="runtime-agent-row"><span>dispatch</span><code>validated input + output + provenance</code></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="runtime-section runtime-value-section">
+      <div class="section-kicker">Package boundary</div>
+      <h2 class="section-title">One browser-safe contract package</h2>
+      <p class="section-intro">
+        `@callumalpass/mdbase-runtime` exposes canonical schemas, provider types,
+        and the reference in-memory host from its main export. Markdown loading
+        and materialization are isolated behind `@callumalpass/mdbase-runtime/node`.
+        Neither entry point depends on TaskNotes, and the browser entry loads no
+        Node or Obsidian APIs.
+      </p>
+    </section>
+  </main>
+
+  <footer class="landing-footer">
+    <p>mdbase specification v0.3.0 &middot; runtime profile 0.1 &middot; <a href="spec-v0.2.html">v0.2 archive</a> &middot; <a href="https://opensource.org/licenses/MIT">MIT License</a> &middot; <a href="https://github.com/callumalpass/mdbase-spec">Source on GitHub</a></p>
+  </footer>
+</body>
+</html>
