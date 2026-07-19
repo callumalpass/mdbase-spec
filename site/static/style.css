@@ -68,6 +68,17 @@ body {
   line-height: 1.66;
 }
 
+.site-page {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100svh;
+  flex-direction: column;
+}
+
+.site-page > main {
+  flex: 1;
+}
+
 ::selection {
   color: var(--paper);
   background: var(--accent);
