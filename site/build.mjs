@@ -10,6 +10,7 @@
 import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync } from 'fs';
 import { join, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
+import { createHash } from 'crypto';
 import { marked } from 'marked';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -17,6 +18,14 @@ const ROOT = join(__dirname, '..');
 const DIST = join(__dirname, 'dist');
 const TEMPLATES = join(__dirname, 'templates');
 const STATIC = join(__dirname, 'static');
+const STYLE_VERSION = createHash('sha256')
+  .update(readFileSync(join(STATIC, 'style.css')))
+  .digest('hex')
+  .slice(0, 12);
+
+function versionAssets(html) {
+  return html.replaceAll('style.css', `style.css?v=${STYLE_VERSION}`);
+}
 
 // ---------------------------------------------------------------------------
 // Spec file ordering and metadata
@@ -137,17 +146,17 @@ function build() {
   console.log('  Copied static assets');
 
   // Copy index.html
-  const indexHtml = readFileSync(join(TEMPLATES, 'index.html'), 'utf-8');
+  const indexHtml = versionAssets(readFileSync(join(TEMPLATES, 'index.html'), 'utf-8'));
   writeFileSync(join(DIST, 'index.html'), indexHtml);
   console.log('  Built index.html');
 
   // Copy ecosystem.html
-  const ecosystemHtml = readFileSync(join(TEMPLATES, 'ecosystem.html'), 'utf-8');
+  const ecosystemHtml = versionAssets(readFileSync(join(TEMPLATES, 'ecosystem.html'), 'utf-8'));
   writeFileSync(join(DIST, 'ecosystem.html'), ecosystemHtml);
   console.log('  Built ecosystem.html');
 
   // Copy runtime.html
-  const runtimeHtml = readFileSync(join(TEMPLATES, 'runtime.html'), 'utf-8');
+  const runtimeHtml = versionAssets(readFileSync(join(TEMPLATES, 'runtime.html'), 'utf-8'));
   writeFileSync(join(DIST, 'runtime.html'), runtimeHtml);
   console.log('  Built runtime.html');
 
@@ -171,7 +180,7 @@ function build() {
 }
 
 function buildSpec({ entries, output: outputFile, title, version, switchLink }) {
-  const specTemplate = readFileSync(join(TEMPLATES, 'spec.html'), 'utf-8');
+  const specTemplate = versionAssets(readFileSync(join(TEMPLATES, 'spec.html'), 'utf-8'));
 
   // Build sidebar links
   let sidebarHtml = '';

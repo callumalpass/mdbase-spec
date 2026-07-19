@@ -2,14 +2,13 @@
 name: mdbase.dev
 description: Minimal technical reference design system for the mdbase specification site.
 colors:
-  paper: "oklch(98% 0.006 88)"
-  paper-raised: "oklch(99.3% 0.004 88)"
-  paper-soft: "oklch(95.5% 0.009 88)"
-  paper-code: "oklch(94.5% 0.01 88)"
+  paper: "oklch(100% 0 0)"
+  paper-soft: "oklch(100% 0 0)"
+  paper-code: "oklch(100% 0 0)"
   ink: "oklch(21% 0.018 255)"
   ink-soft: "oklch(39% 0.016 255)"
   ink-muted: "oklch(54% 0.014 255)"
-  line: "oklch(84% 0.014 88)"
+  line: "oklch(92% 0.006 255)"
   blue-accent: "oklch(45% 0.105 238)"
 typography:
   display:
@@ -47,8 +46,8 @@ spacing:
   xxl: "48px"
 components:
   button-primary:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.paper}"
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
     rounded: "{rounded.default}"
     padding: "0 24px"
   code-specimen:
@@ -62,22 +61,22 @@ components:
 
 ## 1. Overview
 
-**Creative North Star: "A Technical Field Manual"**
+**Creative North Star: "A Clean Standards Document"**
 
-mdbase.dev is a calm, precise reading environment for people who implement the specification. Warm paper, direct typography, fine rules, and real mdbase artifacts give the site its identity. The visual system keeps attention on the model, examples, and normative text.
+mdbase.dev is a calm, precise reading environment for people who implement the specification. White space, direct typography, pale rules, and real mdbase artifacts give the site its identity. The visual system keeps attention on the model, examples, and normative text.
 
 ### Key characteristics
 
 - Open page layouts with generous, deliberate whitespace.
 - Strong headings and highly legible long-form text.
 - Actual files, schemas, queries, and contracts as the primary visual material.
-- One muted blue accent for navigation, links, and current state.
-- Thin horizontal rules for grouping and rhythm.
+- One muted blue accent for links and current state.
+- Pale horizontal rules for grouping and rhythm.
 - Table-like resource rows for dense implementation information.
 
 ## 2. Colors
 
-The palette resembles warm reference paper with blue-black ink. Surfaces remain close in tone so hierarchy comes from type, spacing, and rules.
+The palette is white with blue-black ink. Hierarchy comes from type, spacing, and pale rules.
 
 ### Primary
 
@@ -85,18 +84,15 @@ The palette resembles warm reference paper with blue-black ink. Surfaces remain 
 
 ### Neutral
 
-- **Paper** (`oklch(98% 0.006 88)`): page background.
-- **Paper Raised** (`oklch(99.3% 0.004 88)`): mobile navigation and subtle foreground surfaces.
-- **Paper Soft** (`oklch(95.5% 0.009 88)`): selected rows, quotes, and restrained secondary surfaces.
-- **Paper Code** (`oklch(94.5% 0.01 88)`): code blocks and inline code.
+- **Paper** (`oklch(100% 0 0)`): every page and component surface.
 - **Ink** (`oklch(21% 0.018 255)`): headings and primary text.
 - **Ink Soft** (`oklch(39% 0.016 255)`): explanatory text.
 - **Ink Muted** (`oklch(54% 0.014 255)`): labels and metadata.
-- **Line** (`oklch(84% 0.014 88)`): structural dividers.
+- **Line** (`oklch(92% 0.006 255)`): structural dividers.
 
 ### Color rule
 
-Use blue where an element is actionable, selected, or semantically highlighted. Use neutral ink for primary calls to action.
+Use blue for links, focus, and selected states. Keep actions white with restrained outlines or text treatment.
 
 ## 3. Typography
 
@@ -126,11 +122,11 @@ Whitespace carries hierarchy at page scale. Within resource lists and the specif
 
 ## 5. Components
 
-- **Primary button:** ink fill, paper text, 3px radius, 44px minimum height.
-- **Secondary button:** transparent background with a neutral full border.
+- **Primary button:** white surface, pale neutral border, ink text, 3px radius, 44px minimum height.
+- **Secondary button:** the same light structure with quieter border emphasis.
 - **Resource row:** top rule with label, name, description, capabilities, and link aligned in columns.
 - **Code specimen:** paper-code surface, fine border, compact mono text, and restrained syntax colors.
-- **Spec sidebar link:** soft selected fill with blue text and no decorative stripe.
+- **Spec sidebar link:** blue text with a quiet underline for the selected section.
 - **Tablist:** text labels with a blue underline for the selected tab and keyboard arrow support.
 
 ## 6. Usage principles

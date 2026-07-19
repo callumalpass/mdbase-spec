@@ -4,25 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>mdbase - Typed Markdown Collections</title>
-  <meta name="description" content="A specification for treating folders of markdown files as typed, queryable data collections.">
+  <meta name="description" content="A specification for treating folders of Markdown files as typed, queryable data collections.">
   <meta property="og:title" content="mdbase - Typed Markdown Collections">
-  <meta property="og:description" content="A specification for treating folders of markdown files as typed, queryable data collections.">
+  <meta property="og:description" content="A specification for treating folders of Markdown files as typed, queryable data collections.">
   <meta property="og:url" content="https://mdbase.dev">
   <meta property="og:type" content="website">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9670;</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
   <header class="landing-header">
-    <a href="/" class="landing-logo">
-      <span class="dot"></span>
-      mdbase
-    </a>
+    <a href="/" class="landing-logo"><span class="dot"></span>mdbase</a>
     <nav class="landing-nav" aria-label="Primary">
-      <a href="#principles" class="hide-mobile">Constraints</a>
-      <a href="#examples" class="hide-mobile">Examples</a>
-      <a href="#implementors" class="hide-mobile">Implementors</a>
       <a href="runtime.html">Runtime</a>
       <a href="ecosystem.html">Ecosystem</a>
       <a href="https://github.com/callumalpass/mdbase-spec" class="hide-mobile">GitHub</a>
@@ -32,318 +25,20 @@
 
   <main>
     <section class="hero">
-      <div class="hero-scene" aria-hidden="true">
-        <div class="scene-card scene-folder">
-          <pre><code><strong>collection/</strong>
-|-- mdbase.yaml
-|-- _types/
-|   |-- task.md
-|   `-- person.md
-`-- tasks/
-    `-- fix-bug.md</code></pre>
-        </div>
-        <div class="scene-card scene-type">
-          <pre><code><strong>_types/task.md</strong>
----
-kind: mdbase.type
-name: task
-schema:
-  dialect: json-schema-2020-12
-  value:
-    type: object
-    properties:
-      status: { enum: [open, done] }
----</code></pre>
-        </div>
-        <div class="scene-card scene-query">
-          <pre><code><strong>query</strong>
-types: [task]
-where: 'status != "done"'
-order_by:
-  - field: priority
-    direction: desc</code></pre>
-        </div>
-      </div>
-
       <div class="hero-inner">
         <div class="hero-version">
           <span class="tag">v0.3.0</span>
           Specification
         </div>
-        <h1>Typed Markdown <span class="accent">Collections</span></h1>
+        <h1>Typed Markdown Collections</h1>
         <p class="hero-sub">
-          mdbase specifies how Markdown files with YAML frontmatter are discovered,
-          typed with JSON Schema, queried with CEL, linked, updated, and connected
-          to optional runtime providers. Durable state remains ordinary files.
+          mdbase defines consistent typing, querying, linking, and updates for
+          folders of Markdown files with YAML frontmatter. Files remain ordinary
+          Markdown.
         </p>
-        <ul class="hero-proof" aria-label="Specification coverage">
-          <li>collection layout</li>
-          <li>JSON Schema types</li>
-          <li>CEL queries</li>
-          <li>safe migration</li>
-          <li>runtime contracts</li>
-        </ul>
         <div class="hero-actions">
           <a href="spec.html" class="btn btn-primary">Read the specification</a>
-          <a href="runtime.html" class="btn btn-ghost">See runtime mode</a>
-          <a href="https://github.com/callumalpass/mdbase-spec" class="btn btn-ghost">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-            GitHub
-          </a>
         </div>
-      </div>
-    </section>
-
-    <section class="landing-section" id="quick-model">
-      <div class="section-kicker">Collection layout</div>
-      <h2 class="section-title">A collection is a directory with mdbase.yaml</h2>
-      <p class="section-intro">
-        The spec defines collection boundaries, type definition files, record
-        discovery, effective frontmatter, and operation behavior. Implementations
-        publish the independent conformance profiles they support.
-      </p>
-
-      <div class="proof-flow">
-        <div class="proof-step">
-          <code>_types/task.md</code>
-          <h3>Type definitions</h3>
-          <p>Each Markdown type file wraps a JSON Schema and collection-specific matching, default, link, path, and lifecycle metadata.</p>
-        </div>
-        <div class="proof-step">
-          <code>tasks/fix-bug.md</code>
-          <h3>Record validation</h3>
-          <p>Records are ordinary Markdown files with effective frontmatter derived from matching types.</p>
-        </div>
-        <div class="proof-step">
-          <code>query.where</code>
-          <h3>Queries and expressions</h3>
-          <p>Filtering, ordering, body search, and link traversal are defined by the query and expression sections.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="landing-section" id="principles">
-      <div class="section-kicker">Design constraints</div>
-      <h2 class="section-title">Files stay authoritative</h2>
-      <p class="section-intro">
-        Durable state is represented as Markdown and YAML. Derived indexes,
-        caches, views, and watchers are implementation details, not replacement
-        storage formats.
-      </p>
-
-      <div class="principles">
-        <div class="principle">
-          <div class="principle-num">01</div>
-          <h3>Files are the source of truth</h3>
-          <p>Tools read from and write to the filesystem. Indexes and caches are derived and disposable.</p>
-        </div>
-        <div class="principle">
-          <div class="principle-num">02</div>
-          <h3>Human-readable first</h3>
-          <p>No proprietary formats. A user with a text editor can read and modify any persistent file.</p>
-        </div>
-        <div class="principle">
-          <div class="principle-num">03</div>
-          <h3>Progressive strictness</h3>
-          <p>Collections can start untyped, then opt into validation, matching, links, caching, and watch mode.</p>
-        </div>
-        <div class="principle">
-          <div class="principle-num">04</div>
-          <h3>Portable by default</h3>
-          <p>Collections work with any conforming tool. Templates, plugins, and agents rely on the same specified behavior.</p>
-        </div>
-        <div class="principle">
-          <div class="principle-num">05</div>
-          <h3>Git-friendly</h3>
-          <p>Every durable change is text, reviewable in a diff and versioned with the rest of the collection.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="landing-section" id="examples">
-      <div class="section-kicker">How it works</div>
-      <h2 class="section-title">Schemas, queries, and expressions in plain text</h2>
-      <p class="section-intro">
-        The same primitives appear in the spec, the reference tests, and real
-        implementations.
-      </p>
-
-      <div class="examples-container">
-        <div class="example-tabs" role="tablist" aria-label="Code examples">
-          <button class="example-tab" id="tab-structure" role="tab" type="button" aria-selected="true" aria-controls="ex-structure" data-panel="ex-structure">Structure</button>
-          <button class="example-tab" id="tab-type" role="tab" type="button" aria-selected="false" aria-controls="ex-type" tabindex="-1" data-panel="ex-type">Type definition</button>
-          <button class="example-tab" id="tab-query" role="tab" type="button" aria-selected="false" aria-controls="ex-query" tabindex="-1" data-panel="ex-query">Query</button>
-          <button class="example-tab" id="tab-expressions" role="tab" type="button" aria-selected="false" aria-controls="ex-expressions" tabindex="-1" data-panel="ex-expressions">Expressions</button>
-        </div>
-
-        <div id="ex-structure" class="example-panel" role="tabpanel" aria-labelledby="tab-structure">
-          <pre data-lang="folder"><code>my-project/
-|-- mdbase.yaml            <span class="comment"># marks this folder as a collection</span>
-|-- _types/                <span class="comment"># type definitions (schemas)</span>
-|   |-- task.md
-|   `-- person.md
-|-- tasks/
-|   |-- fix-bug.md         <span class="comment"># a record of type "task"</span>
-|   `-- write-docs.md
-`-- people/
-    `-- alice.md           <span class="comment"># a record of type "person"</span></code></pre>
-        </div>
-
-        <div id="ex-type" class="example-panel" role="tabpanel" aria-labelledby="tab-type" hidden>
-          <pre data-lang="yaml"><code><span class="comment">---</span>
-<span class="key">kind</span>: mdbase.type
-<span class="key">name</span>: task
-<span class="key">schema</span>:
-  <span class="key">dialect</span>: json-schema-2020-12
-  <span class="key">value</span>:
-    <span class="key">type</span>: object
-    <span class="key">required</span>: [title]
-    <span class="key">properties</span>:
-      <span class="key">title</span>: { <span class="key">type</span>: <span class="string">string</span> }
-      <span class="key">status</span>: { <span class="key">enum</span>: [<span class="string">open</span>, <span class="string">in_progress</span>, <span class="string">done</span>] }
-      <span class="key">priority</span>: { <span class="key">type</span>: <span class="string">integer</span>, <span class="key">minimum</span>: <span class="number">1</span>, <span class="key">maximum</span>: <span class="number">5</span> }
-<span class="key">collection</span>:
-  <span class="key">read_defaults</span>: { <span class="key">status</span>: <span class="string">open</span> }
-<span class="comment">---</span></code></pre>
-        </div>
-
-        <div id="ex-query" class="example-panel" role="tabpanel" aria-labelledby="tab-query" hidden>
-          <pre data-lang="yaml"><code><span class="key">query</span>:
-  <span class="key">types</span>: [<span class="string">task</span>]
-  <span class="key">where</span>: <span class="string">'status != "done" &amp;&amp; priority &gt;= 3'</span>
-  <span class="key">order_by</span>:
-    - <span class="key">field</span>: <span class="string">due_date</span>
-      <span class="key">direction</span>: <span class="string">asc</span>
-  <span class="key">limit</span>: <span class="number">20</span></code></pre>
-        </div>
-
-        <div id="ex-expressions" class="example-panel" role="tabpanel" aria-labelledby="tab-expressions" hidden>
-          <pre data-lang="expression"><code><span class="comment"># Filter by status and tags</span>
-status == <span class="string">"open"</span> && tags.contains(<span class="string">"urgent"</span>)
-
-<span class="comment"># Date arithmetic</span>
-due_date < today() + duration(<span class="string">"P7D"</span>)
-
-<span class="comment"># Link traversal</span>
-assignee.asFile().team == <span class="string">"engineering"</span>
-
-<span class="comment"># Null coalescing</span>
-priority ?? <span class="number">3</span></code></pre>
-        </div>
-      </div>
-    </section>
-
-    <section class="landing-section" id="conformance">
-      <div class="section-kicker">Conformance</div>
-      <h2 class="section-title">Independent conformance profiles</h2>
-      <p class="section-intro">Implementations claim only the portable behavior they verify, with dependencies between profiles declared explicitly.</p>
-
-      <div class="levels" aria-label="Conformance profiles">
-        <div class="level"><span class="level-num">01</span><span class="level-name">core_read</span></div>
-        <div class="level"><span class="level-num">02</span><span class="level-name">collection_semantics</span></div>
-        <div class="level"><span class="level-num">03</span><span class="level-name">cel</span></div>
-        <div class="level"><span class="level-num">04</span><span class="level-name">cel_match</span></div>
-        <div class="level"><span class="level-num">05</span><span class="level-name">cel_query</span></div>
-        <div class="level"><span class="level-num">06</span><span class="level-name">links</span></div>
-        <div class="level"><span class="level-num">07</span><span class="level-name">core_write</span></div>
-        <div class="level"><span class="level-num">08</span><span class="level-name">lifecycle</span></div>
-        <div class="level"><span class="level-num">09</span><span class="level-name">runtime_contracts/0.1</span></div>
-        <div class="level"><span class="level-num">10</span><span class="level-name">workflow/0.1</span></div>
-        <div class="level"><span class="level-num">11</span><span class="level-name">watch</span></div>
-      </div>
-    </section>
-
-    <section class="landing-section" id="implementors">
-      <div class="section-kicker">Implementors</div>
-      <h2 class="section-title">Implementation resources</h2>
-      <p class="section-intro">The repository includes adapter documentation, a reference runner, fixtures, and lookup material for implementors.</p>
-
-      <div class="eco-grid">
-        <div class="eco-card">
-          <span class="eco-lang">Guide</span>
-          <h3 class="eco-name">Conformance profiles</h3>
-          <p class="eco-desc">Normative profile dependencies, claim documents, diagnostics, and shared fixture requirements.</p>
-          <ul class="eco-features">
-            <li>Profile dependency graph</li>
-            <li>Machine-readable claims</li>
-            <li>Shared fixture sets</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/16-conformance.md" class="eco-link">Open conformance spec</a>
-        </div>
-
-        <div class="eco-card">
-          <span class="eco-lang">Runner</span>
-          <h3 class="eco-name">Runtime contracts</h3>
-          <p class="eco-desc">Browser-safe schemas, provider host, validation, dispatch, and explicit Node loaders.</p>
-          <ul class="eco-features">
-            <li>Provider registration</li>
-            <li>Default-deny policy</li>
-            <li>Action and event validation</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/tree/main/packages/runtime-contracts" class="eco-link">Open runtime package</a>
-        </div>
-
-        <div class="eco-card">
-          <span class="eco-lang">Template</span>
-          <h3 class="eco-name">Migration guide</h3>
-          <p class="eco-desc">Analyze, review, apply, recover, and stage v0.2 collection upgrades without silent rewrites.</p>
-          <ul class="eco-features">
-            <li>Source hashes</li>
-            <li>Backups and recovery</li>
-            <li>Partial migration policy</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/15-migrations-and-compatibility.md" class="eco-link">Open migration spec</a>
-        </div>
-
-        <div class="eco-card">
-          <span class="eco-lang">Example</span>
-          <h3 class="eco-name">Canvas runtime fixture</h3>
-          <p class="eco-desc">Runnable v0.3 collection proving provider contracts, workflow preflight, CEL inputs, and execution.</p>
-          <ul class="eco-features">
-            <li>Canonical type wrappers</li>
-            <li>Canvas drop event</li>
-            <li>Record patch workflow</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/tree/main/examples/v0.3/canvas-runtime" class="eco-link">Open example</a>
-        </div>
-
-        <div class="eco-card">
-          <span class="eco-lang">Cheat Sheet</span>
-          <h3 class="eco-name">v0.2 archive</h3>
-          <p class="eco-desc">The complete previous specification, implementer guide, runner protocol, appendices, and quick reference.</p>
-          <ul class="eco-features">
-            <li>Unchanged v0.2.1 prose</li>
-            <li>Stable legacy URLs</li>
-            <li>Compatibility fixtures</li>
-          </ul>
-          <a href="spec-v0.2.html" class="eco-link">Open archive</a>
-        </div>
-      </div>
-    </section>
-
-    <section class="landing-section" id="spec-sections">
-      <div class="section-kicker">Specification</div>
-      <h2 class="section-title">Read the full spec</h2>
-      <p class="section-intro">Jump into a section or open the full reader with the sidebar navigation.</p>
-
-      <div class="spec-toc">
-        <a class="toc-item" href="spec.html#section-00"><span class="toc-num">00</span> Overview</a>
-        <a class="toc-item" href="spec.html#section-01"><span class="toc-num">01</span> Concepts</a>
-        <a class="toc-item" href="spec.html#section-02"><span class="toc-num">02</span> Collection Layout</a>
-        <a class="toc-item" href="spec.html#section-03"><span class="toc-num">03</span> Records &amp; Frontmatter</a>
-        <a class="toc-item" href="spec.html#section-04"><span class="toc-num">04</span> Configuration</a>
-        <a class="toc-item" href="spec.html#section-05"><span class="toc-num">05</span> Type Files</a>
-        <a class="toc-item" href="spec.html#section-06"><span class="toc-num">06</span> JSON Schema Profile</a>
-        <a class="toc-item" href="spec.html#section-07"><span class="toc-num">07</span> Collection Semantics</a>
-        <a class="toc-item" href="spec.html#section-08"><span class="toc-num">08</span> Links</a>
-        <a class="toc-item" href="spec.html#section-09"><span class="toc-num">09</span> Lifecycle</a>
-        <a class="toc-item" href="spec.html#section-10"><span class="toc-num">10</span> CEL Profile</a>
-        <a class="toc-item" href="spec.html#section-11"><span class="toc-num">11</span> Querying</a>
-        <a class="toc-item" href="spec.html#section-12"><span class="toc-num">12</span> Operations</a>
-        <a class="toc-item" href="spec.html#section-13"><span class="toc-num">13</span> Runtime Contracts</a>
-        <a class="toc-item" href="spec.html#section-14"><span class="toc-num">14</span> Workflows</a>
-        <a class="toc-item" href="spec.html#section-15"><span class="toc-num">15</span> Migrations &amp; Compatibility</a>
-        <a class="toc-item" href="spec.html#section-16"><span class="toc-num">16</span> Conformance</a>
       </div>
     </section>
   </main>
@@ -351,48 +46,5 @@ priority ?? <span class="number">3</span></code></pre>
   <footer class="landing-footer">
     <p>mdbase specification v0.3.0 &middot; <a href="spec-v0.2.html">v0.2 archive</a> &middot; <a href="https://opensource.org/licenses/MIT">MIT License</a> &middot; <a href="https://github.com/callumalpass/mdbase-spec">Source on GitHub</a></p>
   </footer>
-
-  <script>
-    const tablists = document.querySelectorAll('[role="tablist"]');
-
-    tablists.forEach((tablist) => {
-      const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
-
-      function activateTab(tab, focusTab = true) {
-        tabs.forEach((candidate) => {
-          const selected = candidate === tab;
-          const panel = document.getElementById(candidate.getAttribute('aria-controls'));
-          candidate.setAttribute('aria-selected', String(selected));
-          candidate.tabIndex = selected ? 0 : -1;
-          if (panel) {
-            panel.hidden = !selected;
-          }
-        });
-
-        if (focusTab) {
-          tab.focus();
-        }
-      }
-
-      tabs.forEach((tab, index) => {
-        tab.addEventListener('click', () => activateTab(tab, false));
-        tab.addEventListener('keydown', (event) => {
-          const lastIndex = tabs.length - 1;
-          let nextIndex = index;
-
-          if (event.key === 'ArrowRight') nextIndex = index === lastIndex ? 0 : index + 1;
-          if (event.key === 'ArrowLeft') nextIndex = index === 0 ? lastIndex : index - 1;
-          if (event.key === 'Home') nextIndex = 0;
-          if (event.key === 'End') nextIndex = lastIndex;
-
-          if (nextIndex !== index) {
-            event.preventDefault();
-            activateTab(tabs[nextIndex]);
-          }
-        });
-      });
-    });
-  </script>
-
 </body>
 </html>
