@@ -1,44 +1,43 @@
 ---
 name: mdbase.dev
-description: Muted technical reference design system for the mdbase specification site.
+description: Minimal technical reference design system for the mdbase specification site.
 colors:
-  ink-bg: "oklch(15.5% 0.006 72)"
-  ink-elevated: "oklch(19.5% 0.007 72)"
-  ink-panel: "oklch(22.5% 0.008 72)"
-  parchment-text: "oklch(84% 0.018 78)"
-  parchment-bright: "oklch(93% 0.014 78)"
-  amber-accent: "oklch(70% 0.105 72)"
-  mint-code: "oklch(70% 0.055 150)"
-  cyan-link: "oklch(70% 0.055 220)"
+  paper: "oklch(98% 0.006 88)"
+  paper-raised: "oklch(99.3% 0.004 88)"
+  paper-soft: "oklch(95.5% 0.009 88)"
+  paper-code: "oklch(94.5% 0.01 88)"
+  ink: "oklch(21% 0.018 255)"
+  ink-soft: "oklch(39% 0.016 255)"
+  ink-muted: "oklch(54% 0.014 255)"
+  line: "oklch(84% 0.014 88)"
+  blue-accent: "oklch(45% 0.105 238)"
 typography:
   display:
-    fontFamily: "Azeret Mono, Menlo, Consolas, monospace"
-    fontSize: "3.7rem"
+    fontFamily: "Atkinson Hyperlegible, Segoe UI, sans-serif"
+    fontSize: "6rem"
     fontWeight: 700
-    lineHeight: 1.05
-    letterSpacing: "0"
+    lineHeight: 0.96
+    letterSpacing: "-0.045em"
   headline:
-    fontFamily: "Azeret Mono, Menlo, Consolas, monospace"
-    fontSize: "1.65rem"
-    fontWeight: 600
-    lineHeight: 1.22
-    letterSpacing: "0"
+    fontFamily: "Atkinson Hyperlegible, Segoe UI, sans-serif"
+    fontSize: "2.5rem"
+    fontWeight: 700
+    lineHeight: 1.12
+    letterSpacing: "-0.025em"
   body:
-    fontFamily: "Source Serif 4, Georgia, serif"
-    fontSize: "1rem"
+    fontFamily: "Atkinson Hyperlegible, Segoe UI, sans-serif"
+    fontSize: "1.04rem"
     fontWeight: 400
-    lineHeight: 1.7
+    lineHeight: 1.66
     letterSpacing: "0"
   label:
-    fontFamily: "Azeret Mono, Menlo, Consolas, monospace"
-    fontSize: "0.82rem"
-    fontWeight: 600
-    lineHeight: 1.3
+    fontFamily: "Azeret Mono, SFMono-Regular, Cascadia Code, monospace"
+    fontSize: "0.72rem"
+    fontWeight: 500
+    lineHeight: 1.4
     letterSpacing: "0"
 rounded:
-  sm: "3px"
-  md: "6px"
-  lg: "8px"
+  default: "3px"
 spacing:
   xs: "8px"
   sm: "12px"
@@ -48,14 +47,14 @@ spacing:
   xxl: "48px"
 components:
   button-primary:
-    backgroundColor: "{colors.amber-accent}"
-    textColor: "{colors.ink-bg}"
-    rounded: "{rounded.md}"
-    padding: "0 32px"
-  card:
-    backgroundColor: "{colors.ink-elevated}"
-    textColor: "{colors.parchment-text}"
-    rounded: "{rounded.lg}"
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.paper}"
+    rounded: "{rounded.default}"
+    padding: "0 24px"
+  code-specimen:
+    backgroundColor: "{colors.paper-code}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.default}"
     padding: "24px"
 ---
 
@@ -63,88 +62,82 @@ components:
 
 ## 1. Overview
 
-**Creative North Star: "A Quiet Technical Reference"**
+**Creative North Star: "A Technical Field Manual"**
 
-mdbase.dev should feel like maintained specification documentation for people who build tools, not a startup product page. The system is dark because it supports long-form technical reading, but it should stay neutral and low-chroma rather than atmospheric or glowing.
+mdbase.dev is a calm, precise reading environment for people who implement the specification. Warm paper, direct typography, fine rules, and real mdbase artifacts give the site its identity. The visual system keeps attention on the model, examples, and normative text.
 
-The design rejects generic SaaS chrome, decorative terminal cosplay, slogan-led launch copy, and dark surfaces that hide content. Visual interest comes from actual mdbase artifacts: type files, folder structure, query snippets, conformance levels, and implementation resources.
+### Key characteristics
 
-**Key Characteristics:**
-
-- Reference-page density with clear reading rhythm.
-- Concrete code and filesystem specimens as imagery.
-- Muted amber for primary action and versioning, with low-chroma semantic accents for code only.
-- Flat, bordered surfaces instead of heavy shadows or nested cards.
+- Open page layouts with generous, deliberate whitespace.
+- Strong headings and highly legible long-form text.
+- Actual files, schemas, queries, and contracts as the primary visual material.
+- One muted blue accent for navigation, links, and current state.
+- Thin horizontal rules for grouping and rhythm.
+- Table-like resource rows for dense implementation information.
 
 ## 2. Colors
 
-The palette is a restrained technical reference palette: neutral ink surfaces, warm parchment text, muted amber action, and small semantic accents for code.
+The palette resembles warm reference paper with blue-black ink. Surfaces remain close in tone so hierarchy comes from type, spacing, and rules.
 
 ### Primary
 
-- **Amber Accent** (`oklch(70% 0.105 72)`): primary CTAs, version tags, active states, and the most important navigational highlights.
-
-### Secondary
-
-- **Mint Code** (`oklch(70% 0.055 150)`): positive code semantics only.
-- **Cyan Link** (`oklch(70% 0.055 220)`): focus rings and secondary technical emphasis.
+- **Blue Accent** (`oklch(45% 0.105 238)`): links, version emphasis, selected states, and focus rings.
 
 ### Neutral
 
-- **Ink Background** (`oklch(15.5% 0.006 72)`): page background, tinted away from pure black.
-- **Ink Elevated** (`oklch(19.5% 0.007 72)`): cards and raised panels.
-- **Parchment Text** (`oklch(84% 0.018 78)`): default readable text.
-- **Parchment Bright** (`oklch(93% 0.014 78)`): headings and strongest emphasis.
+- **Paper** (`oklch(98% 0.006 88)`): page background.
+- **Paper Raised** (`oklch(99.3% 0.004 88)`): mobile navigation and subtle foreground surfaces.
+- **Paper Soft** (`oklch(95.5% 0.009 88)`): selected rows, quotes, and restrained secondary surfaces.
+- **Paper Code** (`oklch(94.5% 0.01 88)`): code blocks and inline code.
+- **Ink** (`oklch(21% 0.018 255)`): headings and primary text.
+- **Ink Soft** (`oklch(39% 0.016 255)`): explanatory text.
+- **Ink Muted** (`oklch(54% 0.014 255)`): labels and metadata.
+- **Line** (`oklch(84% 0.014 88)`): structural dividers.
 
-### Named Rules
+### Color rule
 
-**The Proof-First Color Rule.** Use color to identify real artifacts and current state. Do not use glow, saturated washes, or accent color as decoration when no user meaning changes.
+Use blue where an element is actionable, selected, or semantically highlighted. Use neutral ink for primary calls to action.
 
 ## 3. Typography
 
-**Display Font:** Azeret Mono, with Menlo and Consolas fallback.
-**Body Font:** Source Serif 4, with Georgia fallback.
-**Label/Mono Font:** Azeret Mono.
+**Display and body font:** Atkinson Hyperlegible, with Segoe UI fallback.
 
-**Character:** The pairing keeps headings mechanical and implementation-oriented while body copy stays readable across the long spec. Mono is for structure, labels, file paths, and code-adjacent headings; serif carries explanation.
+**Label and code font:** Azeret Mono, with SFMono-Regular and Cascadia Code fallback.
+
+Atkinson Hyperlegible provides clarity across large headlines and long specification prose. Azeret Mono identifies navigation, versions, file paths, labels, and code.
 
 ### Hierarchy
 
-- **Display** (700, 3.7rem desktop / 2.42rem mobile, 1.05): landing hero only.
-- **Headline** (600, 1.65rem, 1.22): section headings and major reader headings.
-- **Title** (600, 1rem-1.08rem, 1.22): card titles and local headings.
-- **Body** (400, 1rem, 1.7): specification prose with a 68ch maximum measure.
-- **Label** (600, 0.78rem-0.82rem, 1.3): section kickers, nav labels, tags, and card metadata.
+- **Display** (700, up to 6rem desktop / 3.2rem mobile, 0.96): landing hero.
+- **Section headline** (700, up to 2.5rem, 1.12): landing and runtime sections.
+- **Reader title** (700, up to 3.5rem, 1.12): specification page title.
+- **Body** (400, 1.04rem, 1.66): prose with a 72ch maximum measure.
+- **Label** (500, 0.7rem to 0.76rem): navigation, metadata, section kickers, and buttons.
 
-### Named Rules
+### Typography rule
 
-**The Mono Budget Rule.** Mono can frame and identify, but prose should remain serif unless the content is code, file paths, or navigation.
+Use the sans face for prose and hierarchy. Reserve mono for structural information and literal technical content.
 
-## 4. Elevation
+## 4. Layout and elevation
 
-The system is mostly flat. Depth comes from tonal layering, borders, and rare page-level shadows on mobile drawers. Cards should use full borders and 8px-or-smaller radius. Avoid side stripes, glass effects, and stacked cards.
+The system is flat. One-pixel rules establish sections, rows, navigation boundaries, and code surfaces. Page content uses a 64rem maximum width. Landing sections add an 8rem metadata gutter on wide screens, then collapse to a single column below 64rem.
+
+Whitespace carries hierarchy at page scale. Within resource lists and the specification reader, spacing becomes denser to support scanning.
 
 ## 5. Components
 
-- **Primary button:** amber fill, ink text, 6px radius, minimum 48px height.
-- **Ghost button:** translucent ink panel with full border, used for secondary external actions.
-- **Card/resource tile:** ink-elevated background, full border, 8px radius, no empty filler cells.
-- **Code specimen:** dark ink code panel with semantic mint/cyan/violet/amber highlighting.
-- **Spec sidebar link:** full bordered active state, never a colored side stripe.
-- **Tablist:** true ARIA tabs with roving tabindex, selected fill, and keyboard arrow support.
+- **Primary button:** ink fill, paper text, 3px radius, 44px minimum height.
+- **Secondary button:** transparent background with a neutral full border.
+- **Resource row:** top rule with label, name, description, capabilities, and link aligned in columns.
+- **Code specimen:** paper-code surface, fine border, compact mono text, and restrained syntax colors.
+- **Spec sidebar link:** soft selected fill with blue text and no decorative stripe.
+- **Tablist:** text labels with a blue underline for the selected tab and keyboard arrow support.
 
-## 6. Do's and Don'ts
+## 6. Usage principles
 
-Do show real folders, type definitions, records, queries, and conformance language early.
-
-Do maintain WCAG AA contrast for all meaningful text, including nav and metadata.
-
-Do keep the spec reader stable and efficient for long sessions.
-
-Don't use blank card-grid cells as structural dividers.
-
-Don't make the hero a generic split card layout or a vague technical slogan.
-
-Don't rely on hover-only affordances for navigation or deep links.
-
-Don't use slogan-shaped section headings where a literal spec term would be clearer.
+- Lead pages with literal descriptions of the specification or runtime profile.
+- Show real collection structures, type definitions, records, and queries.
+- Keep reading measures stable and maintain WCAG AA contrast.
+- Use cards only when content needs a true contained object boundary.
+- Keep hover and focus treatments visible, quiet, and consistent.
+- Preserve practical navigation on small screens with an off-canvas specification index.
