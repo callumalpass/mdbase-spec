@@ -1,6 +1,6 @@
 {
   "name": "@callumalpass/mdbase-runtime",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-rc.1",
   "type": "module",
   "description": "Portable mdbase runtime contracts, provider host, validation, and Node loaders.",
   "license": "MIT",
