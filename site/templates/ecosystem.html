@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ecosystem - mdbase</title>
-  <meta name="description" content="Tools, implementations, and example applications built around the mdbase specification.">
+  <meta name="description" content="Implementations, tools, and projects built around the mdbase specification.">
   <meta property="og:title" content="Ecosystem - mdbase">
-  <meta property="og:description" content="Tools, implementations, and example applications built around the mdbase specification.">
+  <meta property="og:description" content="Implementations, tools, and projects built around the mdbase specification.">
   <meta property="og:url" content="https://mdbase.dev/ecosystem">
   <meta property="og:type" content="website">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9670;</text></svg>">
@@ -30,207 +30,93 @@
 
   <main>
     <section class="eco-hero">
-      <div class="section-kicker">Ecosystem</div>
-      <h1 class="section-title">Tools and implementations</h1>
+      <h1 class="section-title">Ecosystem</h1>
       <p class="eco-hero-sub">
-        Libraries, developer tools, and example applications built around the
-        mdbase specification.
+        Implementations, tools, and projects built around the mdbase
+        specification.
       </p>
     </section>
 
-    <section class="landing-section" id="implementor-resources">
-      <div class="section-kicker">Implementors</div>
-      <h2 class="section-title">Portable implementation artifacts</h2>
-      <p class="section-intro">Normative profiles, schemas, fixtures, and runtime contracts shared by independent implementations.</p>
+    <section class="eco-section" id="implementations">
+      <header class="eco-section-header">
+        <h2>Implementations</h2>
+        <p>Libraries that implement the mdbase specification.</p>
+      </header>
 
-      <div class="eco-grid">
-        <div class="eco-card">
-          <span class="eco-lang">Guide</span>
-          <h3 class="eco-name">Conformance profiles</h3>
-          <p class="eco-desc">Profile dependencies, claim requirements, diagnostic envelopes, and fixture responsibilities.</p>
-          <ul class="eco-features">
-            <li>Independent capability claims</li>
-            <li>Canonical diagnostics</li>
-            <li>Shared fixture sets</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/blob/main/16-conformance.md" class="eco-link">Open conformance spec</a>
-        </div>
-
-        <div class="eco-card">
-          <span class="eco-lang">Runner</span>
-          <h3 class="eco-name">Canonical schemas</h3>
-          <p class="eco-desc">Draft 2020-12 artifacts for configuration, types, operations, claims, and runtime records.</p>
-          <ul class="eco-features">
-            <li>Stable schema IDs</li>
-            <li>Embedded schema profile</li>
-            <li>Machine validation</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/tree/main/schemas/v0.3" class="eco-link">Browse schemas</a>
-        </div>
-
-        <div class="eco-card">
-          <span class="eco-lang">Template</span>
-          <h3 class="eco-name">Runtime package</h3>
-          <p class="eco-desc">Browser-safe provider host and canonical types, with Markdown loading isolated to the Node export.</p>
-          <ul class="eco-features">
-            <li>Atomic provider registration</li>
-            <li>Default-deny policy</li>
-            <li>Validated event and action dispatch</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/tree/main/packages/runtime-contracts" class="eco-link">Open package</a>
-        </div>
-
-        <div class="eco-card">
-          <span class="eco-lang">Fixture</span>
-          <h3 class="eco-name">Canvas runtime fixture</h3>
-          <p class="eco-desc">Runnable provider, event, action, policy, and workflow proof using the exact canonical schemas.</p>
-          <ul class="eco-features">
-            <li>Canvas drop event</li>
-            <li>Record patch action</li>
-            <li>Workflow preflight and execution</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase-spec/tree/main/examples/v0.3/canvas-runtime" class="eco-link">Open fixture</a>
-        </div>
-
-        <div class="eco-card">
-          <span class="eco-lang">Cheat Sheet</span>
-          <h3 class="eco-name">v0.2 archive</h3>
-          <p class="eco-desc">The prior spec, implementer guide, runner protocol, appendices, and quick reference remain intact.</p>
-          <ul class="eco-features">
-            <li>Complete v0.2.1 prose</li>
-            <li>Legacy fixture compatibility</li>
-            <li>Explicit migration path</li>
-          </ul>
-          <a href="spec-v0.2.html" class="eco-link">Open archive</a>
-        </div>
-      </div>
-    </section>
-
-    <section class="landing-section" id="implementations">
-      <div class="section-kicker">Implementations</div>
-      <h2 class="section-title">Core libraries</h2>
-      <p class="section-intro">Reference-grade libraries for embedding mdbase behavior in applications and tools.</p>
-
-      <div class="eco-grid">
-        <div class="eco-card">
-          <span class="eco-lang">TypeScript</span>
+      <div class="eco-list">
+        <article class="eco-item">
+          <span class="eco-kind">TypeScript</span>
           <h3 class="eco-name">mdbase</h3>
-          <p class="eco-desc">Reference implementation of the mdbase specification. Provides collection loading, schema validation, querying, and expression evaluation.</p>
-          <ul class="eco-features">
-            <li>All six collection profiles</li>
-            <li>Safe v0.2 migration</li>
-            <li>Portable runtime integration</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase" class="eco-link">callumalpass/mdbase</a>
-        </div>
+          <p class="eco-description">Reference implementation for loading, validating, querying, and updating collections.</p>
+          <a href="https://github.com/callumalpass/mdbase" class="eco-link">Repository</a>
+        </article>
 
-        <div class="eco-card">
-          <span class="eco-lang">Rust</span>
+        <article class="eco-item">
+          <span class="eco-kind">Rust</span>
           <h3 class="eco-name">mdbase-rs</h3>
-          <p class="eco-desc">Independent Rust implementation used by native tools, the LSP, Pickle, and Tauri consumers.</p>
-          <ul class="eco-features">
-            <li>Verified core_read</li>
-            <li>Verified collection_semantics</li>
-            <li>Canonical v0.3 diagnostics</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase-rs" class="eco-link">callumalpass/mdbase-rs</a>
-        </div>
+          <p class="eco-description">Independent implementation used by native applications and developer tools.</p>
+          <a href="https://github.com/callumalpass/mdbase-rs" class="eco-link">Repository</a>
+        </article>
       </div>
     </section>
 
-    <section class="landing-section" id="tools">
-      <div class="section-kicker">Developer Tools</div>
-      <h2 class="section-title">Build and edit</h2>
-      <p class="section-intro">Tools that make the specification usable from terminals, editors, and repo workflows.</p>
+    <section class="eco-section" id="tools">
+      <header class="eco-section-header">
+        <h2>Tools</h2>
+        <p>Interfaces for working with mdbase collections.</p>
+      </header>
 
-      <div class="eco-grid">
-        <div class="eco-card">
-          <span class="eco-lang">CLI</span>
+      <div class="eco-list">
+        <article class="eco-item">
+          <span class="eco-kind">CLI</span>
           <h3 class="eco-name">mdbase-cli</h3>
-          <p class="eco-desc">Command-line interface for working with mdbase collections. Query, validate, and manage collections from the terminal.</p>
-          <ul class="eco-features">
-            <li>Interactive query REPL</li>
-            <li>Schema validation and linting</li>
-            <li>Record creation scaffolding</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase-cli" class="eco-link">callumalpass/mdbase-cli</a>
-        </div>
+          <p class="eco-description">Query, validate, and manage collections from the terminal.</p>
+          <a href="https://github.com/callumalpass/mdbase-cli" class="eco-link">Repository</a>
+        </article>
 
-        <div class="eco-card">
-          <span class="eco-lang">LSP</span>
+        <article class="eco-item">
+          <span class="eco-kind">LSP</span>
           <h3 class="eco-name">mdbase-lsp</h3>
-          <p class="eco-desc">Language Server Protocol implementation with diagnostics, completions, and hover information in editors.</p>
-          <ul class="eco-features">
-            <li>Real-time validation diagnostics</li>
-            <li>Frontmatter field completion</li>
-            <li>Link target resolution and go-to-definition</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase-lsp" class="eco-link">callumalpass/mdbase-lsp</a>
-        </div>
+          <p class="eco-description">Editor diagnostics, completion, hover information, and link navigation.</p>
+          <a href="https://github.com/callumalpass/mdbase-lsp" class="eco-link">Repository</a>
+        </article>
 
-        <div class="eco-card">
-          <span class="eco-lang">CLI</span>
-          <h3 class="eco-name">mdbase-tasknotes</h3>
-          <p class="eco-desc">Standalone task management CLI that operates directly on Markdown files via mdbase.</p>
-          <ul class="eco-features">
-            <li>Natural language task creation</li>
-            <li>Timer, project, and statistics commands</li>
-            <li>Compatible with TaskNotes plugin vaults</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase-tasknotes" class="eco-link">callumalpass/mdbase-tasknotes</a>
-        </div>
-
-        <div class="eco-card">
-          <span class="eco-lang">CLI</span>
-          <h3 class="eco-name">ops</h3>
-          <p class="eco-desc">Markdown-native operations CLI for AI-assisted GitHub workflows using typed mdbase sidecars.</p>
-          <ul class="eco-features">
-            <li>Typed `.ops/` sidecars committed with code</li>
-            <li>Reusable command templates with variable expansion</li>
-            <li>Built-in triage, review, and handoff flows</li>
-          </ul>
-          <a href="https://github.com/callumalpass/ops" class="eco-link">callumalpass/ops</a>
-        </div>
-      </div>
-    </section>
-
-    <section class="landing-section" id="ai">
-      <div class="section-kicker">AI Integration</div>
-      <h2 class="section-title">Agent tooling</h2>
-      <p class="section-intro">Structured collection access for coding assistants and local agent workflows.</p>
-
-      <div class="eco-grid">
-        <div class="eco-card">
-          <span class="eco-lang">Skill</span>
+        <article class="eco-item">
+          <span class="eco-kind">Agent skill</span>
           <h3 class="eco-name">mdbase-skill</h3>
-          <p class="eco-desc">Agent skill that gives AI coding assistants structured access to mdbase collections for reading, querying, and editing records.</p>
-          <ul class="eco-features">
-            <li>Collection-aware context for AI agents</li>
-            <li>Schema-guided record creation</li>
-            <li>Natural language to mdbase query translation</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase-skill" class="eco-link">callumalpass/mdbase-skill</a>
-        </div>
+          <p class="eco-description">Structured collection access for coding assistants and local agents.</p>
+          <a href="https://github.com/callumalpass/mdbase-skill" class="eco-link">Repository</a>
+        </article>
       </div>
     </section>
 
-    <section class="landing-section" id="examples">
-      <div class="section-kicker">Examples</div>
-      <h2 class="section-title">Example applications</h2>
-      <p class="section-intro">Small products that make the spec concrete in real domains.</p>
+    <section class="eco-section" id="projects">
+      <header class="eco-section-header">
+        <h2>Built with mdbase</h2>
+        <p>Projects that use mdbase collections as their data layer.</p>
+      </header>
 
-      <div class="eco-grid">
-        <div class="eco-card">
-          <span class="eco-lang">App</span>
+      <div class="eco-list">
+        <article class="eco-item">
+          <span class="eco-kind">CLI</span>
+          <h3 class="eco-name">mdbase-tasknotes</h3>
+          <p class="eco-description">Task management over Markdown files compatible with TaskNotes vaults.</p>
+          <a href="https://github.com/callumalpass/mdbase-tasknotes" class="eco-link">Repository</a>
+        </article>
+
+        <article class="eco-item">
+          <span class="eco-kind">CLI</span>
+          <h3 class="eco-name">ops</h3>
+          <p class="eco-description">Repository operations workflows stored as typed Markdown sidecars.</p>
+          <a href="https://github.com/callumalpass/ops" class="eco-link">Repository</a>
+        </article>
+
+        <article class="eco-item">
+          <span class="eco-kind">Application</span>
           <h3 class="eco-name">mdbase-workouts</h3>
-          <p class="eco-desc">Full-stack workout tracker built on mdbase collections. Demonstrates type definitions, linked records, computed fields, and querying in a real application.</p>
-          <ul class="eco-features">
-            <li>Exercise and workout log types with links</li>
-            <li>Query-driven dashboards and history views</li>
-            <li>Progressive web app with offline support</li>
-          </ul>
-          <a href="https://github.com/callumalpass/mdbase-workouts" class="eco-link">callumalpass/mdbase-workouts</a>
-        </div>
+          <p class="eco-description">Workout tracking with linked records, computed fields, and queries.</p>
+          <a href="https://github.com/callumalpass/mdbase-workouts" class="eco-link">Repository</a>
+        </article>
       </div>
     </section>
   </main>

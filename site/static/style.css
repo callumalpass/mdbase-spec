@@ -493,30 +493,56 @@ td {
 .eco-hero {
   width: min(var(--page), 100%);
   margin: 0 auto;
-  padding: calc(var(--header) + 6rem) var(--space-xl) var(--space-3xl);
+  padding: calc(var(--header) + 5rem) var(--space-xl) 4rem;
 }
 
 .eco-hero .section-title {
-  max-width: 16ch;
+  max-width: 12ch;
   font-size: clamp(2.8rem, 7vw, 5rem);
 }
 
-.eco-grid {
-  display: grid;
-  margin-top: var(--space-2xl);
-}
-
-.eco-card {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: 7rem minmax(11rem, 0.65fr) minmax(14rem, 1fr) minmax(10rem, 0.75fr);
-  gap: var(--space-xl);
-  align-items: start;
-  padding: var(--space-xl) 0;
+.eco-section {
+  width: min(var(--page), 100%);
+  margin: 0 auto;
+  padding: var(--space-2xl) var(--space-xl) var(--space-3xl);
   border-top: 1px solid var(--line);
 }
 
-.eco-lang {
+.eco-section-header {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, 1fr);
+  gap: var(--space-xl);
+  align-items: baseline;
+  margin-bottom: var(--space-xl);
+}
+
+.eco-section-header h2 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 1.65rem;
+}
+
+.eco-section-header p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.eco-list {
+  border-bottom: 1px solid var(--line);
+}
+
+.eco-item {
+  display: grid;
+  grid-template-columns: 7rem 14rem minmax(0, 1fr) auto;
+  gap: var(--space-lg);
+  align-items: start;
+  padding: var(--space-lg) 0;
+  border-top: 1px solid var(--line);
+}
+
+.eco-kind {
+  padding-top: 0.15rem;
   color: var(--ink-muted);
   font-family: var(--mono);
   font-size: 0.68rem;
@@ -524,37 +550,19 @@ td {
 
 .eco-name {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.08rem;
 }
 
-.eco-desc {
+.eco-description {
   margin: 0;
   color: var(--ink-soft);
-}
-
-.eco-features {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.eco-features li {
-  margin: 0 0 0.25rem;
-  color: var(--ink-soft);
-  font-size: 0.92rem;
-}
-
-.eco-features li::before {
-  content: '·';
-  margin-right: 0.45rem;
-  color: var(--line-strong);
 }
 
 .eco-link {
-  justify-self: end;
+  padding-top: 0.15rem;
   font-family: var(--mono);
   font-size: 0.72rem;
-  text-align: right;
+  white-space: nowrap;
 }
 
 /* Specification reader */
@@ -837,16 +845,6 @@ td {
 /* Responsive */
 
 @media (max-width: 64rem) {
-  .eco-card {
-    grid-template-columns: 6rem minmax(10rem, 0.55fr) minmax(14rem, 1fr);
-  }
-
-  .eco-link {
-    grid-column: 2 / -1;
-    justify-self: start;
-    text-align: left;
-  }
-
   .spec-layout {
     display: block;
   }
@@ -947,21 +945,39 @@ td {
   }
 
   .eco-hero {
-    padding: calc(var(--header) + 4rem) var(--space-lg) var(--space-3xl);
+    padding: calc(var(--header) + 4rem) var(--space-lg) 4rem;
   }
 
-  .eco-card {
+  .eco-section {
+    padding: var(--space-2xl) var(--space-lg) var(--space-3xl);
+  }
+
+  .eco-section-header {
     grid-template-columns: 1fr;
-    gap: var(--space-sm);
+    gap: var(--space-xs);
   }
 
-  .eco-lang,
-  .eco-link {
+  .eco-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-xs) var(--space-md);
+    padding: 1.25rem 0;
+  }
+
+  .eco-item .eco-kind {
+    grid-column: 1 / -1;
+  }
+
+  .eco-item .eco-name {
     grid-column: 1;
   }
 
-  .eco-link {
-    margin-top: var(--space-sm);
+  .eco-item .eco-description {
+    grid-column: 1 / -1;
+  }
+
+  .eco-item .eco-link {
+    grid-column: 2;
+    grid-row: 2;
   }
 
   .spec-content {
