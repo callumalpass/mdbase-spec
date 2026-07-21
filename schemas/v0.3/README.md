@@ -10,6 +10,9 @@ yet published package artifacts.
 | Schema | Purpose |
 | --- | --- |
 | `type-file.schema.json` | frontmatter of `_types/*.md` v0.3 type files |
+| `query.schema.json` | portable query input objects |
+| `query-result.schema.json` | query results plus optional context, view, grouping, and summary metadata |
+| `view.schema.json` | ordinary `type: view` record frontmatter |
 | `conformance-claim.schema.json` | machine-readable implementation profile claims and evidence |
 | `runtime/provider.schema.json` | provider contract records |
 | `runtime/workflow.schema.json` | workflow records |

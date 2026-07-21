@@ -2,6 +2,28 @@
 
 All notable changes to this specification and conformance suite are documented here.
 
+## 2026-07-21 (v0.3.0 draft)
+
+### Added
+
+- Canonical query-object and ordinary `type: view` record schemas.
+- A materialized `_types/view.md` definition for Markdown view records.
+- Named query projections, grouping, built-in/custom summaries, and selected
+  result values.
+- Explicit query invocation context with a complete, immutable `this` record
+  namespace.
+- Saved-view inheritance, context fallback/type constraints, open presentation
+  identifiers, and the optional `view_records` feature declaration.
+- Obsidian Bases structural mapping guidance and view/context conformance
+  fixtures.
+
+### Changed
+
+- Replaced implementation-defined embedded-query context with deterministic
+  same-collection context binding and result metadata.
+- Clarified that view records are passive ordinary records, not runtime
+  contracts, and that presentation metadata cannot change headless results.
+
 ## 2026-02-03 (v0.2.0)
 
 ### Added

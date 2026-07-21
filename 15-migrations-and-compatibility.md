@@ -85,6 +85,42 @@ Tool-specific expression dialects are adapter concerns. Tools may translate
 them to CEL for portable storage and translate them back for user interfaces or
 exports.
 
+## Obsidian Bases Views
+
+Obsidian `.base` files are compatibility inputs, not mdbase records required by
+Core Read. An adapter may import, execute, or export them through the ordinary
+view-record model from Chapter 11.
+
+The structural mapping is:
+
+| Obsidian Bases | mdbase view record |
+| --- | --- |
+| global `filters` | `query.where` |
+| view `filters` | named-view `where`, combined with the shared filter |
+| `formulas` | `query.projections` |
+| `formula.name` | `projection.name` |
+| `properties` | property metadata |
+| view `order` | `select` order |
+| view `sort` | `order_by` |
+| `groupBy` | `group_by` |
+| custom and property summaries | `summary_functions` and `summaries` |
+| view `type` | `presentation.type` |
+| plugin view keys | presentation options or `x-*` extension data |
+
+An adapter SHOULD parse the source dialect into an inspectable syntax tree and
+translate it to CEL only when behavior can be preserved. A partial translation
+MUST report unsupported expressions, functions, value coercions, or renderer
+features. It MUST NOT silently label a behavior-changing translation as
+portable. Lossless source and round-trip metadata may be retained under
+`x-obsidian`.
+
+Obsidian placement state maps to the portable invocation context rather than to
+query semantics: opening a Base directly supplies the view definition, an
+embed supplies its embedding record, and an active-file interface supplies its
+active record. The adapter resolves that host state before calling the query or
+view executor. Portable mdbase execution does not inspect editor workspace
+state.
+
 ## Runtime Workflows
 
 Current generated-field and tool-conforming behavior that causes mutation

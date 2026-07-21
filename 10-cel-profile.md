@@ -44,7 +44,8 @@ record fields.
 | Context | Available values |
 | --- | --- |
 | inferred match | candidate raw fields at top level; `record`, `raw`, `present`, `file`, `note` |
-| query or projection | effective fields at top level; `record`, `raw`, `present`, `file`, `note`; `this` for an embedded query |
+| query or projection | effective candidate fields at top level; `record`, `raw`, `present`, `file`, `note`; `projection`; `this` as the invocation-context record or null |
+| query summary | `values`; the fixed operation time and timezone |
 | lifecycle guard | current draft fields at top level; `record`, `raw`, `present`, `old`, `file`, `operation` |
 | workflow variable, trigger, or workflow condition | `event`, `workflow`, `trigger`, `vars` |
 | workflow step condition or input | `event`, `workflow`, `trigger`, `steps`, `vars`; `item` during iteration |
@@ -53,10 +54,10 @@ record fields.
 An unavailable system binding is a compile or preflight diagnostic. For example,
 `steps` is unavailable to a trigger condition because no step has run.
 
-The system names `record`, `raw`, `present`, `file`, `note`, `this`, `old`,
-`operation`, `event`, `workflow`, `trigger`, `steps`, `vars`, and `item` are
-reserved. A frontmatter field with one of those names remains available through
-`record.<field>` and `raw.<field>`.
+The system names `record`, `raw`, `present`, `file`, `note`, `projection`,
+`this`, `values`, `old`, `operation`, `event`, `workflow`, `trigger`, `steps`,
+`vars`, and `item` are reserved. A frontmatter field with one of those names
+remains available through `record.<field>` and `raw.<field>`.
 
 ### Query Context
 
@@ -67,9 +68,32 @@ contains persisted frontmatter. `note` is an alias for `record`.
 present.raw.status == false && record.status == "open"
 ```
 
-`file` supplies the metadata and helpers defined by the collection, query, and
-link profiles. An embedded query may receive `this`, which refers to its
-containing record.
+`file` supplies the candidate metadata and helpers defined by the collection,
+query, and link profiles. `projection` contains named query projections after
+their dependency-ordered evaluation.
+
+`this` is reserved for the query invocation-context record. It is null when no
+context is bound. A non-null context mirrors the candidate query namespaces:
+
+- `this.<field>`, `this.record.<field>`, and `this.note.<field>` expose
+  effective context values
+- `this.raw.<field>` exposes persisted context frontmatter
+- `this.present.record.<field>` and `this.present.raw.<field>` expose presence
+- `this.file` exposes context-file metadata and the helpers available to the
+  active profiles
+
+When an effective context field conflicts with the reserved members `record`,
+`note`, `raw`, `present`, or `file`, it remains available through
+`this.record.<field>` and `this.raw.<field>`.
+
+The host resolves and snapshots the context once before evaluating candidates.
+All candidates see the same immutable context, operation time, and timezone.
+Context link values and `this.file` helpers resolve relative to the context
+record; candidate values and `file` helpers resolve relative to the candidate.
+`this` is record-only and MUST NOT be repurposed as an arbitrary caller
+parameter map. A feature that adds parameters uses a distinct binding and
+declares its own context contract.
+Chapter 11 defines portable context binding and saved-view invocation.
 
 ### Matching Context
 

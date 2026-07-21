@@ -62,8 +62,11 @@ claim_profiles:
     requires: [core_read, cel]
     requirements:
       - query_context
+      - invocation_context
       - query_filtering
       - query_projections
+      - named_projections
+      - grouping_and_summaries
       - query_evaluation_diagnostics
   - id: links
     status: draft
@@ -126,6 +129,11 @@ fixture_sets:
     coverage_targets: [cel, cel_match, cel_query, links]
     files:
       - cel/cel-profile.yaml
+  - id: views
+    description: Ordinary view records resolve named queries, invocation context, and advisory presentation.
+    coverage_targets: [cel_query]
+    files:
+      - views/view-records.yaml
   - id: runtime_contracts
     description: runtime registries, event/action validation, implicit contracts, and materialization.
     coverage_targets: [runtime_contracts/0.1]

@@ -101,10 +101,10 @@ groups:
           frontmatter_not_contains:
             - status
 
-      - name: "effective read still exposes read defaults after create"
+      - name: "effective read exposes read defaults without materializing them"
         operation: read
         input:
-          path: "tasks/no-status.md"
+          path: "tasks/existing.md"
           effective: true
         expect:
           valid: true
@@ -219,5 +219,5 @@ groups:
         expect:
           valid: false
           issues:
-            - code: lifecycle_conflict
+            - code: type_conflict
               field: stamp

@@ -236,6 +236,11 @@ collection:
 Projection values are available to queries. Persistence occurs only through an
 explicit write operation or runtime workflow.
 
+Collection projections enter the effective record and remain available through
+their declared field names. Query- and view-local named projections are
+separate, live under the `projection` CEL namespace, and never replace a
+collection projection or persisted field with the same name.
+
 ## Domain Namespaces
 
 Domain annotations use namespaced extension sections:

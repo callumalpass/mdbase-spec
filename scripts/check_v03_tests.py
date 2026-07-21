@@ -331,9 +331,7 @@ def run_executable_test(test: dict[str, Any], setup: dict[str, Any] | None = Non
         validator = Draft202012Validator(schema)
         for path in expand_paths(input_data.get("paths", [])):
             errors = list(validator.iter_errors(load_markdown_frontmatter(path)))
-            if errors:
-                raise AssertionError(format_schema_errors(path, errors))
-        assert_valid(expect)
+            assert_document_schema_result(path, errors, expect)
         return
 
     if operation == "embedded_json_schema_validate":
