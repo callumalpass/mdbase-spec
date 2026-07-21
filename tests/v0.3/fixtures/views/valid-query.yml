@@ -1,0 +1,31 @@
+types: [task]
+context:
+  this:
+    path: projects/alpha.md
+projections:
+  is_overdue:
+    expr: 'present.record.due && due < today() && status != "done"'
+where: 'status != "done"'
+select:
+  - title
+  - projection.is_overdue
+  - name: context_title
+    expr: 'this.title'
+    label: Project
+order_by:
+  - field: projection.is_overdue
+    direction: desc
+group_by:
+  - field: status
+    direction: asc
+summary_functions:
+  completion_rate:
+    expr: 'values.size() == 0 ? 0 : values.filter(v, v).size() * 100 / values.size()'
+summaries:
+  - field: projection.is_overdue
+    function: completion_rate
+    name: completion_rate
+limit: 20
+offset: 0
+include_body: false
+frontmatter: both

@@ -4,8 +4,9 @@
 
 This specification defines the behavior of tools that treat folders of
 Markdown files as typed, queryable, link-aware data collections. It covers
-collection discovery, JSON Schema types, validation, links, CEL queries, record
-operations, lifecycle policy, and optional runtime workflows.
+collection discovery, JSON Schema types, validation, links, CEL queries,
+ordinary records that save named views, record operations, lifecycle policy,
+and optional runtime workflows.
 
 ## Motivation
 
@@ -44,7 +45,8 @@ workflows.
 
 ## What a conforming tool does
 
-Depending on its conformance profiles, a tool implementing this specification:
+Depending on its conformance profiles and optional features, a tool implementing
+this specification:
 
 1. **Recognizes collections** by the presence of an `mdbase.yaml` configuration
    file.
@@ -56,9 +58,11 @@ Depending on its conformance profiles, a tool implementing this specification:
 5. **Resolves links** between records and exposes link-aware metadata.
 6. **Executes queries** using CEL expressions for filtering, ordering, and
    projection.
-7. **Performs record operations** with validation, reference handling, and
+7. **Executes saved view records** when it advertises the optional
+   `view_records` feature.
+8. **Performs record operations** with validation, reference handling, and
    lifecycle-managed values.
-8. **Loads runtime contracts and workflows** when it supports active behavior.
+9. **Loads runtime contracts and workflows** when it supports active behavior.
 
 Conformance profiles define the expected behavior for each capability and its
 dependencies.
@@ -207,6 +211,14 @@ status == "open" && "urgent" in tags
 due_date < today()
 assignee.asFile().team == "engineering"
 ```
+
+### View records save reusable queries
+
+A collection can define the ordinary `view` type and store one or more named
+queries in a Markdown record. Shared query scope, named-view filters,
+projections, ordering, grouping, and summaries remain machine-readable, while
+the Markdown body documents the view for people. Optional presentation metadata
+can select a renderer without changing query results.
 
 ### Validation is progressive
 

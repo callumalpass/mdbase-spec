@@ -96,6 +96,7 @@ groups:
           - cel_query.query_filtering
         operation: query
         input:
+          types: [task]
           where: 'status == "open"'
           order_by:
             - field: file.path

@@ -12,7 +12,7 @@ queries, writes, runtime preflight, workflow execution, and watching.
 | Collection Semantics | apply defaults, uniqueness, path policy, multi-type composition, and collection diagnostics |
 | CEL | compile and evaluate the shared mdbase CEL language and host contract |
 | CEL Match | evaluate `match.expr` against raw candidate records |
-| Query | evaluate CEL filters and projections and return query envelopes |
+| Query | evaluate contextual CEL filters, projections, grouping, summaries, and query envelopes |
 | Links | parse, resolve, validate, and traverse links |
 | Core Write | create, update, delete, rename, and batch records |
 | Lifecycle | apply standard managed-field policy during writes |
@@ -86,7 +86,9 @@ frontmatter selector. Implementations MAY add fields under `x-*`.
 The v0.3 core codes include `unsupported_profile`, `type_conflict`,
 `type_membership_changed`, `path_value_missing`, `schema_ref_forbidden`,
 `schema_ref_unresolved`, `schema_ref_cycle`, `format_invalid`,
-`lifecycle_expression_error`, and `concurrent_modification`. Runtime profile
+`lifecycle_expression_error`, `concurrent_modification`, `invalid_query`,
+`context_not_found`, `context_required`, `context_type_mismatch`,
+`view_not_found`, `invalid_view`, and `unsupported_presentation`. Runtime profile
 0.1 additionally defines `contract_conflict`, `contract_version_mismatch`,
 `event_provider_mismatch`, `provider_version_mismatch`, `capability_denied`,
 `policy_not_selected`, `executor_not_selected`, and
@@ -146,13 +148,42 @@ CEL Match implementations MUST:
 
 Query implementations MUST:
 
+- validate portable query objects against the canonical query schema
+- resolve and snapshot an optional same-collection invocation context
+- expose the complete `this` context contract, binding it to null when absent
+- evaluate named query projections in dependency order before filtering
+- reject cyclic projection dependencies and duplicate result names with
+  `invalid_query`
 - evaluate `where` filters against the effective query context
 - evaluate requested CEL projections
 - support OR-based type filtering
 - support deterministic ordering and pagination
+- support deterministic grouping and built-in and custom summaries
 - return total-count and has-more metadata
+- return context, grouping, and summary metadata when requested
 - expose raw and effective frontmatter when requested
 - report per-record evaluation errors and continue evaluating remaining records
+
+## View Record Optional Feature
+
+View records do not define a separate conformance profile. They are ordinary
+typed records and require no runtime profile. An implementation advertises
+`view_records` through the existing `optional_features` member only when it:
+
+- validates view frontmatter against the canonical view schema
+- resolves a stable view-record ID or path plus a stable named-view ID
+- rejects duplicate named-view IDs with `invalid_view`
+- derives the executable query using the inheritance and merge rules in
+  Chapter 11
+- applies `context.this.on_missing` and context type constraints before query
+  execution
+- reports the selected view and resolved context in query result metadata
+- treats presentation metadata as advisory and preserves headless results when
+  a renderer is unavailable
+- keeps alternate dialect and renderer-specific data under `x-*` extensions
+
+A tool MAY advertise supported presentation identifiers separately in
+`optional_features`. Presentation support is not required for `view_records`.
 
 ## Links Requirements
 

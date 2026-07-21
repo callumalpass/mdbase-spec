@@ -98,6 +98,11 @@ Tools MAY support non-portable UI expression dialects. Portable stored v0.3
 files MUST use the mdbase CEL profile unless a feature declares a different
 extension namespace.
 
+View records use CEL for portable filters, projections, selections, and custom
+summaries. Compatibility tools MAY read another view or expression format, but
+alternate source and round-trip metadata belong under an `x-*` extension and do
+not change the meaning of the portable CEL fields.
+
 ## Version Compatibility
 
 Patch versions within the same stable minor version MUST be backward compatible.

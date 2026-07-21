@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mdbase.dev/schemas/v0.3/query.schema.json",
+  "title": "mdbase v0.3 query object",
+  "type": "object",
+  "properties": {
+    "types": { "$ref": "#/$defs/typeList" },
+    "context": { "$ref": "#/$defs/queryContext" },
+    "projections": { "$ref": "#/$defs/projectionSet" },
+    "where": { "$ref": "#/$defs/expression" },
+    "select": { "$ref": "#/$defs/select" },
+    "order_by": { "$ref": "#/$defs/orderBy" },
+    "group_by": { "$ref": "#/$defs/groupBy" },
+    "summary_functions": { "$ref": "#/$defs/summaryFunctionSet" },
+    "summaries": { "$ref": "#/$defs/summaries" },
+    "limit": { "type": "integer", "minimum": 0 },
+    "offset": { "type": "integer", "minimum": 0 },
+    "include_body": { "type": "boolean", "default": false },
+    "frontmatter": {
+      "enum": ["effective", "raw", "both"],
+      "default": "effective"
+    }
+  },
+  "patternProperties": {
+    "^x-[A-Za-z][A-Za-z0-9._:-]{0,127}$": { "$ref": "#/$defs/extension" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    },
+    "typeName": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,127}$"
+    },
+    "fieldName": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_:-]*$"
+    },
+    "expression": {
+      "type": "string",
+      "minLength": 1
+    },
+    "extension": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "typeList": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/typeName" }
+    },
+    "queryContext": {
+      "type": "object",
+      "required": ["this"],
+      "properties": {
+        "this": {
+          "type": "object",
+          "required": ["path"],
+          "properties": {
+            "path": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "projectionSet": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/fieldName" },
+      "additionalProperties": { "$ref": "#/$defs/projection" }
+    },
+    "projection": {
+      "type": "object",
+      "required": ["expr"],
+      "properties": {
+        "expr": { "$ref": "#/$defs/expression" },
+        "description": { "type": "string" }
+      },
+      "patternProperties": {
+        "^x-[A-Za-z][A-Za-z0-9._:-]{0,127}$": { "$ref": "#/$defs/extension" }
+      },
+      "additionalProperties": false
+    },
+    "select": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          { "type": "string", "minLength": 1 },
+          { "$ref": "#/$defs/selectExpression" }
+        ]
+      }
+    },
+    "selectExpression": {
+      "type": "object",
+      "required": ["name", "expr"],
+      "properties": {
+        "name": { "$ref": "#/$defs/fieldName" },
+        "expr": { "$ref": "#/$defs/expression" },
+        "label": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "patternProperties": {
+        "^x-[A-Za-z][A-Za-z0-9._:-]{0,127}$": { "$ref": "#/$defs/extension" }
+      },
+      "additionalProperties": false
+    },
+    "orderBy": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["field"],
+        "properties": {
+          "field": { "type": "string", "minLength": 1 },
+          "direction": { "enum": ["asc", "desc"], "default": "asc" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "groupBy": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["field"],
+        "properties": {
+          "field": { "type": "string", "minLength": 1 },
+          "direction": { "enum": ["asc", "desc"], "default": "asc" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "summaryFunctionSet": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/fieldName" },
+      "additionalProperties": { "$ref": "#/$defs/summaryFunction" }
+    },
+    "summaryFunction": {
+      "type": "object",
+      "required": ["expr"],
+      "properties": {
+        "expr": { "$ref": "#/$defs/expression" },
+        "description": { "type": "string" }
+      },
+      "patternProperties": {
+        "^x-[A-Za-z][A-Za-z0-9._:-]{0,127}$": { "$ref": "#/$defs/extension" }
+      },
+      "additionalProperties": false
+    },
+    "summaries": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/summary" }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["field", "function"],
+      "properties": {
+        "field": { "type": "string", "minLength": 1 },
+        "function": { "$ref": "#/$defs/identifier" },
+        "name": { "$ref": "#/$defs/fieldName" },
+        "label": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

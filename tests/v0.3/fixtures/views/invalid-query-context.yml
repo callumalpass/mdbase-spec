@@ -1,0 +1,4 @@
+where: 'this.status == "active"'
+context:
+  this:
+    path: ""

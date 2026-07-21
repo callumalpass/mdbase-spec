@@ -82,6 +82,21 @@ lifecycle guards.
 `match.where` uses the standalone structured predicate language defined in
 Chapter 07.
 
+## View
+
+A view is an ordinary Markdown record whose matched type is `view`. It stores
+shared query scope and one or more named queries, with optional advisory
+presentation metadata.
+
+Views do not introduce a second query engine. A view-aware tool resolves a
+named view to the query model from Chapter 11 and executes it through the Query
+profile. Tools that do not support view execution continue to read and validate
+view files as ordinary typed records.
+
+View records are passive collection data. Rendering a view, registering a
+renderer, or connecting user interaction to actions may be tool- or
+runtime-specific, but the record itself is not a runtime contract.
+
 ## Link
 
 A link is a frontmatter value or body reference that can resolve to another

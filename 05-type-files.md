@@ -170,6 +170,19 @@ type-file frontmatter against the v0.3 type-file JSON Schema.
 The built-in schema is authoritative during bootstrap. A materialized
 `_types/meta.md` mirrors and documents that behavior.
 
+## View Type
+
+Saved views use the ordinary `view` type defined by
+`schemas/v0.3/view.schema.json`. A collection that stores portable view records
+SHOULD materialize `_types/view.md` with `match.where.type: view` and a local
+reference to that schema. The repository's `_types/view.md` is the canonical
+materialization.
+
+Unlike the meta type, the view type is not required for bootstrap and is not a
+built-in control-file category. A view file remains an ordinary Markdown record
+and participates in normal reads, validation, links, writes, and type matching.
+View-aware execution is the optional behavior defined in Chapter 11.
+
 ## Type Membership
 
 Records may select types explicitly or through inferred matching. Chapter 07

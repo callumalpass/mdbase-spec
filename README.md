@@ -23,6 +23,7 @@ The current specification is **v0.3.0**.
 - collection-aware defaults, uniqueness rules, and validation
 - portable links between Markdown records
 - CEL expressions for filtering, ordering, and projections
+- ordinary Markdown view records for saved queries and advisory presentation
 - consistent create, read, update, delete, rename, and batch operations
 - lifecycle policies for IDs, timestamps, slugs, and managed values
 - optional runtime contracts for events, actions, capabilities, and workflows
@@ -107,7 +108,7 @@ order_by:
 | --- | --- |
 | Understand the model | [Overview](./00-overview.md) and [Concepts](./01-concepts.md) |
 | Create a collection | [Collection Layout](./02-collection-layout.md), [Configuration](./04-configuration.md), and [Type Files](./05-type-files.md) |
-| Validate or query records | [JSON Schema Profile](./06-json-schema-profile.md), [CEL Profile](./10-cel-profile.md), and [Querying](./11-querying.md) |
+| Validate, query, or save views over records | [JSON Schema Profile](./06-json-schema-profile.md), [CEL Profile](./10-cel-profile.md), and [Querying](./11-querying.md) |
 | Add links or managed fields | [Links](./08-links.md) and [Lifecycle](./09-lifecycle.md) |
 | Define automation | [Runtime Contracts](./13-runtime-contracts.md) and [Workflows](./14-workflows.md) |
 | Migrate a v0.2 collection | [Migrations And Compatibility](./15-migrations-and-compatibility.md) |

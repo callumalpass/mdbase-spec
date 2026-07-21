@@ -25,6 +25,12 @@
           "frontmatter": {
             "type": "object"
           },
+          "raw_frontmatter": {
+            "type": "object"
+          },
+          "values": {
+            "type": "object"
+          },
           "body": {
             "type": "string"
           }
@@ -42,6 +48,38 @@
         },
         "has_more": {
           "type": "boolean"
+        },
+        "context": {
+          "type": "object",
+          "required": ["path"],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "view": {
+          "type": "object",
+          "required": ["path", "id"],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/group"
+          }
         }
       },
       "additionalProperties": true
@@ -53,5 +91,24 @@
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "group": {
+      "type": "object",
+      "required": ["values", "count", "summaries"],
+      "properties": {
+        "values": {
+          "type": "object"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "summaries": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
 }
