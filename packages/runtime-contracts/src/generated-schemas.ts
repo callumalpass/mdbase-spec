@@ -669,6 +669,12 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
             "frontmatter": {
               "type": "object"
             },
+            "raw_frontmatter": {
+              "type": "object"
+            },
+            "values": {
+              "type": "object"
+            },
             "body": {
               "type": "string"
             }
@@ -689,6 +695,43 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
           },
           "has_more": {
             "type": "boolean"
+          },
+          "context": {
+            "type": "object",
+            "required": [
+              "path"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          },
+          "view": {
+            "type": "object",
+            "required": [
+              "path",
+              "id"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/group"
+            }
           }
         },
         "additionalProperties": true
@@ -700,7 +743,30 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
         }
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "$defs": {
+      "group": {
+        "type": "object",
+        "required": [
+          "values",
+          "count",
+          "summaries"
+        ],
+        "properties": {
+          "values": {
+            "type": "object"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "summaries": {
+            "type": "object"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
   },
   "typeFile": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
