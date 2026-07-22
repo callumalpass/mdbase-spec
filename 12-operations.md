@@ -127,6 +127,11 @@ result:
       views:
         - id: today
           name: Today
+          properties:
+            - key: title
+              label: Task
+            - key: urgency
+              label: Urgency
           presentation:
             type: tasknotes.task-list
   meta:
@@ -140,6 +145,13 @@ format identifier. `source.revision` is an opaque token for the source content.
 format. Each nested descriptor exposes the stable named-view ID, its display
 name, and its optional presentation metadata. Discovery order is ascending by
 source path and then source-defined named-view order.
+
+`properties` lists the named view's result values in display order. Each entry
+has the result `key` and may include `label`, `description`, `format`, and
+`hidden` metadata. Canonical view records derive this list from `select`.
+Compatible external sources derive it from their ordered property list and
+property metadata. Projection and formula results use the same descriptors as
+persisted fields.
 
 Malformed configured sources are omitted from `result.views` and reported as
 warning diagnostics. Reading a malformed source explicitly produces
