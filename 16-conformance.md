@@ -174,6 +174,7 @@ An implementation advertises `view_records` through `optional_features` when it:
 - rejects duplicate named-view IDs with `invalid_view`
 - derives the executable query using the inheritance and merge rules in
   Chapter 11
+- exposes selected result properties in display order with their metadata
 - applies `context.this.on_missing` and context type constraints before query
   execution
 - reports the selected view and resolved context in query result metadata
@@ -195,6 +196,7 @@ An implementation advertises `obsidian_bases_views` through
   coercions
 - combines source and named-view filters with AND
 - applies source order, sort, group, limit, and presentation metadata
+- exposes the source's ordered properties and display names
 - returns the saved-view headless result envelope
 - keeps `.base` sources authoritative throughout discovery and execution
 

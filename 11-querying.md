@@ -379,6 +379,10 @@ available to presentation without giving presentation its own projection
 language. A named view with no `presentation` is a complete headless saved
 query.
 
+Saved-view discovery exposes the selected outputs as ordered property
+descriptors. A renderer uses those descriptors to preserve selection order and
+labels while reading the corresponding values from each result row.
+
 Presentation metadata is advisory. Filtering, projection, ordering, grouping,
 summaries, pagination, and the headless result envelope retain their canonical
 query semantics. Headless execution succeeds for every renderer identifier. A

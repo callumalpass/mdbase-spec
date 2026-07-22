@@ -117,6 +117,11 @@ groups:
           id: task.views
           version: 1
           name: Task views
+          properties:
+            title:
+              label: Task
+            projection.contextual_title:
+              label: Contextual title
           query:
             types: [task]
             where: 'status != "archived"'
@@ -215,6 +220,11 @@ groups:
               views:
                 - id: project-open
                   name: Open tasks for project
+                  properties:
+                    - key: title
+                      label: Task
+                    - key: contextual_title
+                      label: Contextual title
                   presentation:
                     type: tasknotes.task-list
                 - id: direct
