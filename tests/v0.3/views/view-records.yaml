@@ -200,6 +200,35 @@ groups:
               name: Second
           ---
     tests:
+      - name: "view discovery returns stable source and named-view descriptors"
+        operation: list_views
+        input: {}
+        expect:
+          valid: true
+          views:
+            - id: task.views
+              name: Task views
+              source:
+                path: views/tasks.md
+                format: mdbase.view
+                writable: true
+              views:
+                - id: project-open
+                  name: Open tasks for project
+                  presentation:
+                    type: tasknotes.task-list
+                - id: direct
+                  name: Direct invocation
+                - id: optional
+                  name: Optional context
+                - id: context-shape
+                  name: Complete context shape
+          meta:
+            total_count: 1
+          diagnostics:
+            - code: invalid_view
+              severity: warning
+
       - name: "explicit context is fixed while candidates change"
         id: views.explicit_context
         covers:
@@ -281,6 +310,17 @@ groups:
             - tasks/alpha-done.md
             - tasks/alpha-open.md
             - tasks/beta-open.md
+
+      - name: "an explicit null context overrides the view default"
+        operation: execute_view
+        input:
+          path: views/tasks.md
+          view: direct
+          context: null
+        expect:
+          valid: true
+          context: null
+          paths: []
 
       - name: "optional missing context binds this to null"
         operation: execute_view
@@ -387,6 +427,57 @@ groups:
             second:
               expr: 'projection.first'
           select: [projection.first]
+        expect:
+          valid: false
+          diagnostics:
+            - code: invalid_query
+
+      - name: "computed named-projection references participate in cycle detection"
+        operation: query
+        input:
+          types: [task]
+          projections:
+            first:
+              expr: 'projection["second"]'
+            second:
+              expr: 'projection["first"]'
+          select: [projection.first]
+        expect:
+          valid: false
+          diagnostics:
+            - code: invalid_query
+
+      - name: "projection-like text inside a string is not a dependency"
+        operation: query
+        input:
+          types: [task]
+          projections:
+            first:
+              expr: '"projection.second"'
+            second:
+              expr: 'projection.first'
+          select: [projection.second]
+        expect:
+          valid: true
+          results:
+            - path: tasks/alpha-done.md
+              values:
+                second: projection.second
+            - path: tasks/alpha-open.md
+              values:
+                second: projection.second
+            - path: tasks/archived.md
+              values:
+                second: projection.second
+            - path: tasks/beta-open.md
+              values:
+                second: projection.second
+
+      - name: "invalid CEL syntax fails query preflight"
+        operation: query
+        input:
+          types: [missing-type]
+          where: 'status =='
         expect:
           valid: false
           diagnostics:

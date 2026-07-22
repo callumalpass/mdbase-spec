@@ -87,9 +87,34 @@ exports.
 
 ## Obsidian Bases Views
 
-Obsidian `.base` files are compatibility inputs, not mdbase records required by
-Core Read. An adapter may import, execute, or export them through the ordinary
-view-record model from Chapter 11.
+Obsidian `.base` files are external saved-view sources. A collection provider
+discovers configured sources and exposes them through the saved-view operations
+in Chapter 12. Core Read continues to discover records through the collection's
+record extensions.
+
+Collections enable discovery with a namespaced configuration section:
+
+```yaml
+x-obsidian:
+  bases:
+    include:
+      - TaskNotes/Views/**/*.base
+    create_folder: TaskNotes/Views
+    default_for_new_views: true
+```
+
+`include` contains collection-relative glob patterns. The provider MUST apply
+the same path-boundary and symlink protections used for record discovery.
+`create_folder` identifies the preferred location for new Obsidian sources.
+`default_for_new_views` makes that source format the collection's default when
+a view-creation interface offers no explicit format. Providers advertising
+write support use these values when creating a source.
+
+The `.base` file remains authoritative for a discovered Obsidian source.
+`list_views` returns `source.format: obsidian.base`, a revision derived from the
+source bytes, and a stable named-view ID for each contained view. Stable IDs are
+derived deterministically from view names when the source format supplies no
+ID. Collisions receive deterministic source-order suffixes.
 
 The structural mapping is:
 
@@ -107,19 +132,25 @@ The structural mapping is:
 | view `type` | `presentation.type` |
 | plugin view keys | presentation options or `x-*` extension data |
 
-An adapter SHOULD parse the source dialect into an inspectable syntax tree and
-translate it to CEL only when behavior can be preserved. A partial translation
-MUST report unsupported expressions, functions, value coercions, or renderer
-features. It MUST NOT silently label a behavior-changing translation as
-portable. Lossless source and round-trip metadata may be retained under
-`x-obsidian`.
+Executing an Obsidian source evaluates its filters and formulas with Obsidian
+Bases expression semantics. The adapter parses the source dialect into an
+inspectable syntax tree and applies the source dialect's value coercion, date,
+link, file, formula, and error behavior. Translation to canonical CEL is an
+export operation and succeeds only when behavior is preserved. Translation
+diagnostics identify unsupported expressions, functions, coercions, or
+renderer features. Lossless source and round-trip metadata may be retained
+under `x-obsidian`.
+
+Execution returns the headless result envelope from Chapter 12. Selected and
+presentation-mapped values appear under each row's `values`; renderer metadata
+may approximate layout while retaining the source's filtering, formula,
+ordering, grouping, and pagination semantics.
 
 Obsidian placement state maps to the portable invocation context rather than to
 query semantics: opening a Base directly supplies the view definition, an
 embed supplies its embedding record, and an active-file interface supplies its
-active record. The adapter resolves that host state before calling the query or
-view executor. Portable mdbase execution does not inspect editor workspace
-state.
+active record. The adapter resolves that host state into an explicit invocation
+context before calling the query or view executor.
 
 ## Runtime Workflows
 

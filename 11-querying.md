@@ -264,11 +264,9 @@ empty object.
 
 ## Saved View Records
 
-A saved view is an ordinary Markdown record matched by the `view` type. It is
-not a runtime contract and does not introduce a second query language or query
-engine. The specification does not define a separate persisted query-record
-kind: a query is the reusable value object above, and a view record is its
-portable persisted container. The canonical record schema is
+A saved view is an ordinary Markdown record matched by the `view` type. The
+canonical query object above supplies its execution semantics, and the view
+record provides a portable persisted container. The canonical record schema is
 `schemas/v0.3/view.schema.json`; a collection can materialize the corresponding
 `_types/view.md` type file.
 
@@ -329,13 +327,14 @@ Record-level property metadata and summary functions remain available to every
 named view. Resolving an unknown view record or named-view ID produces
 `view_not_found`.
 
-View execution returns the ordinary query envelope and adds
+View execution returns the query envelope and adds
 `meta.view: { path, id }`, using the resolved view-record path and named-view
-ID. It does not introduce a second result format.
+ID.
 
 Property-metadata keys MAY name effective fields, `file.*` values,
 `projection.*` values, or selection outputs. They provide labels, descriptions,
-format hints, and visibility hints only; they do not add values to `select`.
+format hints, and visibility hints. `select` remains the source of result
+values.
 
 ### View invocation context
 
@@ -380,20 +379,18 @@ available to presentation without giving presentation its own projection
 language. A named view with no `presentation` is a complete headless saved
 query.
 
-Presentation metadata MUST NOT affect filtering, projection, ordering,
-grouping, summaries, pagination, or the headless result envelope. An unknown
-renderer does not prevent headless execution. A request that specifically asks
-for unavailable rendering reports `unsupported_presentation` and may use the
-declared fallback.
+Presentation metadata is advisory. Filtering, projection, ordering, grouping,
+summaries, pagination, and the headless result envelope retain their canonical
+query semantics. Headless execution succeeds for every renderer identifier. A
+request for rendered output reports `unsupported_presentation` when neither the
+requested renderer nor its declared fallback is available.
 
-Tool-specific source syntax, renderer configuration, and round-trip data use
-`x-*` extensions. An Obsidian Bases adapter, for example, may translate Bases
-filters and formulas to portable CEL while preserving untranslatable source
-under `x-obsidian`.
+Source syntax, renderer configuration, and round-trip data use `x-*`
+extensions. Chapter 15 defines the adapter contract for Obsidian Bases sources.
 
 ### Optional support
 
-All Core Read implementations treat a view file as an ordinary typed record.
-A tool advertises `view_records` in its existing `optional_features` claim only
-when it resolves and executes named views with the semantics in this chapter.
-No runtime profile is required.
+Core Read implementations treat a canonical view file as an ordinary typed
+record. A tool advertises `view_records` in its `optional_features` claim when
+it resolves, lists, and executes named views with the semantics in this
+chapter.
