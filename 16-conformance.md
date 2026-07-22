@@ -166,11 +166,10 @@ Query implementations MUST:
 
 ## View Record Optional Feature
 
-View records do not define a separate conformance profile. They are ordinary
-typed records and require no runtime profile. An implementation advertises
-`view_records` through the existing `optional_features` member only when it:
+An implementation advertises `view_records` through `optional_features` when it:
 
 - validates view frontmatter against the canonical view schema
+- lists view records with stable source and named-view descriptors
 - resolves a stable view-record ID or path plus a stable named-view ID
 - rejects duplicate named-view IDs with `invalid_view`
 - derives the executable query using the inheritance and merge rules in
@@ -178,12 +177,32 @@ typed records and require no runtime profile. An implementation advertises
 - applies `context.this.on_missing` and context type constraints before query
   execution
 - reports the selected view and resolved context in query result metadata
-- treats presentation metadata as advisory and preserves headless results when
-  a renderer is unavailable
+- applies presentation metadata as advisory input while preserving canonical
+  headless results
 - keeps alternate dialect and renderer-specific data under `x-*` extensions
 
 A tool MAY advertise supported presentation identifiers separately in
-`optional_features`. Presentation support is not required for `view_records`.
+`optional_features`.
+
+An implementation advertises `obsidian_bases_views` through
+`optional_features` when it:
+
+- discovers `.base` sources selected by `x-obsidian.bases.include`
+- assigns deterministic named-view IDs and source revisions
+- parses filters and formulas before candidate evaluation
+- evaluates the Obsidian Bases expression dialect, including formula
+  dependencies, file and link values, date and duration behavior, methods, and
+  coercions
+- combines source and named-view filters with AND
+- applies source order, sort, group, limit, and presentation metadata
+- returns the saved-view headless result envelope
+- keeps `.base` sources authoritative throughout discovery and execution
+
+Conformance suites for `obsidian_bases_views` MUST include an oracle corpus
+captured from the supported Obsidian expression environment. Each case records
+the expression, evaluation context, expected value or error, and source
+environment version. Known upstream divergences are identified individually in
+the corpus.
 
 ## Links Requirements
 

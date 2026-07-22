@@ -14,6 +14,11 @@ Core operations:
 - rename
 - batch
 
+Optional saved-view operations:
+
+- list_views
+- execute_view
+
 ## Read
 
 Read returns a record by path, including:
@@ -102,6 +107,64 @@ Recommended behavior:
 - support dry-run with full diagnostics
 - report per-operation result and diagnostics
 - stop on first error unless configured otherwise
+
+## Saved Views
+
+`list_views` discovers the saved-view sources available through the collection
+provider. Its result has this shape:
+
+```yaml
+valid: true
+result:
+  views:
+    - id: task.views
+      name: Task views
+      source:
+        path: views/tasks.md
+        format: mdbase.view
+        revision: opaque-source-revision
+        writable: true
+      views:
+        - id: today
+          name: Today
+          presentation:
+            type: tasknotes.task-list
+  meta:
+    total_count: 1
+diagnostics: []
+```
+
+`source.path` is a collection-relative path. `source.format` is a stable source
+format identifier. `source.revision` is an opaque token for the source content.
+`source.writable` describes whether the provider accepts writes for that source
+format. Each nested descriptor exposes the stable named-view ID, its display
+name, and its optional presentation metadata. Discovery order is ascending by
+source path and then source-defined named-view order.
+
+Malformed configured sources are omitted from `result.views` and reported as
+warning diagnostics. Reading a malformed source explicitly produces
+`invalid_view`.
+
+`execute_view` accepts:
+
+```yaml
+path: views/tasks.md
+view: today
+context:
+  path: projects/alpha.md
+limit: 50
+offset: 0
+render: false
+```
+
+`path` and `view` select a descriptor returned by `list_views`. `context` binds
+the invocation context defined in Chapter 11. `limit` and `offset` override the
+named view's pagination for this invocation. The provider evaluates the
+source's declared expression dialect and returns the query result envelope with
+`meta.view`.
+
+`render: false` requests the headless result and is the default. `render: true`
+requests renderer output using the selected presentation metadata.
 
 ## Concurrency
 

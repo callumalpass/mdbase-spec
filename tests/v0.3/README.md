@@ -82,6 +82,7 @@ Future v0.3 adapters should support these operations:
 - `read`
 - `validate`
 - `query`
+- `list_views`
 - `execute_view`
 - `evaluate_cel`
 - `create`
