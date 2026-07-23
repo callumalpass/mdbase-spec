@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{SPEC_TITLE}} - mdbase</title>
   <meta name="description" content="The full mdbase specification for typed markdown collections.">
+  <meta name="theme-color" content="#fdfdfd">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9670;</text></svg>">
+  <script src="theme.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -21,13 +23,16 @@
       </a>
       <span class="spec-version">{{SPEC_VERSION}}</span>
     </div>
-    <nav class="landing-nav" aria-label="Spec links">
-      <a href="/">Home</a>
-      <a href="runtime.html">Runtime</a>
-      <a href="ecosystem.html">Ecosystem</a>
-      {{SPEC_SWITCH_LINK}}
-      <a href="https://github.com/callumalpass/mdbase-spec">GitHub</a>
-    </nav>
+    <div class="spec-header-actions">
+      <select class="theme-select" aria-label="Color theme" data-theme-select><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+      <nav class="landing-nav" aria-label="Spec links">
+        <a href="/">Home</a>
+        <a href="runtime.html">Runtime</a>
+        <a href="ecosystem.html">Ecosystem</a>
+        {{SPEC_SWITCH_LINK}}
+        <a href="https://github.com/callumalpass/mdbase-spec">GitHub</a>
+      </nav>
+    </div>
   </header>
 
   <button class="sidebar-scrim" id="sidebar-scrim" type="button" aria-label="Close section navigation" hidden></button>
