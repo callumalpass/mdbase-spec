@@ -18,6 +18,10 @@ Optional saved-view operations:
 
 - list_views
 - execute_view
+- read_view_source
+- create_view_source
+- update_view_source
+- delete_view_source
 
 ## Read
 
@@ -177,6 +181,41 @@ source's declared expression dialect and returns the query result envelope with
 
 `render: false` requests the headless result and is the default. `render: true`
 requests renderer output using the selected presentation metadata.
+
+### Saved-view source operations
+
+A provider that advertises a source as `writable: true` MUST support the four
+saved-view source operations. These operations exchange the complete source
+document so format-aware editors can preserve source data they do not
+interpret.
+
+`read_view_source` accepts a `path` from `list_views` and returns:
+
+```yaml
+path: TaskNotes/Views/tasks.base
+format: obsidian.base
+revision: sha256:opaque
+document: |
+  views:
+    - type: tasknotesTaskList
+      name: Tasks
+```
+
+`create_view_source` accepts `document` and may accept `path`, `format`, and
+`name`. When `path` is absent, the provider selects a collection-relative path
+using the requested format and the collection's format configuration. Creation
+MUST validate the complete document and MUST fail with `path_conflict` rather
+than replace an existing source.
+
+`update_view_source` accepts `path`, `document`, and optional `if_revision`.
+The complete candidate document MUST be valid before the current source is
+atomically replaced. `delete_view_source` accepts `path` and optional
+`if_revision`.
+
+All source operations apply the collection's path-boundary and symlink rules.
+Update and delete use the concurrency behavior defined below. A successful
+create or update returns the same fields as `read_view_source`; a successful
+delete returns `path` and `deleted: true`.
 
 ## Concurrency
 

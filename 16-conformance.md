@@ -200,6 +200,18 @@ An implementation advertises `obsidian_bases_views` through
 - returns the saved-view headless result envelope
 - keeps `.base` sources authoritative throughout discovery and execution
 
+An implementation advertises `writable_view_sources` through
+`optional_features` when it:
+
+- marks only writable source formats with `source.writable: true`
+- reads complete source documents with stable opaque revisions
+- validates complete candidate documents before create or update
+- creates sources without replacing an existing path
+- applies `if_revision` to update and delete
+- writes source replacements atomically
+- preserves source-format extension data supplied by the caller
+- makes successful mutations visible to subsequent list and execute operations
+
 Conformance suites for `obsidian_bases_views` MUST include an oracle corpus
 captured from the supported Obsidian expression environment. Each case records
 the expression, evaluation context, expected value or error, and source

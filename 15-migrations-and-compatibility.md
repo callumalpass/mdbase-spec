@@ -110,6 +110,12 @@ the same path-boundary and symlink protections used for record discovery.
 a view-creation interface offers no explicit format. Providers advertising
 write support use these values when creating a source.
 
+Write-capable providers validate the complete `.base` document before a
+source operation commits it. They preserve unknown top-level keys, view keys,
+property metadata, formulas, and presentation options supplied in the
+document. A source editor can therefore modify the structures it understands
+while round-tripping the remainder.
+
 The `.base` file remains authoritative for a discovered Obsidian source.
 `list_views` returns `source.format: obsidian.base`, a revision derived from the
 source bytes, and a stable named-view ID for each contained view. Stable IDs are
