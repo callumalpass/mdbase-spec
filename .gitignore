@@ -19,3 +19,4 @@ POST.md
 /.impeccable/critique
 __pycache__/
 *.py[cod]
+/.ops/
