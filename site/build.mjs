@@ -22,9 +22,15 @@ const STYLE_VERSION = createHash('sha256')
   .update(readFileSync(join(STATIC, 'style.css')))
   .digest('hex')
   .slice(0, 12);
+const THEME_VERSION = createHash('sha256')
+  .update(readFileSync(join(STATIC, 'theme.js')))
+  .digest('hex')
+  .slice(0, 12);
 
 function versionAssets(html) {
-  return html.replaceAll('style.css', `style.css?v=${STYLE_VERSION}`);
+  return html
+    .replaceAll('style.css', `style.css?v=${STYLE_VERSION}`)
+    .replaceAll('theme.js', `theme.js?v=${THEME_VERSION}`);
 }
 
 // ---------------------------------------------------------------------------
