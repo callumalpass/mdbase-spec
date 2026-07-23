@@ -10,6 +10,16 @@ colors:
   ink-muted: "oklch(54% 0.014 255)"
   line: "oklch(92% 0.006 255)"
   blue-accent: "oklch(45% 0.105 238)"
+dark-colors:
+  paper: "oklch(18.5% 0.012 255)"
+  paper-soft: "oklch(20.5% 0.013 255)"
+  paper-code: "oklch(21.5% 0.014 255)"
+  ink: "oklch(92% 0.008 255)"
+  ink-soft: "oklch(79% 0.01 255)"
+  ink-muted: "oklch(67% 0.012 255)"
+  line: "oklch(29% 0.012 255)"
+  line-strong: "oklch(40% 0.014 255)"
+  blue-accent: "oklch(73% 0.105 238)"
 typography:
   display:
     fontFamily: "Atkinson Hyperlegible, Segoe UI, sans-serif"
@@ -63,7 +73,7 @@ components:
 
 **Creative North Star: "A Clean Standards Document"**
 
-mdbase.dev is a calm, precise reading environment for people who implement the specification. White space, direct typography, pale rules, and real mdbase artifacts give the site its identity. The visual system keeps attention on the model, examples, and normative text.
+mdbase.dev is a calm, precise reading environment for people who implement the specification. Open space, direct typography, quiet rules, and real mdbase artifacts give the site its identity. The visual system keeps attention on the model, examples, and normative text in daylight or low light.
 
 ### Key characteristics
 
@@ -76,7 +86,9 @@ mdbase.dev is a calm, precise reading environment for people who implement the s
 
 ## 2. Colors
 
-The palette is white with blue-black ink. Hierarchy comes from type, spacing, and pale rules.
+The light palette is paper with blue-black ink. The dark palette uses deep
+blue-black paper with softened light ink. Hierarchy comes from type, spacing,
+and quiet rules in both themes.
 
 ### Primary
 
@@ -92,7 +104,18 @@ The palette is white with blue-black ink. Hierarchy comes from type, spacing, an
 
 ### Color rule
 
-Use blue for links, focus, and selected states. Keep actions white with restrained outlines or text treatment.
+Use blue for links, focus, and selected states. Keep actions on the current
+surface with restrained outlines or text treatment.
+
+### Theme contract
+
+Every page offers System, Light, and Dark. System follows
+`prefers-color-scheme`; an explicit choice is stored locally as `mdbase:theme`
+and applied before the stylesheet to prevent a flash. Components consume
+canvas, surface, surface-subtle, text, text-soft, text-muted, border,
+border-strong, accent, success, and danger roles rather than fixed palette
+values. Dark mode uses blue-black surfaces, not pure black, with lighter syntax
+and link colors for long-form reading.
 
 ## 3. Typography
 
@@ -122,7 +145,7 @@ Whitespace carries hierarchy at page scale. Within resource lists and the specif
 
 ## 5. Components
 
-- **Primary button:** white surface, pale neutral border, ink text, 3px radius, 44px minimum height.
+- **Primary button:** current surface, quiet neutral border, ink text, 3px radius, 44px minimum height.
 - **Secondary button:** the same light structure with quieter border emphasis.
 - **Resource row:** top rule with label, name, description, capabilities, and link aligned in columns.
 - **Code specimen:** paper-code surface, fine border, compact mono text, and restrained syntax colors.
