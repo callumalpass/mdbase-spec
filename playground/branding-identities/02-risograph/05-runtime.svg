@@ -1,0 +1,48 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Risograph Field Notes: Runtime</title>
+  <desc id="desc">Risograph identity study for Runtime.</desc>
+  <defs>
+    <pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.7" fill="#1e1919" opacity="0.18"/></pattern>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="34"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .paper { fill: #fff5dc; }
+    .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+    .thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .magenta { fill: #ff4f78; opacity: 0.9; mix-blend-mode: multiply; }
+    .cyan { fill: #1f9dff; opacity: 0.82; mix-blend-mode: multiply; }
+    .yellow { fill: #ffd447; opacity: 0.92; mix-blend-mode: multiply; }
+    .green { fill: #39bf7a; opacity: 0.9; mix-blend-mode: multiply; }
+    .label { fill: #1e1919; font: 800 42px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .small { fill: #1e1919; font: 750 24px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .tiny { fill: #1e1919; font: 700 17px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="paper"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.28"/>
+  <rect x="70" y="78" width="1060" height="520" fill="url(#dots)" opacity="0.55"/>
+  <text x="108" y="152" class="label" >Runtime</text>
+  <text x="110" y="194" class="small" >events, workflows, actions</text>
+  <path d="M190 154C278 126 380 154 428 236C480 326 446 438 354 486C262 534 150 494 112 396C78 308 102 184 190 154Z" class="cyan"/>
+  <path d="M486 104C608 72 748 134 790 252C832 370 758 498 632 518C508 538 402 448 398 320C394 218 414 122 486 104Z" class="yellow"/>
+  <path d="M806 132C938 82 1094 170 1110 318C1126 466 1004 574 860 542C742 516 686 392 720 274C740 204 752 152 806 132Z" class="magenta"/>
+  <text x="156" y="314" class="small" >file_modified</text>
+<text x="156" y="360" class="small" >workflow step</text>
+<text x="156" y="406" class="small" >record.patch</text>
+  <path d="M420 330H526M768 330H856" class="ink"/>
+  <path d="M512 296L560 330L512 364M842 296L890 330L842 364" class="ink"/>
+  <path d="M830 340C902 322 998 334 1060 368L1038 482C972 466 906 466 844 480C828 431 826 384 830 340Z" fill="#fff5dc" opacity="0.9"/>
+  <text x="854" y="388" class="tiny" >policy gate</text>
+<text x="854" y="422" class="tiny" >idempotent write</text>
+<text x="854" y="456" class="tiny" >effect log</text>
+  <path d="M108 418C254 376 412 400 540 494L474 604C342 514 214 498 82 548Z" class="green"/>
+  <path d="M164 552H1020" class="ink" opacity="0.74"/>
+  <path d="M252 522L300 552L252 582M532 522L580 552L532 582M812 522L860 552L812 582" class="ink" opacity="0.74"/>
+  <path d="M182 508C246 472 322 472 394 510M470 508C534 472 610 472 682 510M758 508C822 472 898 472 970 510" fill="none" class="thin" opacity="0.78"/>
+</svg>

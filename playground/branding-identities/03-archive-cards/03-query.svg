@@ -1,0 +1,48 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Archive Cards: Query</title>
+  <desc id="desc">Archive card identity study for Query.</desc>
+  <defs>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="52"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .bg { fill: #f3eadb; }
+    .card { fill: #fffaf0; stroke: #241c18; stroke-width: 4; }
+    .cardAlt { fill: #f8dfb7; stroke: #241c18; stroke-width: 4; }
+    .red { stroke: #b83232; fill: none; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+    .line { stroke: #241c18; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .stamp { fill: none; stroke: #b83232; stroke-width: 5; }
+    .label { fill: #241c18; font: 700 35px Georgia, "Times New Roman", serif; letter-spacing: 0; }
+    .small { fill: #241c18; font: 700 23px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+    .tiny { fill: #241c18; font: 650 16px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+    .stampText { fill: #b83232; font: 800 22px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="bg"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.25"/>
+  <path d="M90 86H318V142H90Z" fill="#fffaf0" stroke="#241c18" stroke-width="3" opacity="0.75"/>
+  <path d="M112 116H292" class="line" opacity="0.5"/>
+  <circle cx="1006" cy="104" r="36" fill="none" stroke="#b83232" stroke-width="5" opacity="0.5"/>
+  <path d="M1032 130L1084 182" class="red" opacity="0.5"/>
+<path d="M114 98C282 76 482 86 572 140L518 568C352 550 192 564 96 586C64 452 74 214 114 98Z" class="card"/>
+  <text x="126" y="158" class="label" >Query ledger</text>
+  <path d="M126 206H524M126 280H524M126 354H524M126 428H524" class="line"/>
+  <text x="146" y="254" class="small" >type == &quot;task&quot;</text>
+<text x="146" y="328" class="small" >status == &quot;open&quot;</text>
+<text x="146" y="402" class="small" >order: due</text>
+  <path d="M654 128C784 98 930 112 1050 180L990 532C884 492 750 492 624 534C614 402 620 270 654 128Z" class="cardAlt"/>
+  <text x="700" y="210" class="label" >results</text>
+  <text x="704" y="282" class="small" >deterministic rows</text>
+<text x="704" y="330" class="small" >body-aware filters</text>
+<text x="704" y="378" class="small" >metadata envelope</text>
+  <path d="M548 332H654" class="red"/>
+  <rect x="792" y="440" width="206" height="82" rx="8" class="stamp" transform="rotate(-7 895 481)"/>
+  <text x="828" y="490" class="stampText" transform="rotate(-7 895 481)">PORTABLE</text>
+  <path d="M100 84C132 70 169 67 208 77" class="line"/>
+  <path d="M982 582C1020 598 1062 594 1103 570" class="line"/>
+</svg>

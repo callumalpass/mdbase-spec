@@ -1,0 +1,56 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Signal Graph: Links</title>
+  <desc id="desc">Signal graph identity study for Links.</desc>
+  <defs>
+    <pattern id="signalGrid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" class="grid"/></pattern>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#32f29b" flood-opacity="0.45"/></filter>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="73"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .bg { fill: #fbfffb; }
+    .grid { stroke: #cceede; stroke-width: 1.2; }
+    .panel { fill: #ffffff; stroke: #14231c; stroke-width: 4; }
+    .nodeA { fill: #32f29b; stroke: #14231c; stroke-width: 5; }
+    .nodeB { fill: #38a7ff; stroke: #14231c; stroke-width: 5; }
+    .nodeC { fill: #ff5a7c; stroke: #14231c; stroke-width: 5; }
+    .line { stroke: #14231c; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .thin { stroke: #19b875; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .dash { stroke-dasharray: 8 12; }
+    .label { fill: #14231c; font: 800 36px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .small { fill: #14231c; font: 750 23px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .tiny { fill: #14231c; font: 700 16px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="bg"/>
+  <rect width="1200" height="676" fill="url(#signalGrid)" opacity="0.75"/>
+  <rect x="78" y="76" width="1046" height="524" rx="22" class="panel"/>
+  <circle cx="1018" cy="114" r="9" fill="#32f29b" stroke="#14231c" stroke-width="3"/>
+  <circle cx="1050" cy="114" r="9" fill="#38a7ff" stroke="#14231c" stroke-width="3"/>
+  <circle cx="1082" cy="114" r="9" fill="#ff5a7c" stroke="#14231c" stroke-width="3"/>
+  <path d="M920 150C938 126 958 126 976 150S1014 174 1032 150S1070 126 1092 150" fill="none" stroke="#19b875" stroke-width="3" opacity="0.62"/>
+  <path d="M892 190H1096" class="thin" opacity="0.24"/>
+  <text x="118" y="144" class="label" >Links</text>
+  <text x="120" y="180" class="small" >resolved markdown references</text>
+  <path d="M206 462C344 386 506 362 682 392C810 414 910 390 1018 310" class="thin dash" opacity="0.52"/>
+  <circle cx="1018" cy="310" r="54" fill="none" stroke="#19b875" stroke-width="3" opacity="0.3"/>
+  <path d="M884 188H1052M884 216H1016M884 244H1034" class="thin" opacity="0.28"/>
+  <circle cx="228" cy="304" r="68" class="nodeB" filter="url(#glow)"/>
+  <circle cx="420" cy="430" r="68" class="nodeA" filter="url(#glow)"/>
+  <circle cx="602" cy="284" r="86" class="nodeA" filter="url(#glow)"/>
+  <circle cx="816" cy="430" r="86" class="nodeC" filter="url(#glow)"/>
+  <circle cx="966" cy="292" r="60" class="nodeC" filter="url(#glow)"/>
+  <path d="M286 338L366 396M478 392L548 330M674 326L760 394M870 390L926 332" class="line dash"/>
+  <text x="566" y="292" class="tiny" >resolve</text>
+  <rect x="140" y="524" width="220" height="58" rx="29" fill="#ffffff" stroke="#14231c" stroke-width="4"/>
+  <text x="164" y="560" class="tiny" >[[alpha]]</text>
+  <rect x="398" y="524" width="230" height="58" rx="29" fill="#ffffff" stroke="#14231c" stroke-width="4"/>
+  <text x="422" y="560" class="tiny" >[Plan](b.md)</text>
+  <rect x="710" y="524" width="260" height="58" rx="29" fill="#ffffff" stroke="#14231c" stroke-width="4"/>
+  <text x="734" y="560" class="tiny" >id lookup</text>
+</svg>

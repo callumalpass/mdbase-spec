@@ -1,0 +1,43 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Cut Paper Model: Types</title>
+  <desc id="desc">Cut paper identity study for Types.</desc>
+  <defs>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="91"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .bg { fill: #fffdf8; }
+    .paper1 { fill: #f8c94a; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .paper2 { fill: #ff647d; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .paper3 { fill: #2fb879; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .paper4 { fill: #2f7df4; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .line { stroke: #1e1919; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .label { fill: #1e1919; font: 800 39px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .small { fill: #1e1919; font: 750 24px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .tiny { fill: #1e1919; font: 700 16px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="bg"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.18"/>
+  <path d="M214 190C316 142 448 170 504 266C560 362 496 494 380 522C264 550 152 484 136 370C124 286 146 222 214 190Z" class="paper1"/>
+  <path d="M438 134C552 86 706 124 762 236C818 348 730 488 592 494C470 500 392 404 406 292C414 222 390 154 438 134Z" class="paper4"/>
+  <path d="M680 192C810 132 1004 174 1068 310C1128 438 1012 564 856 534C728 510 654 394 684 276C692 244 648 206 680 192Z" class="paper2"/>
+  <text x="182" y="334" class="small" >fields</text>
+<text x="182" y="376" class="small" >defaults</text>
+<text x="182" y="418" class="small" >strict mode</text>
+  <path d="M518 456C596 430 698 440 768 474C756 508 728 524 688 520C624 512 572 516 526 530C510 504 512 474 518 456Z" fill="#fffdf8" stroke="#1e1919" stroke-width="4" filter="url(#softShadow)"/>
+  <text x="546" y="498" class="small" >inherits rules</text>
+  <path d="M318 274C430 238 564 246 684 306" class="line"/>
+  <path d="M822 126L1030 126L986 196L866 196Z" fill="#fffdf8" stroke="#1e1919" stroke-width="4" filter="url(#softShadow)"/>
+  <path d="M882 156H970" class="thin"/>
+  <path d="M806 504L1006 456" class="line"/>
+  <path d="M834 486L856 524M954 452L976 490" class="thin"/>
+  <text x="82" y="118" class="label" >Types</text>
+  <text x="84" y="154" class="small" >schema files with prose</text>
+</svg>

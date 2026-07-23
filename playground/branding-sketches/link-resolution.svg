@@ -1,0 +1,63 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">mdbase link resolution sketch</title>
+  <desc id="desc">A sketch of wikilink parsing, ID lookup, filename fallback, and resolved collection paths.</desc>
+  <defs>
+    <filter id="paper" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.81" numOctaves="2" seed="61"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.052"/></feComponentTransfer>
+    </filter>
+    <style>
+      .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-fat { stroke: #1e1919; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .dash { stroke-dasharray: 11 13; }
+      .label { fill: #1e1919; font: 650 27px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .small { fill: #1e1919; font: 600 18px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .tiny { fill: #1e1919; font: 600 14px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="676" fill="#fffdf8"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.42"/>
+
+  <path d="M104 148 C194 120 300 122 397 151 C424 159 437 180 430 208 L378 464 C372 493 350 510 320 509 C237 504 156 515 80 542 C53 552 31 537 30 508 C27 395 43 286 76 184 C82 165 91 153 104 148 Z" fill="#ffffff"/>
+  <path class="ink" d="M104 148 C194 120 300 122 397 151 C424 159 437 180 430 208 L378 464 C372 493 350 510 320 509 C237 504 156 515 80 542 C53 552 31 537 30 508 C27 395 43 286 76 184 C82 165 91 153 104 148 Z"/>
+  <text x="103" y="210" class="label">record.md</text>
+  <path class="ink-thin" d="M101 239 C178 218 292 221 395 252"/>
+  <text x="112" y="294" class="small">project: [[alpha]]</text>
+  <text x="112" y="335" class="small">see: [Plan](b.md)</text>
+  <text x="112" y="376" class="small">owner: ../team.md</text>
+  <path class="ink-thin" d="M117 422 C181 404 276 407 353 429"/>
+
+  <path d="M520 101 C606 79 704 92 777 133 C800 146 808 168 797 193 L709 407 C697 433 675 444 647 436 C580 416 506 416 433 435 C406 442 386 426 390 398 C405 302 435 205 477 126 C486 110 500 104 520 101 Z" fill="#f8c94a"/>
+  <path class="ink" d="M520 101 C606 79 704 92 777 133 C800 146 808 168 797 193 L709 407 C697 433 675 444 647 436 C580 416 506 416 433 435 C406 442 386 426 390 398 C405 302 435 205 477 126 C486 110 500 104 520 101 Z"/>
+  <text x="498" y="166" class="label">resolver</text>
+  <path class="ink-thin" d="M493 195 C565 176 675 184 758 223"/>
+  <text x="505" y="249" class="small">1. id field</text>
+  <text x="505" y="290" class="small">2. filename</text>
+  <text x="505" y="331" class="small">3. tiebreak</text>
+  <path d="M651 363 C673 355 699 360 713 377 C727 394 718 414 694 421 C671 428 644 422 634 405 C624 390 631 370 651 363 Z" fill="#28b47a"/>
+  <path class="ink-thin" d="M651 363 C673 355 699 360 713 377 C727 394 718 414 694 421 C671 428 644 422 634 405 C624 390 631 370 651 363 Z"/>
+  <text x="661" y="397" class="tiny">ok</text>
+
+  <path d="M810 161 C900 134 1005 135 1098 164 C1125 172 1138 193 1131 221 L1084 481 C1078 510 1057 528 1027 527 C946 522 865 532 787 558 C760 567 738 552 737 523 C733 409 749 300 781 198 C787 178 797 166 810 161 Z" fill="#ff5f75"/>
+  <path class="ink" d="M810 161 C900 134 1005 135 1098 164 C1125 172 1138 193 1131 221 L1084 481 C1078 510 1057 528 1027 527 C946 522 865 532 787 558 C760 567 738 552 737 523 C733 409 749 300 781 198 C787 178 797 166 810 161 Z"/>
+  <text x="815" y="224" class="label">resolved</text>
+  <path class="ink-thin" d="M812 253 C888 235 1001 237 1098 266"/>
+  <text x="827" y="306" class="small">projects/alpha.md</text>
+  <text x="827" y="347" class="small">notes/b.md</text>
+  <text x="827" y="388" class="small">team.md</text>
+  <path class="ink-fat" d="M844 453 L873 480 L929 417"/>
+  <text x="945" y="461" class="tiny">format kept</text>
+
+  <path class="ink-thin dash" d="M383 292 C426 260 464 242 506 235"/>
+  <path class="ink-thin dash" d="M707 301 C758 295 794 298 833 314"/>
+  <path class="ink-thin dash" d="M707 352 C764 348 802 356 838 384"/>
+  <circle cx="505" cy="235" r="10" fill="#1f7aff" class="ink-thin"/>
+  <circle cx="833" cy="314" r="10" fill="#1f7aff" class="ink-thin"/>
+  <circle cx="838" cy="384" r="10" fill="#f8c94a" class="ink-thin"/>
+
+  <path class="ink-thin" d="M61 106 C91 88 124 84 159 93"/>
+  <path class="ink-thin" d="M1011 588 C1045 604 1083 601 1120 579"/>
+</svg>

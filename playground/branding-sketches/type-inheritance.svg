@@ -1,0 +1,60 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">mdbase type inheritance sketch</title>
+  <desc id="desc">A sketch of type files, inherited fields, child constraints, and merged validation rules.</desc>
+  <defs>
+    <filter id="paper" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="89"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.052"/></feComponentTransfer>
+    </filter>
+    <style>
+      .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-fat { stroke: #1e1919; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .dash { stroke-dasharray: 10 13; }
+      .label { fill: #1e1919; font: 650 27px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .small { fill: #1e1919; font: 600 18px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .tiny { fill: #1e1919; font: 600 14px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="676" fill="#fffdf8"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.42"/>
+
+  <path d="M124 144 C217 119 322 125 413 159 C440 170 451 191 442 219 L369 473 C361 502 339 517 309 512 C232 499 154 505 80 529 C53 538 32 523 34 494 C42 376 67 266 106 174 C112 159 118 149 124 144 Z" fill="#ffffff"/>
+  <path class="ink" d="M124 144 C217 119 322 125 413 159 C440 170 451 191 442 219 L369 473 C361 502 339 517 309 512 C232 499 154 505 80 529 C53 538 32 523 34 494 C42 376 67 266 106 174 C112 159 118 149 124 144 Z"/>
+  <text x="115" y="207" class="label">base.md</text>
+  <path class="ink-thin" d="M112 235 C190 217 306 226 406 263"/>
+  <text x="123" y="290" class="small">name: base</text>
+  <text x="123" y="331" class="small">strict: true</text>
+  <text x="123" y="372" class="small">title: string</text>
+  <text x="123" y="413" class="small">created: date</text>
+
+  <path d="M469 105 C563 79 673 84 765 123 C791 134 802 156 792 183 L703 438 C693 466 671 479 641 471 C563 452 483 454 403 480 C375 489 353 473 356 443 C368 327 403 216 449 134 C456 119 463 110 469 105 Z" fill="#f8c94a"/>
+  <path class="ink" d="M469 105 C563 79 673 84 765 123 C791 134 802 156 792 183 L703 438 C693 466 671 479 641 471 C563 452 483 454 403 480 C375 489 353 473 356 443 C368 327 403 216 449 134 C456 119 463 110 469 105 Z"/>
+  <text x="466" y="169" class="label">task.md</text>
+  <path class="ink-thin" d="M462 198 C540 181 654 193 755 233"/>
+  <text x="476" y="252" class="small">extends: base</text>
+  <text x="476" y="293" class="small">status: enum</text>
+  <text x="476" y="334" class="small">due: date</text>
+  <text x="476" y="375" class="small">project: link</text>
+
+  <path d="M801 173 C900 145 1015 150 1109 190 C1135 201 1146 224 1137 252 L1052 520 C1043 549 1019 564 988 558 C902 541 814 545 729 573 C700 583 678 566 680 535 C687 413 719 296 765 202 C773 185 785 177 801 173 Z" fill="#28b47a"/>
+  <path class="ink-fat" d="M801 173 C900 145 1015 150 1109 190 C1135 201 1146 224 1137 252 L1052 520 C1043 549 1019 564 988 558 C902 541 814 545 729 573 C700 583 678 566 680 535 C687 413 719 296 765 202 C773 185 785 177 801 173 Z"/>
+  <text x="805" y="239" class="label">effective</text>
+  <path class="ink-thin" d="M802 267 C883 249 1004 260 1103 299"/>
+  <text x="816" y="321" class="small">title + created</text>
+  <text x="816" y="362" class="small">status + due</text>
+  <text x="816" y="403" class="small">strict inherited</text>
+  <path d="M824 448 C883 433 956 439 1015 465 C1031 472 1037 486 1030 501 C1023 517 1007 524 990 518 C942 503 884 504 832 520 C815 525 801 516 800 499 C799 481 806 456 824 448 Z" fill="#ffffff"/>
+  <path class="ink-thin" d="M824 448 C883 433 956 439 1015 465 C1031 472 1037 486 1030 501 C1023 517 1007 524 990 518 C942 503 884 504 832 520 C815 525 801 516 800 499 C799 481 806 456 824 448 Z"/>
+  <text x="843" y="491" class="tiny">merged at validate()</text>
+
+  <path class="ink-thin dash" d="M366 332 C413 302 447 287 478 281"/>
+  <path class="ink-thin dash" d="M694 332 C743 329 779 338 819 360"/>
+  <circle cx="478" cy="281" r="10" fill="#1f7aff" class="ink-thin"/>
+  <circle cx="819" cy="360" r="10" fill="#ff5f75" class="ink-thin"/>
+
+  <path class="ink-thin" d="M65 101 C94 82 130 78 166 88"/>
+  <path class="ink-thin" d="M1014 602 C1049 617 1089 613 1127 590"/>
+</svg>

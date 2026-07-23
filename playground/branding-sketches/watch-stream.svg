@@ -1,0 +1,80 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">mdbase watch stream sketch</title>
+  <desc id="desc">A sketch-style illustration of Markdown files emitting ordered mdbase watch events.</desc>
+  <defs>
+    <filter id="paper" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="47"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.052"/>
+      </feComponentTransfer>
+    </filter>
+    <style>
+      .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-fat { stroke: #1e1919; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .dash { stroke-dasharray: 10 13; }
+      .label { fill: #1e1919; font: 650 27px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .small { fill: #1e1919; font: 600 18px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .tiny { fill: #1e1919; font: 600 14px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="676" fill="#fffdf8"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.42"/>
+
+  <path d="M115 151 C181 130 260 127 342 144 C366 149 379 168 374 192 L338 373 C333 397 315 411 290 409 C225 405 160 415 97 439 C74 448 54 436 51 411 C43 338 47 258 67 186 C72 168 87 156 115 151 Z" fill="#ffffff"/>
+  <path class="ink" d="M115 151 C181 130 260 127 342 144 C366 149 379 168 374 192 L338 373 C333 397 315 411 290 409 C225 405 160 415 97 439 C74 448 54 436 51 411 C43 338 47 258 67 186 C72 168 87 156 115 151 Z"/>
+  <text x="102" y="207" class="label">files</text>
+  <path class="ink-thin" d="M98 232 C169 211 262 212 337 232"/>
+  <text x="103" y="273" class="small">tasks/new.md</text>
+  <text x="103" y="314" class="small">tasks/old.md</text>
+  <text x="103" y="355" class="small">_types/task.md</text>
+
+  <path d="M165 449 C237 435 318 439 388 461 C409 468 418 485 411 506 L376 595 C369 615 352 625 330 620 C272 606 210 606 149 622 C127 628 110 617 106 595 C98 552 107 501 127 469 C134 458 147 452 165 449 Z" fill="#f8c94a"/>
+  <path class="ink" d="M165 449 C237 435 318 439 388 461 C409 468 418 485 411 506 L376 595 C369 615 352 625 330 620 C272 606 210 606 149 622 C127 628 110 617 106 595 C98 552 107 501 127 469 C134 458 147 452 165 449 Z"/>
+  <text x="153" y="504" class="label">cache</text>
+  <text x="153" y="542" class="tiny">rebuilt before event</text>
+  <path class="ink-thin" d="M164 570 C226 555 299 557 363 574"/>
+
+  <path d="M517 186 C565 152 633 148 686 179 C747 215 765 295 727 353 C691 407 616 426 557 395 C499 365 474 290 501 232 C505 222 510 202 517 186 Z" fill="#1f7aff"/>
+  <path class="ink-fat" d="M517 186 C565 152 633 148 686 179 C747 215 765 295 727 353 C691 407 616 426 557 395 C499 365 474 290 501 232 C505 222 510 202 517 186 Z"/>
+  <path d="M570 258 C592 234 630 229 657 247 C684 265 689 303 666 327 C643 352 605 356 579 337 C553 318 548 282 570 258 Z" fill="#fffdf8"/>
+  <path class="ink-thin" d="M570 258 C592 234 630 229 657 247 C684 265 689 303 666 327 C643 352 605 356 579 337 C553 318 548 282 570 258 Z"/>
+  <circle cx="620" cy="292" r="18" fill="#1e1919"/>
+  <path class="ink-thin" d="M619 150 C604 125 579 108 546 99"/>
+  <path class="ink-thin" d="M722 189 C752 174 785 171 820 180"/>
+  <path class="ink-thin" d="M508 379 C481 393 450 396 417 389"/>
+  <text x="515" y="466" class="label">watch()</text>
+
+  <path class="ink-thin dash" d="M357 277 C420 257 464 252 520 264"/>
+  <path class="ink-thin dash" d="M369 500 C441 463 494 419 543 362"/>
+  <path class="ink-thin dash" d="M721 341 C775 394 833 422 901 437"/>
+  <path class="ink-thin dash" d="M735 265 C807 257 860 261 923 286"/>
+  <circle cx="389" cy="269" r="10" fill="#28b47a" class="ink-thin"/>
+  <circle cx="431" cy="471" r="10" fill="#ff5f75" class="ink-thin"/>
+  <circle cx="804" cy="392" r="10" fill="#f8c94a" class="ink-thin"/>
+  <circle cx="848" cy="265" r="10" fill="#28b47a" class="ink-thin"/>
+
+  <path d="M905 165 C977 141 1057 144 1122 173 C1147 184 1157 204 1150 231 L1078 512 C1070 540 1050 554 1020 551 C948 544 872 550 795 570 C768 577 747 562 746 534 C742 430 756 326 789 217 C794 199 807 189 826 185 C852 180 878 173 905 165 Z" fill="#ffffff"/>
+  <path class="ink" d="M905 165 C977 141 1057 144 1122 173 C1147 184 1157 204 1150 231 L1078 512 C1070 540 1050 554 1020 551 C948 544 872 550 795 570 C768 577 747 562 746 534 C742 430 756 326 789 217 C794 199 807 189 826 185 C852 180 878 173 905 165 Z"/>
+  <text x="836" y="224" class="label">events</text>
+  <path class="ink-thin" d="M829 248 C925 226 1036 234 1120 266"/>
+
+  <path d="M843 286 C896 274 963 278 1022 296 C1035 300 1041 311 1037 324 L1029 351 C1025 365 1013 371 999 367 C950 354 892 351 838 361 C825 364 815 356 816 342 L819 308 C820 297 827 289 843 286 Z" fill="#28b47a"/>
+  <path class="ink-thin" d="M843 286 C896 274 963 278 1022 296 C1035 300 1041 311 1037 324 L1029 351 C1025 365 1013 371 999 367 C950 354 892 351 838 361 C825 364 815 356 816 342 L819 308 C820 297 827 289 843 286 Z"/>
+  <text x="843" y="326" class="tiny">file_created</text>
+
+  <path d="M821 384 C891 366 974 371 1040 394 C1054 399 1060 410 1055 424 L1045 455 C1041 468 1028 475 1014 470 C958 453 891 450 828 463 C814 466 804 457 806 443 L810 407 C811 395 814 386 821 384 Z" fill="#f8c94a"/>
+  <path class="ink-thin" d="M821 384 C891 366 974 371 1040 394 C1054 399 1060 410 1055 424 L1045 455 C1041 468 1028 475 1014 470 C958 453 891 450 828 463 C814 466 804 457 806 443 L810 407 C811 395 814 386 821 384 Z"/>
+  <text x="835" y="424" class="tiny">file_modified</text>
+  <text x="835" y="448" class="tiny">changed_fields: [status]</text>
+
+  <path d="M805 491 C854 476 916 476 972 493 C986 497 993 509 990 523 C987 538 975 546 960 542 C914 531 858 531 808 544 C793 548 781 540 780 524 C779 509 787 497 805 491 Z" fill="#ff5f75"/>
+  <path class="ink-thin" d="M805 491 C854 476 916 476 972 493 C986 497 993 509 990 523 C987 538 975 546 960 542 C914 531 858 531 808 544 C793 548 781 540 780 524 C779 509 787 497 805 491 Z"/>
+  <text x="827" y="524" class="tiny">type_changed</text>
+
+  <path class="ink-thin" d="M64 107 C93 87 126 82 163 90"/>
+  <path class="ink-thin" d="M1007 591 C1044 605 1081 601 1118 579"/>
+  <path class="ink-thin" d="M637 536 C662 553 696 554 730 538"/>
+</svg>

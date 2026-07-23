@@ -1,0 +1,61 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">mdbase runtime workflow sketch</title>
+  <desc id="desc">A sketch of an event triggering a workflow step, an action contract, and a record patch output.</desc>
+  <defs>
+    <filter id="paper" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.81" numOctaves="2" seed="97"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.052"/></feComponentTransfer>
+    </filter>
+    <style>
+      .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-fat { stroke: #1e1919; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .dash { stroke-dasharray: 10 13; }
+      .label { fill: #1e1919; font: 650 27px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .small { fill: #1e1919; font: 600 18px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .tiny { fill: #1e1919; font: 600 14px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="676" fill="#fffdf8"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.42"/>
+
+  <path d="M111 172 C199 144 302 146 393 174 C420 183 433 204 426 232 L378 486 C372 515 350 532 320 531 C240 527 161 538 86 565 C59 575 37 560 36 530 C33 415 49 304 82 203 C88 186 97 176 111 172 Z" fill="#28b47a"/>
+  <path class="ink" d="M111 172 C199 144 302 146 393 174 C420 183 433 204 426 232 L378 486 C372 515 350 532 320 531 C240 527 161 538 86 565 C59 575 37 560 36 530 C33 415 49 304 82 203 C88 186 97 176 111 172 Z"/>
+  <text x="108" y="234" class="label">event</text>
+  <path class="ink-thin" d="M105 261 C184 240 296 244 396 275"/>
+  <text x="116" y="315" class="small">file_modified</text>
+  <text x="116" y="356" class="small">path: task.md</text>
+  <text x="116" y="397" class="small">changed: status</text>
+
+  <path d="M464 106 C557 79 665 84 758 123 C785 134 796 157 786 185 L697 451 C688 480 665 494 635 487 C557 469 475 473 396 499 C367 508 345 492 348 461 C359 340 392 226 442 136 C450 121 457 111 464 106 Z" fill="#f8c94a"/>
+  <path class="ink-fat" d="M464 106 C557 79 665 84 758 123 C785 134 796 157 786 185 L697 451 C688 480 665 494 635 487 C557 469 475 473 396 499 C367 508 345 492 348 461 C359 340 392 226 442 136 C450 121 457 111 464 106 Z"/>
+  <text x="456" y="171" class="label">workflow</text>
+  <path class="ink-thin" d="M453 199 C537 181 660 194 755 233"/>
+  <text x="466" y="253" class="small">when: event</text>
+  <text x="466" y="294" class="small">step: classify</text>
+  <text x="466" y="335" class="small">then: patch</text>
+  <text x="466" y="376" class="small">idempotency_key</text>
+  <path d="M500 415 C552 400 617 404 674 428 C690 435 696 449 690 464 C683 480 668 487 651 482 C606 468 554 469 507 483 C490 488 476 480 475 464 C474 446 482 422 500 415 Z" fill="#ffffff"/>
+  <path class="ink-thin" d="M500 415 C552 400 617 404 674 428 C690 435 696 449 690 464 C683 480 668 487 651 482 C606 468 554 469 507 483 C490 488 476 480 475 464 C474 446 482 422 500 415 Z"/>
+  <text x="516" y="458" class="tiny">policy gates action</text>
+
+  <path d="M812 158 C906 130 1015 134 1108 168 C1135 178 1147 200 1139 228 L1074 500 C1067 530 1045 547 1014 545 C931 538 848 546 770 572 C742 581 720 566 720 536 C722 418 742 305 779 198 C786 180 796 163 812 158 Z" fill="#ff5f75"/>
+  <path class="ink" d="M812 158 C906 130 1015 134 1108 168 C1135 178 1147 200 1139 228 L1074 500 C1067 530 1045 547 1014 545 C931 538 848 546 770 572 C742 581 720 566 720 536 C722 418 742 305 779 198 C786 180 796 163 812 158 Z"/>
+  <text x="812" y="221" class="label">action</text>
+  <path class="ink-thin" d="M810 248 C893 228 1012 236 1108 270"/>
+  <text x="824" y="303" class="small">record.patch</text>
+  <text x="824" y="344" class="small">input schema</text>
+  <text x="824" y="385" class="small">output envelope</text>
+  <text x="824" y="426" class="small">effects logged</text>
+  <path class="ink-fat" d="M849 484 L878 511 L936 447"/>
+
+  <path class="ink-thin dash" d="M377 354 C424 324 451 307 467 299"/>
+  <path class="ink-thin dash" d="M690 335 C742 330 781 339 824 363"/>
+  <circle cx="467" cy="299" r="10" fill="#1f7aff" class="ink-thin"/>
+  <circle cx="824" cy="363" r="10" fill="#28b47a" class="ink-thin"/>
+
+  <path class="ink-thin" d="M64 105 C94 86 129 82 166 91"/>
+  <path class="ink-thin" d="M1011 600 C1048 615 1086 611 1125 589"/>
+</svg>

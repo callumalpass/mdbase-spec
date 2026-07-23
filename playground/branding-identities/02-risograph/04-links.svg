@@ -1,0 +1,49 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Risograph Field Notes: Links</title>
+  <desc id="desc">Risograph identity study for Links.</desc>
+  <defs>
+    <pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.7" fill="#1e1919" opacity="0.18"/></pattern>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="33"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .paper { fill: #fff5dc; }
+    .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+    .thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .magenta { fill: #ff4f78; opacity: 0.9; mix-blend-mode: multiply; }
+    .cyan { fill: #1f9dff; opacity: 0.82; mix-blend-mode: multiply; }
+    .yellow { fill: #ffd447; opacity: 0.92; mix-blend-mode: multiply; }
+    .green { fill: #39bf7a; opacity: 0.9; mix-blend-mode: multiply; }
+    .label { fill: #1e1919; font: 800 42px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .small { fill: #1e1919; font: 750 24px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .tiny { fill: #1e1919; font: 700 17px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="paper"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.28"/>
+  <rect x="70" y="78" width="1060" height="520" fill="url(#dots)" opacity="0.55"/>
+  <text x="108" y="152" class="label" >Links</text>
+  <text x="110" y="194" class="small" >resolved markdown references</text>
+  <circle cx="270" cy="356" r="170" class="cyan"/>
+  <circle cx="548" cy="256" r="140" class="yellow"/>
+  <circle cx="608" cy="474" r="136" class="green"/>
+  <circle cx="880" cy="358" r="180" class="magenta"/>
+  <path d="M338 328C406 282 454 260 500 252M376 408C454 450 504 468 548 472M680 448C756 418 814 386 870 350" class="ink"/>
+  <text x="144" y="320" class="small" >[[alpha]]</text>
+<text x="144" y="366" class="small" >[Plan](b.md)</text>
+<text x="144" y="412" class="small" >../team.md</text>
+  <path d="M750 292C822 274 918 286 980 320L958 434C892 418 826 418 764 432C748 383 746 336 750 292Z" fill="#fff5dc" opacity="0.9"/>
+  <text x="774" y="340" class="tiny" >id lookup</text>
+<text x="774" y="374" class="tiny" >filename fallback</text>
+<text x="774" y="408" class="tiny" >format preserved</text>
+  <path d="M640 94C746 74 858 130 900 230C934 310 902 396 830 436C742 486 614 450 566 350C510 234 548 112 640 94Z" class="yellow"/>
+  <path d="M194 522C322 424 462 422 596 510C736 604 872 562 1008 456" fill="none" class="ink" opacity="0.78"/>
+  <circle cx="194" cy="522" r="20" fill="#1e1919" opacity="0.88"/>
+  <circle cx="596" cy="510" r="20" fill="#1e1919" opacity="0.88"/>
+  <circle cx="1008" cy="456" r="20" fill="#1e1919" opacity="0.88"/>
+</svg>

@@ -1,0 +1,59 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">mdbase frontmatter states sketch</title>
+  <desc id="desc">A sketch of missing, null, and empty string frontmatter values with defaults applied only to missing fields.</desc>
+  <defs>
+    <filter id="paper" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.79" numOctaves="2" seed="53"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.052"/></feComponentTransfer>
+    </filter>
+    <style>
+      .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-fat { stroke: #1e1919; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .label { fill: #1e1919; font: 650 27px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .small { fill: #1e1919; font: 600 18px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .tiny { fill: #1e1919; font: 600 14px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="676" fill="#fffdf8"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.42"/>
+
+  <path d="M112 143 C197 118 296 120 377 147 C403 156 415 176 408 203 L360 452 C354 481 333 498 303 497 C233 493 162 502 94 525 C67 534 46 520 45 491 C43 383 56 277 83 181 C88 162 98 148 112 143 Z" fill="#ffffff"/>
+  <path class="ink" d="M112 143 C197 118 296 120 377 147 C403 156 415 176 408 203 L360 452 C354 481 333 498 303 497 C233 493 162 502 94 525 C67 534 46 520 45 491 C43 383 56 277 83 181 C88 162 98 148 112 143 Z"/>
+  <text x="105" y="205" class="label">missing</text>
+  <path class="ink-thin" d="M105 232 C173 213 267 214 351 235"/>
+  <text x="111" y="281" class="small">title: Note</text>
+  <text x="111" y="323" class="small">status: --</text>
+  <path class="ink-thin" d="M122 366 C173 351 247 352 315 370"/>
+  <text x="119" y="410" class="tiny">default applies</text>
+  <path class="ink-fat" d="M137 449 L166 476 L225 412"/>
+
+  <path d="M447 117 C530 99 628 109 705 143 C729 153 739 174 731 199 L665 459 C657 487 636 501 607 497 C538 487 468 492 398 514 C371 522 350 507 351 478 C356 365 377 261 412 157 C418 136 429 121 447 117 Z" fill="#f8c94a"/>
+  <path class="ink" d="M447 117 C530 99 628 109 705 143 C729 153 739 174 731 199 L665 459 C657 487 636 501 607 497 C538 487 468 492 398 514 C371 522 350 507 351 478 C356 365 377 261 412 157 C418 136 429 121 447 117 Z"/>
+  <text x="451" y="184" class="label">null</text>
+  <path class="ink-thin" d="M446 213 C512 198 603 204 685 232"/>
+  <text x="455" y="263" class="small">title: Note</text>
+  <text x="455" y="305" class="small">status: null</text>
+  <path class="ink-thin" d="M458 349 C509 337 575 341 636 360"/>
+  <text x="462" y="392" class="tiny">exists() == true</text>
+  <text x="462" y="421" class="tiny">required fails</text>
+
+  <path d="M778 149 C873 119 982 118 1078 148 C1105 157 1118 178 1111 206 L1061 484 C1056 513 1034 531 1004 530 C918 525 835 535 756 562 C729 571 707 556 706 527 C702 413 717 303 750 188 C756 167 765 153 778 149 Z" fill="#ff5f75"/>
+  <path class="ink" d="M778 149 C873 119 982 118 1078 148 C1105 157 1118 178 1111 206 L1061 484 C1056 513 1034 531 1004 530 C918 525 835 535 756 562 C729 571 707 556 706 527 C702 413 717 303 750 188 C756 167 765 153 778 149 Z"/>
+  <text x="790" y="209" class="label">empty</text>
+  <path class="ink-thin" d="M787 236 C868 217 977 219 1075 247"/>
+  <text x="795" y="286" class="small">title: ""</text>
+  <text x="795" y="328" class="small">status: open</text>
+  <path class="ink-thin" d="M799 373 C866 358 950 361 1031 382"/>
+  <text x="807" y="416" class="tiny">isEmpty() == true</text>
+  <text x="807" y="445" class="tiny">not missing</text>
+
+  <path d="M433 560 C535 531 661 531 774 561 C793 566 801 582 793 599 C783 620 764 628 741 622 C647 603 540 604 444 626 C421 631 402 622 395 601 C390 584 400 569 433 560 Z" fill="#1f7aff"/>
+  <path class="ink" d="M433 560 C535 531 661 531 774 561 C793 566 801 582 793 599 C783 620 764 628 741 622 C647 603 540 604 444 626 C421 631 402 622 395 601 C390 584 400 569 433 560 Z"/>
+  <text x="455" y="599" fill="#fffdf8" font-family="Azeret Mono, DejaVu Sans Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="20" font-weight="700">missing != null != ""</text>
+
+  <path class="ink-thin" d="M62 109 C90 91 124 87 159 95"/>
+  <path class="ink-thin" d="M1015 591 C1049 608 1086 605 1124 584"/>
+</svg>

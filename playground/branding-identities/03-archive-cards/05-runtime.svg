@@ -1,0 +1,49 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Archive Cards: Runtime</title>
+  <desc id="desc">Archive card identity study for Runtime.</desc>
+  <defs>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="54"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .bg { fill: #f3eadb; }
+    .card { fill: #fffaf0; stroke: #241c18; stroke-width: 4; }
+    .cardAlt { fill: #f8dfb7; stroke: #241c18; stroke-width: 4; }
+    .red { stroke: #b83232; fill: none; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+    .line { stroke: #241c18; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .stamp { fill: none; stroke: #b83232; stroke-width: 5; }
+    .label { fill: #241c18; font: 700 35px Georgia, "Times New Roman", serif; letter-spacing: 0; }
+    .small { fill: #241c18; font: 700 23px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+    .tiny { fill: #241c18; font: 650 16px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+    .stampText { fill: #b83232; font: 800 22px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="bg"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.25"/>
+  <path d="M88 88H252V138H88ZM88 150H252V200H88" fill="#fffaf0" stroke="#241c18" stroke-width="3" opacity="0.7"/>
+  <path d="M110 116H230M110 178H230" class="line" opacity="0.5"/>
+  <path d="M934 92H1092V138H934ZM956 138V178H1070V138" fill="#f8dfb7" stroke="#241c18" stroke-width="3" opacity="0.72"/>
+  <path d="M970 114H1058M980 158H1048" class="line" opacity="0.42"/>
+<path d="M128 160C191 138 291 148 336 202L282 490C226 472 146 486 110 508C78 374 88 276 128 160Z" class="card"/>
+  <path d="M434 112C518 90 638 100 692 154L638 494C560 476 464 490 416 512C384 378 394 228 434 112Z" class="cardAlt"/>
+  <path d="M820 160C895.6 138 1007.6 148 1058 202L1004 490C934.8 472 845.2 486 802 508C770 374 780 276 820 160Z" class="card"/>
+  <text x="136" y="220" class="label" >event</text>
+  <text x="452" y="172" class="label" >workflow</text>
+  <text x="830" y="220" class="label" >action</text>
+  <text x="130" y="292" class="small" >file_modified</text>
+  <text x="452" y="250" class="small" >workflow step</text>
+<text x="452" y="292" class="small" >policy gate</text>
+<text x="452" y="334" class="small" >idempotent</text>
+  <text x="832" y="292" class="small" >record.patch</text>
+<text x="832" y="334" class="small" >effect log</text>
+  <path d="M336 324H392M692 324H778" class="red"/>
+  <rect x="820" y="450" width="206" height="82" rx="8" class="stamp" transform="rotate(5 923 491)"/>
+  <text x="856" y="500" class="stampText" transform="rotate(5 923 491)">PORTABLE</text>
+  <path d="M100 84C132 70 169 67 208 77" class="line"/>
+  <path d="M982 582C1020 598 1062 594 1103 570" class="line"/>
+</svg>

@@ -1,0 +1,8 @@
+spec_version: "0.2.0"
+name: "Power Automate Agent Package"
+description: "Prototype mdbase runtime package for agent-assisted Power Automate development through pp."
+settings:
+  types_folder: "_types"
+  default_strict: false
+  exclude:
+    - "_types"

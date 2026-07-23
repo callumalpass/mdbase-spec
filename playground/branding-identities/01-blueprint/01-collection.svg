@@ -1,0 +1,53 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Blueprint Systems: Collection</title>
+  <desc id="desc">Blueprint identity study for Collection.</desc>
+  <defs>
+    <pattern id="minorGrid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" class="grid"/></pattern>
+    <pattern id="majorGrid" width="160" height="160" patternUnits="userSpaceOnUse"><path d="M160 0H0V160" class="major"/></pattern>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="10"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .bg { fill: #081d33; }
+    .grid { stroke: #60d8ff; stroke-width: 1; opacity: 0.16; }
+    .major { stroke: #60d8ff; stroke-width: 2; opacity: 0.24; }
+    .panel { fill: #0d2a47; stroke: #bdf2ff; stroke-width: 4; }
+    .panel2 { fill: #12395f; stroke: #6ee7ff; stroke-width: 3; }
+    .line { stroke: #bdf2ff; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .thin { stroke: #6ee7ff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .dash { stroke-dasharray: 10 12; }
+    .label { fill: #f1fbff; font: 700 34px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+    .small { fill: #d7f8ff; font: 650 22px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+    .tiny { fill: #9eeeff; font: 650 17px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+    .tag { fill: #081d33; font: 800 17px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="bg"/>
+  <rect width="1200" height="676" fill="url(#minorGrid)"/>
+  <rect width="1200" height="676" fill="url(#majorGrid)"/>
+  <rect x="72" y="72" width="1056" height="532" rx="10" class="panel"/>
+  <path d="M72 154H1128M196 72V604M1002 72V604" class="thin"/>
+  <text x="116" y="128" class="label" >Collection</text>
+  <text x="820" y="128" class="tiny" >MDB-01</text>
+  <path d="M814 182H1068V288H976V382H814Z" fill="none" stroke="#6ee7ff" stroke-width="2.5" opacity="0.5"/>
+  <path d="M840 214H930M840 250H1018M840 286H930M980 326H1044" class="thin" opacity="0.5"/>
+  <path d="M792 178V404M776 178H810M776 404H810M816 438H1068" class="thin" opacity="0.55"/>
+  <path d="M980 176L1066 176L1066 208" class="thin dash" opacity="0.5"/>
+  <text x="838" y="424" class="tiny" >root boundary</text>
+  <path d="M166 260H408L454 306H704V512H166Z" class="panel2"/>
+  <path d="M166 306H704" class="thin"/>
+  <text x="204" y="364" class="small" >mdbase.yaml</text>
+<text x="204" y="408" class="small" >_types/task.md</text>
+<text x="204" y="452" class="small" >notes/idea.md</text>
+  <rect x="790" y="238" width="230" height="92" rx="8" class="panel2"/>
+  <rect x="790" y="374" width="230" height="92" rx="8" class="panel2"/>
+  <text x="820" y="292" class="small" >scan root</text>
+  <text x="820" y="428" class="small" >records</text>
+  <path d="M704 386C740 352 754 318 790 286" class="line"/>
+  <path d="M704 436C738 428 758 426 790 420" class="thin dash"/>
+</svg>

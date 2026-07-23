@@ -1,0 +1,45 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Cut Paper Model: Links</title>
+  <desc id="desc">Cut paper identity study for Links.</desc>
+  <defs>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="93"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .bg { fill: #fffdf8; }
+    .paper1 { fill: #f8c94a; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .paper2 { fill: #ff647d; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .paper3 { fill: #2fb879; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .paper4 { fill: #2f7df4; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .line { stroke: #1e1919; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .label { fill: #1e1919; font: 800 39px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .small { fill: #1e1919; font: 750 24px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .tiny { fill: #1e1919; font: 700 16px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="bg"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.18"/>
+  <path d="M126 290C208 224 338 232 410 316C486 404 434 538 318 570C204 602 88 526 74 410C68 358 86 322 126 290Z" class="paper1"/>
+  <path d="M464 174C554 122 680 138 744 226C812 320 768 456 652 502C536 548 414 484 390 366C372 278 398 214 464 174Z" class="paper4"/>
+  <path d="M806 232C902 168 1044 196 1100 304C1158 416 1086 554 956 566C832 578 736 484 746 356C750 304 766 258 806 232Z" class="paper2"/>
+  <text x="116" y="398" class="small" >[[alpha]]</text>
+<text x="116" y="440" class="small" >[Plan](b.md)</text>
+<text x="116" y="482" class="small" >../team.md</text>
+  <path d="M500 504C578 478 680 488 750 522C738 556 710 572 670 568C606 560 554 564 508 578C492 552 494 522 500 504Z" fill="#fffdf8" stroke="#1e1919" stroke-width="4" filter="url(#softShadow)"/>
+  <text x="528" y="546" class="small" >id lookup</text>
+  <path d="M374 350C440 292 480 260 514 246M710 328C790 330 844 348 900 384" class="line"/>
+  <circle cx="514" cy="246" r="13" fill="#fffdf8" stroke="#1e1919" stroke-width="4"/>
+  <circle cx="900" cy="384" r="13" fill="#fffdf8" stroke="#1e1919" stroke-width="4"/>
+  <path d="M944 118C1010 96 1076 120 1100 180C1038 196 976 178 944 118Z" fill="#fffdf8" stroke="#1e1919" stroke-width="4" filter="url(#softShadow)"/>
+  <path d="M184 532C294 484 434 500 532 574" fill="none" class="line"/>
+  <circle cx="184" cy="532" r="10" fill="#fffdf8" stroke="#1e1919" stroke-width="4"/>
+  <circle cx="532" cy="574" r="10" fill="#fffdf8" stroke="#1e1919" stroke-width="4"/>
+  <text x="82" y="118" class="label" >Links</text>
+  <text x="84" y="154" class="small" >resolved markdown references</text>
+</svg>

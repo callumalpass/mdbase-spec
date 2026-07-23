@@ -1,0 +1,53 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Blueprint Systems: Types</title>
+  <desc id="desc">Blueprint identity study for Types.</desc>
+  <defs>
+    <pattern id="minorGrid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" class="grid"/></pattern>
+    <pattern id="majorGrid" width="160" height="160" patternUnits="userSpaceOnUse"><path d="M160 0H0V160" class="major"/></pattern>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="11"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .bg { fill: #081d33; }
+    .grid { stroke: #60d8ff; stroke-width: 1; opacity: 0.16; }
+    .major { stroke: #60d8ff; stroke-width: 2; opacity: 0.24; }
+    .panel { fill: #0d2a47; stroke: #bdf2ff; stroke-width: 4; }
+    .panel2 { fill: #12395f; stroke: #6ee7ff; stroke-width: 3; }
+    .line { stroke: #bdf2ff; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .thin { stroke: #6ee7ff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .dash { stroke-dasharray: 10 12; }
+    .label { fill: #f1fbff; font: 700 34px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+    .small { fill: #d7f8ff; font: 650 22px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+    .tiny { fill: #9eeeff; font: 650 17px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+    .tag { fill: #081d33; font: 800 17px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="bg"/>
+  <rect width="1200" height="676" fill="url(#minorGrid)"/>
+  <rect width="1200" height="676" fill="url(#majorGrid)"/>
+  <rect x="72" y="72" width="1056" height="532" rx="10" class="panel"/>
+  <path d="M72 154H1128M196 72V604M1002 72V604" class="thin"/>
+  <text x="116" y="128" class="label" >Types</text>
+  <text x="820" y="128" class="tiny" >MDB-02</text>
+  <path d="M772 188L1020 188L894 462Z" fill="none" stroke="#6ee7ff" stroke-width="2.5" opacity="0.52"/>
+  <path d="M810 276H980M850 362H940M894 188V462" class="thin" opacity="0.52"/>
+  <circle cx="894" cy="188" r="10" fill="#6ee7ff" opacity="0.55"/>
+  <path d="M780 480H1008M780 508H932M780 536H968" class="thin" opacity="0.45"/>
+  <text x="790" y="456" class="tiny" >inheritance cone</text>
+  <rect x="176" y="246" width="260" height="104" rx="8" class="panel2"/>
+  <rect x="390" y="340" width="260" height="104" rx="8" class="panel2"/>
+  <rect x="604" y="434" width="260" height="104" rx="8" class="panel2"/>
+  <text x="212" y="306" class="small" >base.md</text>
+  <text x="430" y="400" class="small" >task.md</text>
+  <text x="646" y="494" class="small" >bug.md</text>
+  <path d="M434 318L390 340M648 412L604 434" class="line"/>
+  <rect x="806" y="218" width="236" height="156" rx="8" class="panel2"/>
+  <text x="836" y="272" class="tiny" >strict inherited</text>
+<text x="836" y="306" class="tiny" >fields merged</text>
+<text x="836" y="340" class="tiny" >cycles rejected</text>
+</svg>

@@ -1,0 +1,43 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Cut Paper Model: Query</title>
+  <desc id="desc">Cut paper identity study for Query.</desc>
+  <defs>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="92"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .bg { fill: #fffdf8; }
+    .paper1 { fill: #f8c94a; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .paper2 { fill: #ff647d; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .paper3 { fill: #2fb879; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .paper4 { fill: #2f7df4; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .line { stroke: #1e1919; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .label { fill: #1e1919; font: 800 39px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .small { fill: #1e1919; font: 750 24px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .tiny { fill: #1e1919; font: 700 16px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="bg"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.18"/>
+  <path d="M174 214C272 158 404 180 470 278C532 370 496 498 384 552C274 604 138 556 92 446C54 354 88 262 174 214Z" class="paper1"/>
+  <path d="M500 188L830 340L500 492Z" class="paper4"/>
+  <path d="M812 184C946 122 1118 218 1110 370C1104 498 982 574 858 526C756 486 724 364 774 270C790 238 772 202 812 184Z" class="paper2"/>
+  <text x="144" y="340" class="small" >type == &quot;task&quot;</text>
+<text x="144" y="382" class="small" >status == &quot;open&quot;</text>
+<text x="144" y="424" class="small" >order: due</text>
+  <path d="M748 450C826 424 928 434 998 468C986 502 958 518 918 514C854 506 802 510 756 524C740 498 742 468 748 450Z" fill="#fffdf8" stroke="#1e1919" stroke-width="4" filter="url(#softShadow)"/>
+  <text x="776" y="492" class="small" >deterministic rows</text>
+  <path d="M472 350H506M832 340C874 316 906 292 942 260M832 340C886 386 914 418 948 466" class="line"/>
+  <path d="M178 520C268 486 392 490 496 536C448 584 288 596 174 560Z" fill="#fffdf8" stroke="#1e1919" stroke-width="4" filter="url(#softShadow)"/>
+  <circle cx="1014" cy="142" r="44" fill="#fffdf8" stroke="#1e1919" stroke-width="4" filter="url(#softShadow)"/>
+  <path d="M1048 176L1102 230" class="line"/>
+  <path d="M988 142H1038M1014 116V168" class="thin"/>
+  <text x="82" y="118" class="label" >Query</text>
+  <text x="84" y="154" class="small" >filters over files</text>
+</svg>

@@ -1,0 +1,81 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">mdbase query sketch</title>
+  <desc id="desc">A sketchy illustration of query expressions filtering and sorting Markdown records.</desc>
+  <defs>
+    <filter id="paper" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="2" seed="23"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.05"/>
+      </feComponentTransfer>
+    </filter>
+    <style>
+      .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-fat { stroke: #1e1919; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .dash { stroke-dasharray: 12 14; }
+      .label { fill: #1e1919; font: 650 27px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .small { fill: #1e1919; font: 600 18px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .tiny { fill: #1e1919; font: 600 14px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="676" fill="#fffdf8"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.42"/>
+
+  <path d="M115 165 C277 134 451 138 610 159 C642 163 659 184 653 216 L615 423 C609 456 584 475 550 472 C403 460 250 470 105 498 C75 504 54 485 58 454 C69 364 80 260 91 195 C94 177 99 168 115 165 Z" fill="#ffffff"/>
+  <path class="ink" d="M115 165 C277 134 451 138 610 159 C642 163 659 184 653 216 L615 423 C609 456 584 475 550 472 C403 460 250 470 105 498 C75 504 54 485 58 454 C69 364 80 260 91 195 C94 177 99 168 115 165 Z"/>
+  <text x="125" y="203" class="label">query</text>
+  <path class="ink-thin" d="M110 225 C240 203 422 204 607 227"/>
+
+  <path d="M134 251 C265 237 415 238 569 257" class="ink-thin"/>
+  <text x="154" y="286" class="small">type == "task"</text>
+  <text x="154" y="326" class="small">status == "open"</text>
+  <text x="154" y="366" class="small">due &lt; today()</text>
+  <text x="154" y="406" class="small">order_by: due</text>
+  <path class="ink-thin" d="M120 280 C128 279 134 279 140 279"/>
+  <path class="ink-thin" d="M120 320 C128 319 134 319 140 319"/>
+  <path class="ink-thin" d="M120 360 C128 359 134 359 140 359"/>
+  <path class="ink-thin" d="M120 400 C128 399 134 399 140 399"/>
+
+  <path d="M447 279 C478 268 516 276 537 301 C560 328 557 365 532 391 C504 421 457 420 430 391 C405 365 408 316 447 279 Z" fill="#28b47a"/>
+  <path class="ink-fat" d="M447 279 C478 268 516 276 537 301 C560 328 557 365 532 391 C504 421 457 420 430 391 C405 365 408 316 447 279 Z"/>
+  <path class="ink-fat" d="M528 389 C553 407 578 430 602 457"/>
+  <path class="ink-thin" d="M454 334 C466 342 482 344 497 335 C512 326 516 313 510 301"/>
+
+  <path d="M701 96 C822 93 948 110 1058 142 C1084 150 1096 170 1092 197 C1082 281 1064 377 1036 481 C1027 516 1003 535 966 532 C862 523 751 524 651 539 C621 543 600 525 604 494 C617 389 641 254 666 127 C670 108 681 97 701 96 Z" fill="#fffdf8"/>
+  <path class="ink" d="M701 96 C822 93 948 110 1058 142 C1084 150 1096 170 1092 197 C1082 281 1064 377 1036 481 C1027 516 1003 535 966 532 C862 523 751 524 651 539 C621 543 600 525 604 494 C617 389 641 254 666 127 C670 108 681 97 701 96 Z"/>
+  <text x="701" y="151" class="label">results</text>
+  <path class="ink-thin" d="M699 174 C790 166 916 181 1056 215"/>
+
+  <path d="M695 222 C737 212 789 212 834 223 C847 226 854 236 852 249 L841 313 C839 327 829 335 814 333 C774 329 731 331 690 341 C676 344 665 335 668 321 L679 244 C681 232 687 224 695 222 Z" fill="#1f7aff"/>
+  <path class="ink-thin" d="M695 222 C737 212 789 212 834 223 C847 226 854 236 852 249 L841 313 C839 327 829 335 814 333 C774 329 731 331 690 341 C676 344 665 335 668 321 L679 244 C681 232 687 224 695 222 Z"/>
+  <text x="701" y="258" class="tiny">tasks/a.md</text>
+  <text x="701" y="287" class="tiny">open / today</text>
+
+  <path d="M878 226 C929 221 981 229 1026 245 C1038 249 1044 259 1041 272 L1025 340 C1022 354 1010 361 996 358 C958 350 918 349 875 356 C861 358 851 349 853 336 L863 247 C864 236 869 228 878 226 Z" fill="#f8c94a"/>
+  <path class="ink-thin" d="M878 226 C929 221 981 229 1026 245 C1038 249 1044 259 1041 272 L1025 340 C1022 354 1010 361 996 358 C958 350 918 349 875 356 C861 358 851 349 853 336 L863 247 C864 236 869 228 878 226 Z"/>
+  <text x="889" y="266" class="tiny">tasks/b.md</text>
+  <text x="889" y="295" class="tiny">open / next</text>
+
+  <path d="M727 385 C779 377 835 381 889 394 C902 397 909 407 907 421 L897 485 C895 499 884 507 869 505 C822 500 774 502 728 513 C714 516 704 507 707 493 L716 408 C717 395 720 387 727 385 Z" fill="#ff5f75"/>
+  <path class="ink-thin" d="M727 385 C779 377 835 381 889 394 C902 397 909 407 907 421 L897 485 C895 499 884 507 869 505 C822 500 774 502 728 513 C714 516 704 507 707 493 L716 408 C717 395 720 387 727 385 Z"/>
+  <text x="738" y="426" class="tiny">notes/c.md</text>
+  <text x="738" y="455" class="tiny">closed</text>
+  <path class="ink-thin" d="M847 462 L881 430"/>
+  <path class="ink-thin" d="M879 461 L846 431"/>
+
+  <path class="ink-thin dash" d="M612 458 C645 455 676 443 709 420"/>
+  <path class="ink-thin dash" d="M611 458 C686 354 765 316 871 280"/>
+  <path class="ink-thin dash" d="M611 458 C648 373 677 318 695 262"/>
+  <circle cx="695" cy="262" r="9" fill="#fffdf8" class="ink-thin"/>
+  <circle cx="871" cy="280" r="9" fill="#fffdf8" class="ink-thin"/>
+  <circle cx="709" cy="420" r="9" fill="#fffdf8" class="ink-thin"/>
+
+  <path d="M190 545 C319 520 469 520 599 547 C615 550 622 564 616 579 C608 599 590 610 568 607 C456 591 333 592 212 613 C189 617 172 607 168 587 C164 568 172 550 190 545 Z" fill="#1e1919"/>
+  <text x="211" y="584" fill="#fffdf8" font-family="Azeret Mono, DejaVu Sans Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="19" font-weight="600">meta.total_count: 2</text>
+
+  <path class="ink-thin" d="M80 111 C104 95 134 90 168 96"/>
+  <path class="ink-thin" d="M1064 566 C1097 574 1122 566 1145 545"/>
+  <path class="ink-thin" d="M100 572 C123 586 148 588 175 579"/>
+</svg>
