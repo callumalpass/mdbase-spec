@@ -1,0 +1,57 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">mdbase validation issues sketch</title>
+  <desc id="desc">A hand-drawn validation report with errors, warnings, paths, fields, and issue codes.</desc>
+  <defs>
+    <filter id="paper" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="2" seed="67"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.052"/></feComponentTransfer>
+    </filter>
+    <style>
+      .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-fat { stroke: #1e1919; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .label { fill: #1e1919; font: 650 27px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .small { fill: #1e1919; font: 600 18px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .tiny { fill: #1e1919; font: 600 14px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="676" fill="#fffdf8"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.42"/>
+
+  <path d="M139 118 C235 91 345 94 442 125 C469 134 482 155 475 183 L417 472 C411 501 389 519 358 518 C272 512 187 524 104 553 C76 563 54 548 53 518 C49 391 67 271 103 159 C109 139 123 123 139 118 Z" fill="#ffffff"/>
+  <path class="ink" d="M139 118 C235 91 345 94 442 125 C469 134 482 155 475 183 L417 472 C411 501 389 519 358 518 C272 512 187 524 104 553 C76 563 54 548 53 518 C49 391 67 271 103 159 C109 139 123 123 139 118 Z"/>
+  <text x="135" y="180" class="label">task.md</text>
+  <path class="ink-thin" d="M133 209 C216 186 335 190 438 221"/>
+  <text x="143" y="266" class="small">title: Ship v1</text>
+  <text x="143" y="307" class="small">status: maybe</text>
+  <text x="143" y="348" class="small">extra: true</text>
+  <text x="143" y="389" class="small">due: yesterday</text>
+  <path class="ink-thin" d="M347 301 C361 294 377 293 392 300"/>
+  <path class="ink-thin" d="M343 343 C360 335 380 337 396 349"/>
+
+  <path d="M551 110 C658 90 777 100 882 142 C910 153 921 176 911 205 L819 502 C810 532 786 548 754 542 C663 525 567 528 470 556 C440 565 417 549 418 517 C424 383 452 260 501 149 C510 128 526 115 551 110 Z" fill="#ff5f75"/>
+  <path class="ink" d="M551 110 C658 90 777 100 882 142 C910 153 921 176 911 205 L819 502 C810 532 786 548 754 542 C663 525 567 528 470 556 C440 565 417 549 418 517 C424 383 452 260 501 149 C510 128 526 115 551 110 Z"/>
+  <text x="537" y="180" class="label">issues</text>
+  <path class="ink-thin" d="M532 209 C622 190 757 200 875 242"/>
+  <text x="543" y="264" class="small">path: task.md</text>
+  <text x="543" y="305" class="small">field: status</text>
+  <text x="543" y="346" class="small">code: enum_invalid</text>
+  <path class="ink-thin" d="M537 384 C623 369 726 378 812 410"/>
+  <text x="543" y="429" class="small">field: extra</text>
+  <text x="543" y="470" class="small">code: unknown_field</text>
+
+  <path d="M869 364 C918 333 985 328 1040 358 C1096 389 1115 451 1085 502 C1056 552 993 572 932 549 C874 527 839 475 852 421 C856 400 861 379 869 364 Z" fill="#f8c94a"/>
+  <path class="ink-fat" d="M869 364 C918 333 985 328 1040 358 C1096 389 1115 451 1085 502 C1056 552 993 572 932 549 C874 527 839 475 852 421 C856 400 861 379 869 364 Z"/>
+  <text x="908" y="437" class="label">warn</text>
+  <path class="ink-fat" d="M970 466 L970 397"/>
+  <circle cx="970" cy="500" r="8" fill="#1e1919"/>
+
+  <path d="M909 84 C937 75 968 85 982 111 C996 137 982 166 951 174 C921 182 893 169 885 142 C878 116 888 91 909 84 Z" fill="#1f7aff"/>
+  <path class="ink" d="M909 84 C937 75 968 85 982 111 C996 137 982 166 951 174 C921 182 893 169 885 142 C878 116 888 91 909 84 Z"/>
+  <text x="914" y="137" fill="#fffdf8" font-family="Azeret Mono, DejaVu Sans Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="29" font-weight="700">9.3</text>
+
+  <path class="ink-thin" d="M67 96 C95 78 130 74 166 83"/>
+  <path class="ink-thin" d="M1014 593 C1048 609 1087 606 1126 583"/>
+</svg>

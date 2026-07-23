@@ -1,0 +1,59 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">mdbase computed fields sketch</title>
+  <desc id="desc">A sketch of persisted frontmatter flowing through computed fields into a read-time output envelope.</desc>
+  <defs>
+    <filter id="paper" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="71"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.052"/></feComponentTransfer>
+    </filter>
+    <style>
+      .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-fat { stroke: #1e1919; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .dash { stroke-dasharray: 10 13; }
+      .label { fill: #1e1919; font: 650 27px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .small { fill: #1e1919; font: 600 18px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .tiny { fill: #1e1919; font: 600 14px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="676" fill="#fffdf8"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.42"/>
+
+  <path d="M110 164 C199 135 303 136 397 164 C424 172 437 193 431 221 L383 482 C377 512 356 530 325 529 C244 524 163 535 88 562 C61 572 39 557 38 527 C34 410 49 298 82 197 C88 179 96 168 110 164 Z" fill="#ffffff"/>
+  <path class="ink" d="M110 164 C199 135 303 136 397 164 C424 172 437 193 431 221 L383 482 C377 512 356 530 325 529 C244 524 163 535 88 562 C61 572 39 557 38 527 C34 410 49 298 82 197 C88 179 96 168 110 164 Z"/>
+  <text x="106" y="226" class="label">persisted</text>
+  <path class="ink-thin" d="M104 253 C183 231 296 235 397 265"/>
+  <text x="115" y="308" class="small">title: Hello World</text>
+  <text x="115" y="349" class="small">due: 2026-06-20</text>
+  <text x="115" y="390" class="small">status: open</text>
+  <path class="ink-thin" d="M119 435 C177 418 264 421 345 443"/>
+
+  <path d="M485 113 C572 89 674 97 756 136 C781 148 791 169 781 195 L692 433 C682 460 660 473 631 466 C560 449 486 453 413 477 C385 486 364 471 366 441 C376 335 405 231 449 143 C458 126 469 117 485 113 Z" fill="#1f7aff"/>
+  <path class="ink-fat" d="M485 113 C572 89 674 97 756 136 C781 148 791 169 781 195 L692 433 C682 460 660 473 631 466 C560 449 486 453 413 477 C385 486 364 471 366 441 C376 335 405 231 449 143 C458 126 469 117 485 113 Z"/>
+  <text x="477" y="182" class="label">computed</text>
+  <path class="ink-thin" d="M474 211 C547 193 655 201 742 236"/>
+  <text x="487" y="263" class="small">slug = title.slug()</text>
+  <text x="487" y="304" class="small">late = due &lt; today()</text>
+  <text x="487" y="345" class="small">age = now() - mtime</text>
+  <path class="ink-thin" d="M496 395 C556 379 631 383 690 405"/>
+
+  <path d="M818 159 C909 130 1016 133 1106 167 C1132 177 1144 198 1136 226 L1070 496 C1063 525 1041 542 1010 540 C929 533 848 541 771 566 C743 575 722 560 722 530 C724 414 744 303 781 198 C787 180 801 164 818 159 Z" fill="#28b47a"/>
+  <path class="ink" d="M818 159 C909 130 1016 133 1106 167 C1132 177 1144 198 1136 226 L1070 496 C1063 525 1041 542 1010 540 C929 533 848 541 771 566 C743 575 722 560 722 530 C724 414 744 303 781 198 C787 180 801 164 818 159 Z"/>
+  <text x="817" y="221" class="label">read()</text>
+  <path class="ink-thin" d="M816 249 C895 229 1012 236 1107 270"/>
+  <text x="829" y="303" class="small">title: Hello World</text>
+  <text x="829" y="344" class="small">slug: hello-world</text>
+  <text x="829" y="385" class="small">late: false</text>
+  <text x="829" y="426" class="small">not written</text>
+  <path class="ink-fat" d="M854 480 L883 507 L939 443"/>
+
+  <path class="ink-thin dash" d="M384 346 C418 316 448 294 486 279"/>
+  <path class="ink-thin dash" d="M688 342 C739 336 784 344 831 372"/>
+  <circle cx="486" cy="279" r="10" fill="#f8c94a" class="ink-thin"/>
+  <circle cx="831" cy="372" r="10" fill="#ff5f75" class="ink-thin"/>
+
+  <path class="ink-thin" d="M69 111 C98 91 132 87 169 96"/>
+  <path class="ink-thin" d="M1005 592 C1041 608 1081 604 1118 581"/>
+</svg>

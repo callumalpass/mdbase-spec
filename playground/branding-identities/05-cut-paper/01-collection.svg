@@ -1,0 +1,44 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Cut Paper Model: Collection</title>
+  <desc id="desc">Cut paper identity study for Collection.</desc>
+  <defs>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="90"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .bg { fill: #fffdf8; }
+    .paper1 { fill: #f8c94a; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .paper2 { fill: #ff647d; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .paper3 { fill: #2fb879; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .paper4 { fill: #2f7df4; stroke: #1e1919; stroke-width: 5; filter: url(#softShadow); }
+    .line { stroke: #1e1919; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .label { fill: #1e1919; font: 800 39px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .small { fill: #1e1919; font: 750 24px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .tiny { fill: #1e1919; font: 700 16px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="bg"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.18"/>
+  <path d="M164 230H520L592 302V548H164Z" class="paper1"/>
+  <path d="M164 302H592" class="thin"/>
+  <path d="M452 148C568 96 728 132 792 238C854 340 794 484 668 518C554 550 442 482 414 366C392 276 390 178 452 148Z" class="paper4"/>
+  <path d="M744 218C858 164 1032 198 1098 316C1158 424 1070 560 918 556C790 552 704 452 720 334C728 278 706 238 744 218Z" class="paper2"/>
+  <text x="206" y="372" class="small" >mdbase.yaml</text>
+<text x="206" y="414" class="small" >_types/task.md</text>
+<text x="206" y="456" class="small" >notes/idea.md</text>
+  <path d="M704 454C782 428 884 438 954 472C942 506 914 522 874 518C810 510 758 514 712 528C696 502 698 472 704 454Z" fill="#fffdf8" stroke="#1e1919" stroke-width="4" filter="url(#softShadow)"/>
+  <text x="732" y="496" class="small" >rooted scan</text>
+  <path d="M790 330L850 390L966 250" class="line"/>
+  <path d="M880 118C934 96 1004 108 1042 154C1000 176 938 174 888 156Z" fill="#fffdf8" stroke="#1e1919" stroke-width="4" filter="url(#softShadow)"/>
+  <path d="M928 132L970 154M970 132L928 154" class="thin"/>
+  <path d="M776 520C834 488 908 494 960 532" fill="none" class="line"/>
+  <circle cx="776" cy="520" r="10" fill="#fffdf8" stroke="#1e1919" stroke-width="4"/>
+  <text x="82" y="118" class="label" >Collection</text>
+  <text x="84" y="154" class="small" >folder as data surface</text>
+</svg>

@@ -1,0 +1,62 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">mdbase body search sketch</title>
+  <desc id="desc">A sketch of raw Markdown body text, tags, links, code-block exclusion, and body filtering.</desc>
+  <defs>
+    <filter id="paper" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.83" numOctaves="2" seed="79"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.052"/></feComponentTransfer>
+    </filter>
+    <style>
+      .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-fat { stroke: #1e1919; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .dash { stroke-dasharray: 10 13; }
+      .label { fill: #1e1919; font: 650 27px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .small { fill: #1e1919; font: 600 18px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .tiny { fill: #1e1919; font: 600 14px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="676" fill="#fffdf8"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.42"/>
+
+  <path d="M143 105 C255 79 382 84 495 121 C524 131 537 154 529 184 L447 529 C440 560 416 578 384 575 C281 565 178 575 81 605 C51 614 29 597 30 565 C35 417 62 277 109 142 C116 122 129 109 143 105 Z" fill="#ffffff"/>
+  <path class="ink" d="M143 105 C255 79 382 84 495 121 C524 131 537 154 529 184 L447 529 C440 560 416 578 384 575 C281 565 178 575 81 605 C51 614 29 597 30 565 C35 417 62 277 109 142 C116 122 129 109 143 105 Z"/>
+  <text x="136" y="169" class="label">body</text>
+  <path class="ink-thin" d="M135 196 C235 173 379 181 500 220"/>
+  <text x="146" y="249" class="small"># Project alpha</text>
+  <text x="146" y="290" class="small">see [[Plan]] today</text>
+  <text x="146" y="331" class="small">body has raw markdown</text>
+  <path d="M146 365 C224 350 322 355 408 384 C424 389 431 401 427 417 L414 470 C410 485 397 493 381 489 C309 472 232 472 157 490 C142 494 130 485 130 469 C130 441 134 411 143 382 C144 374 145 369 146 365 Z" fill="#1e1919"/>
+  <text x="158" y="408" fill="#fffdf8" font-family="Azeret Mono, DejaVu Sans Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="600">```</text>
+  <text x="158" y="437" fill="#fffdf8" font-family="Azeret Mono, DejaVu Sans Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="600">#not-a-tag</text>
+  <text x="158" y="466" fill="#fffdf8" font-family="Azeret Mono, DejaVu Sans Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="600">```</text>
+
+  <path d="M604 164 C656 128 730 127 787 162 C847 199 863 279 823 338 C784 394 706 410 646 377 C588 345 564 270 592 211 C598 198 602 177 604 164 Z" fill="#1f7aff"/>
+  <path class="ink-fat" d="M604 164 C656 128 730 127 787 162 C847 199 863 279 823 338 C784 394 706 410 646 377 C588 345 564 270 592 211 C598 198 602 177 604 164 Z"/>
+  <path d="M663 241 C687 216 729 212 758 232 C786 252 790 292 765 317 C740 343 699 346 671 326 C643 306 639 267 663 241 Z" fill="#fffdf8"/>
+  <path class="ink-thin" d="M663 241 C687 216 729 212 758 232 C786 252 790 292 765 317 C740 343 699 346 671 326 C643 306 639 267 663 241 Z"/>
+  <path class="ink-fat" d="M765 318 C791 339 817 363 842 391"/>
+  <text x="548" y="444" class="label">file.body</text>
+  <text x="548" y="483" class="small">filter only</text>
+
+  <path d="M857 117 C948 88 1052 94 1126 135 C1149 148 1157 170 1147 195 L1054 432 C1044 458 1022 471 994 464 C928 447 854 450 780 474 C752 483 731 468 733 438 C742 333 773 228 817 146 C826 129 840 122 857 117 Z" fill="#f8c94a"/>
+  <path class="ink" d="M857 117 C948 88 1052 94 1126 135 C1149 148 1157 170 1147 195 L1054 432 C1044 458 1022 471 994 464 C928 447 854 450 780 474 C752 483 731 468 733 438 C742 333 773 228 817 146 C826 129 840 122 857 117 Z"/>
+  <text x="850" y="184" class="label">extracted</text>
+  <path class="ink-thin" d="M849 212 C928 193 1045 203 1122 239"/>
+  <text x="862" y="268" class="small">tags: project</text>
+  <text x="862" y="309" class="small">links: Plan</text>
+  <text x="862" y="350" class="small">embeds: []</text>
+  <text x="862" y="391" class="tiny">code block skipped</text>
+
+  <path d="M426 532 C541 501 681 503 794 538 C816 545 825 562 817 583 C808 605 788 616 763 610 C662 590 544 591 439 616 C415 622 395 612 388 590 C382 570 393 543 426 532 Z" fill="#28b47a"/>
+  <path class="ink" d="M426 532 C541 501 681 503 794 538 C816 545 825 562 817 583 C808 605 788 616 763 610 C662 590 544 591 439 616 C415 622 395 612 388 590 C382 570 393 543 426 532 Z"/>
+  <text x="449" y="572" class="tiny">where: file.body.contains("alpha")</text>
+  <text x="449" y="596" class="tiny">include_body: false</text>
+
+  <path class="ink-thin dash" d="M499 293 C540 271 574 265 611 279"/>
+  <path class="ink-thin dash" d="M815 248 C827 241 840 242 852 250"/>
+  <path class="ink-thin" d="M62 78 C92 59 126 55 163 64"/>
+  <path class="ink-thin" d="M1009 551 C1044 568 1084 564 1122 542"/>
+</svg>

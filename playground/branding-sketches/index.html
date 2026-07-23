@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>mdbase sketch branding playground</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #1e1919;
+        --paper: #fffdf8;
+        --line: #d8d0c9;
+        --accent: #1f7aff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        line-height: 1.5;
+      }
+
+      main {
+        width: min(1120px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 34px 0 56px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(28px, 4vw, 48px);
+        line-height: 1.05;
+        letter-spacing: 0;
+      }
+
+      p {
+        max-width: 760px;
+        margin: 0 0 28px;
+        font-size: 15px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+      }
+
+      figure {
+        margin: 0;
+        border: 2px solid var(--ink);
+        background: #ffffff;
+      }
+
+      img {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1200 / 676;
+        object-fit: cover;
+        border-bottom: 2px solid var(--ink);
+      }
+
+      figcaption {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 12px 14px;
+        font-size: 13px;
+        overflow-wrap: anywhere;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>mdbase sketch branding</h1>
+      <p>Original SVG studies for a loose, hand-drawn mdbase visual language: white paper, black sketch lines, and a few bold accents tied to concrete spec artifacts.</p>
+      <div class="grid">
+        <figure>
+          <img src="./collection-map.svg" alt="Sketch of an mdbase collection folder with type and record files">
+          <figcaption><span>collection-map.svg</span><a href="./collection-map.svg">open</a></figcaption>
+        </figure>
+        <figure>
+          <img src="./frontmatter-states.svg" alt="Sketch comparing missing, null, and empty string frontmatter fields">
+          <figcaption><span>frontmatter-states.svg</span><a href="./frontmatter-states.svg">open</a></figcaption>
+        </figure>
+        <figure>
+          <img src="./type-inheritance.svg" alt="Sketch of inherited mdbase type fields becoming effective constraints">
+          <figcaption><span>type-inheritance.svg</span><a href="./type-inheritance.svg">open</a></figcaption>
+        </figure>
+        <figure>
+          <img src="./validation-issues.svg" alt="Sketch of mdbase validation issues with fields and error codes">
+          <figcaption><span>validation-issues.svg</span><a href="./validation-issues.svg">open</a></figcaption>
+        </figure>
+        <figure>
+          <img src="./query-weave.svg" alt="Sketch of a query filtering Markdown records">
+          <figcaption><span>query-weave.svg</span><a href="./query-weave.svg">open</a></figcaption>
+        </figure>
+        <figure>
+          <img src="./computed-fields.svg" alt="Sketch of persisted values flowing into computed fields">
+          <figcaption><span>computed-fields.svg</span><a href="./computed-fields.svg">open</a></figcaption>
+        </figure>
+        <figure>
+          <img src="./link-resolution.svg" alt="Sketch of wikilinks resolving to collection paths">
+          <figcaption><span>link-resolution.svg</span><a href="./link-resolution.svg">open</a></figcaption>
+        </figure>
+        <figure>
+          <img src="./body-search.svg" alt="Sketch of raw Markdown body search and extracted tags and links">
+          <figcaption><span>body-search.svg</span><a href="./body-search.svg">open</a></figcaption>
+        </figure>
+        <figure>
+          <img src="./conformance-stack.svg" alt="Sketch of conformance tests and a passing runner">
+          <figcaption><span>conformance-stack.svg</span><a href="./conformance-stack.svg">open</a></figcaption>
+        </figure>
+        <figure>
+          <img src="./cache-index.svg" alt="Sketch of a derived mdbase cache index and staleness checks">
+          <figcaption><span>cache-index.svg</span><a href="./cache-index.svg">open</a></figcaption>
+        </figure>
+        <figure>
+          <img src="./watch-stream.svg" alt="Sketch of files flowing into watch events">
+          <figcaption><span>watch-stream.svg</span><a href="./watch-stream.svg">open</a></figcaption>
+        </figure>
+        <figure>
+          <img src="./runtime-workflow.svg" alt="Sketch of an event flowing through a runtime workflow into an action">
+          <figcaption><span>runtime-workflow.svg</span><a href="./runtime-workflow.svg">open</a></figcaption>
+        </figure>
+      </div>
+    </main>
+  </body>
+</html>

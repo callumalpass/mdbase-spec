@@ -1,0 +1,49 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Risograph Field Notes: Collection</title>
+  <desc id="desc">Risograph identity study for Collection.</desc>
+  <defs>
+    <pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.7" fill="#1e1919" opacity="0.18"/></pattern>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="30"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .paper { fill: #fff5dc; }
+    .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+    .thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .magenta { fill: #ff4f78; opacity: 0.9; mix-blend-mode: multiply; }
+    .cyan { fill: #1f9dff; opacity: 0.82; mix-blend-mode: multiply; }
+    .yellow { fill: #ffd447; opacity: 0.92; mix-blend-mode: multiply; }
+    .green { fill: #39bf7a; opacity: 0.9; mix-blend-mode: multiply; }
+    .label { fill: #1e1919; font: 800 42px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .small { fill: #1e1919; font: 750 24px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .tiny { fill: #1e1919; font: 700 17px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="paper"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.28"/>
+  <rect x="70" y="78" width="1060" height="520" fill="url(#dots)" opacity="0.55"/>
+  <text x="108" y="152" class="label" >Collection</text>
+  <text x="110" y="194" class="small" >folder as data surface</text>
+  <path d="M116 260C210 168 392 154 520 238C640 317 646 490 522 562C390 638 190 598 94 482C18 390 38 310 116 260Z" class="cyan"/>
+  <path d="M460 154C618 108 821 164 896 306C967 442 860 585 684 576C540 569 424 480 406 354C394 266 408 170 460 154Z" class="yellow"/>
+  <path d="M688 194C784 122 958 132 1050 236C1134 331 1112 494 1004 556C902 614 744 568 692 458C646 360 628 240 688 194Z" class="magenta"/>
+  <path d="M138 284C286 260 454 284 610 354" class="thin"/>
+  <text x="150" y="344" class="small" >mdbase.yaml</text>
+<text x="150" y="390" class="small" >_types/task.md</text>
+<text x="150" y="436" class="small" >notes/idea.md</text>
+  <path d="M742 300C814 282 910 294 972 328L950 442C884 426 818 426 756 440C740 391 738 344 742 300Z" fill="#fff5dc" opacity="0.9"/>
+  <text x="766" y="348" class="tiny" >rooted scan</text>
+<text x="766" y="382" class="tiny" >typed files</text>
+<text x="766" y="416" class="tiny" >plain markdown</text>
+  <path d="M466 426L520 482L628 330" class="ink"/>
+  <path d="M722 96C810 72 930 92 1018 154L960 262C868 220 764 214 672 250C650 184 666 118 722 96Z" class="yellow"/>
+  <path d="M850 96H1046L1090 140V250H850Z" fill="none" class="ink" opacity="0.78"/>
+  <path d="M850 140H1090M884 176H1028M884 212H1002" class="thin" opacity="0.82"/>
+  <circle cx="826" cy="232" r="20" fill="#1e1919" opacity="0.86"/>
+  <circle cx="826" cy="232" r="8" fill="#fff5dc" opacity="0.95"/>
+</svg>

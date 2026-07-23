@@ -1,0 +1,83 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">mdbase collection sketch</title>
+  <desc id="desc">A loose hand-drawn illustration of a typed Markdown collection with mdbase.yaml, type files, records, and links.</desc>
+  <defs>
+    <filter id="paper" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="2" seed="17" result="noise"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.055"/>
+      </feComponentTransfer>
+    </filter>
+    <style>
+      .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-fat { stroke: #1e1919; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+      .label { fill: #1e1919; font: 650 27px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .small { fill: #1e1919; font: 600 18px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .tiny { fill: #1e1919; font: 600 14px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .muted { fill: #6c625e; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="676" fill="#fffdf8"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.45"/>
+
+  <path d="M123 547 C102 474 91 357 108 239 C111 213 120 188 136 172 C157 151 204 157 258 160 C283 137 315 119 352 119 L497 119 C537 119 565 135 584 166 C680 162 794 166 905 182 C940 187 965 210 970 244 C984 343 982 448 956 547 C946 584 921 603 884 606 C646 626 395 622 165 597 C143 594 131 575 123 547 Z" fill="#f8c94a"/>
+  <path class="ink" d="M123 547 C102 474 91 357 108 239 C111 213 120 188 136 172 C157 151 204 157 258 160 C283 137 315 119 352 119 L497 119 C537 119 565 135 584 166 C680 162 794 166 905 182 C940 187 965 210 970 244 C984 343 982 448 956 547 C946 584 921 603 884 606 C646 626 395 622 165 597 C143 594 131 575 123 547 Z"/>
+  <path class="ink-thin" d="M137 562 C311 588 572 593 878 571"/>
+
+  <path d="M154 247 C256 237 373 235 496 239 C594 242 709 235 887 254 C910 256 927 274 925 298 C917 383 909 463 890 534 C883 560 865 574 837 576 C617 590 392 588 178 566 C154 563 139 545 139 520 C138 442 141 346 154 247 Z" fill="#fffdf8"/>
+  <path class="ink" d="M154 247 C256 237 373 235 496 239 C594 242 709 235 887 254 C910 256 927 274 925 298 C917 383 909 463 890 534 C883 560 865 574 837 576 C617 590 392 588 178 566 C154 563 139 545 139 520 C138 442 141 346 154 247 Z"/>
+
+  <path d="M218 287 L396 276 C411 275 421 284 421 299 L421 492 C421 507 412 516 397 518 L216 529 C201 530 191 521 191 506 L191 314 C191 298 201 288 218 287 Z" fill="#fffdf8"/>
+  <path class="ink" d="M218 287 L396 276 C411 275 421 284 421 299 L421 492 C421 507 412 516 397 518 L216 529 C201 530 191 521 191 506 L191 314 C191 298 201 288 218 287 Z"/>
+  <text x="221" y="324" class="label">collection/</text>
+  <path class="ink-thin" d="M226 348 C277 343 338 343 391 346"/>
+  <text x="235" y="383" class="small">mdbase.yaml</text>
+  <text x="235" y="422" class="small">_types/task.md</text>
+  <text x="235" y="461" class="small">notes/idea.md</text>
+  <path class="ink-thin" d="M217 376 C217 397 217 418 217 445"/>
+  <path class="ink-thin" d="M218 378 C224 379 229 379 234 379"/>
+  <path class="ink-thin" d="M218 417 C224 418 229 418 234 418"/>
+  <path class="ink-thin" d="M218 456 C224 457 229 457 234 457"/>
+  <circle cx="392" cy="418" r="13" fill="#1f7aff"/>
+  <path class="ink-thin" d="M385 417 L391 423 L402 411"/>
+
+  <path d="M488 286 C557 274 645 274 717 283 C735 285 745 297 743 315 L723 510 C721 530 707 542 687 540 C622 535 549 536 474 548 C454 551 440 539 440 518 L450 320 C451 302 464 290 488 286 Z" fill="#ffffff"/>
+  <path class="ink" d="M488 286 C557 274 645 274 717 283 C735 285 745 297 743 315 L723 510 C721 530 707 542 687 540 C622 535 549 536 474 548 C454 551 440 539 440 518 L450 320 C451 302 464 290 488 286 Z"/>
+  <path d="M475 319 C550 307 643 309 714 318" class="ink-thin"/>
+  <text x="482" y="338" class="small">type: task</text>
+  <text x="482" y="382" class="tiny">fields:</text>
+  <text x="508" y="414" class="tiny">status: enum</text>
+  <text x="508" y="443" class="tiny">due: date</text>
+  <text x="508" y="472" class="tiny">project: link</text>
+  <path class="ink-thin" d="M493 409 C500 409 502 409 506 409"/>
+  <path class="ink-thin" d="M493 438 C500 438 502 438 506 438"/>
+  <path class="ink-thin" d="M493 467 C500 467 502 467 506 467"/>
+  <path d="M662 357 C685 354 702 360 709 375 C716 390 703 405 680 408 C657 411 639 405 633 390 C626 375 639 360 662 357 Z" fill="#28b47a"/>
+  <path class="ink-thin" d="M662 357 C685 354 702 360 709 375 C716 390 703 405 680 408 C657 411 639 405 633 390 C626 375 639 360 662 357 Z"/>
+  <text x="651" y="390" class="tiny">ok</text>
+
+  <path d="M791 322 C843 309 909 309 971 321 C990 325 1000 339 995 358 L958 500 C953 520 938 531 917 529 C861 523 802 526 743 537 C724 541 710 528 715 508 L751 360 C756 339 768 328 791 322 Z" fill="#ff5f75"/>
+  <path class="ink" d="M791 322 C843 309 909 309 971 321 C990 325 1000 339 995 358 L958 500 C953 520 938 531 917 529 C861 523 802 526 743 537 C724 541 710 528 715 508 L751 360 C756 339 768 328 791 322 Z"/>
+  <text x="783" y="368" class="small">record.md</text>
+  <path class="ink-thin" d="M779 388 C825 382 897 383 951 391"/>
+  <text x="779" y="424" class="tiny">status: open</text>
+  <text x="779" y="453" class="tiny">project: [[alpha]]</text>
+  <text x="779" y="482" class="tiny">tags: [spec]</text>
+  <path class="ink-thin" d="M742 442 C714 431 699 425 685 413"/>
+  <path class="ink-thin" d="M692 414 L682 412 L686 421"/>
+
+  <path d="M1000 200 C1033 191 1076 196 1097 222 C1126 258 1112 309 1070 329 C1029 349 978 331 963 290 C949 251 966 210 1000 200 Z" fill="#1f7aff"/>
+  <path class="ink-fat" d="M1000 200 C1033 191 1076 196 1097 222 C1126 258 1112 309 1070 329 C1029 349 978 331 963 290 C949 251 966 210 1000 200 Z"/>
+  <path class="ink-thin" d="M1003 244 C1020 233 1050 233 1068 247"/>
+  <path class="ink-thin" d="M1008 274 C1028 288 1052 287 1073 273"/>
+  <text x="1010" y="382" class="label">typed</text>
+  <text x="1010" y="416" class="label">markdown</text>
+
+  <path class="ink-thin" d="M101 138 C128 117 151 108 180 106"/>
+  <path class="ink-thin" d="M984 590 C1013 601 1049 597 1081 578"/>
+  <path class="ink-thin" d="M76 505 C91 511 103 510 114 501"/>
+  <path class="ink-thin" d="M1044 469 C1083 462 1115 469 1133 487"/>
+</svg>

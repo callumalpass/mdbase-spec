@@ -1,0 +1,51 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Archive Cards: Types</title>
+  <desc id="desc">Archive card identity study for Types.</desc>
+  <defs>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="51"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .bg { fill: #f3eadb; }
+    .card { fill: #fffaf0; stroke: #241c18; stroke-width: 4; }
+    .cardAlt { fill: #f8dfb7; stroke: #241c18; stroke-width: 4; }
+    .red { stroke: #b83232; fill: none; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+    .line { stroke: #241c18; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .stamp { fill: none; stroke: #b83232; stroke-width: 5; }
+    .label { fill: #241c18; font: 700 35px Georgia, "Times New Roman", serif; letter-spacing: 0; }
+    .small { fill: #241c18; font: 700 23px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+    .tiny { fill: #241c18; font: 650 16px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+    .stampText { fill: #b83232; font: 800 22px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="bg"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.25"/>
+  <path d="M86 512C168 476 286 486 374 540" class="red" opacity="0.55"/>
+  <circle cx="166" cy="498" r="12" fill="#b83232" opacity="0.85"/>
+  <circle cx="328" cy="522" r="12" fill="#b83232" opacity="0.85"/>
+  <path d="M892 100C936 78 1002 84 1044 118L1016 154C970 130 926 128 886 148Z" fill="#fffaf0" stroke="#241c18" stroke-width="3" opacity="0.75"/>
+  <path d="M914 122H1016" class="line" opacity="0.45"/>
+<path d="M138 128C234.6 106 366.59999999999997 116 426 170L372 548C280.8 530 175.2 544 120 566C88 432 98 244 138 128Z" class="card"/>
+  <path d="M358 102C454.6 80 586.5999999999999 90 646 144L592 522C500.8 504 395.2 518 340 540C308 406 318 218 358 102Z" class="cardAlt"/>
+  <path d="M578 128C674.6 106 806.5999999999999 116 866 170L812 548C720.8 530 615.2 544 560 566C528 432 538 244 578 128Z" class="card"/>
+  <text x="146" y="188" class="label" >base</text>
+  <text x="368" y="162" class="label" >task</text>
+  <text x="590" y="188" class="label" >child</text>
+  <path d="M250 326C340 292 430 292 520 326" class="red"/>
+  <path d="M520 326C610 360 700 360 790 326" class="red"/>
+  <text x="142" y="260" class="small" >fields</text>
+<text x="142" y="302" class="small" >defaults</text>
+<text x="142" y="344" class="small" >strict mode</text>
+  <text x="606" y="260" class="small" >inherits rules</text>
+<text x="606" y="302" class="small" >validates records</text>
+<text x="606" y="344" class="small" >documents shape</text>
+  <rect x="824" y="430" width="206" height="82" rx="8" class="stamp" transform="rotate(4 927 471)"/>
+  <text x="860" y="480" class="stampText" transform="rotate(4 927 471)">PORTABLE</text>
+  <path d="M100 84C132 70 169 67 208 77" class="line"/>
+  <path d="M982 582C1020 598 1062 594 1103 570" class="line"/>
+</svg>

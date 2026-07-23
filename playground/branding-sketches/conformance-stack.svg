@@ -1,0 +1,68 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">mdbase conformance sketch</title>
+  <desc id="desc">A loose illustration of conformance levels, YAML tests, and a passing implementation stamp.</desc>
+  <defs>
+    <filter id="paper" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.76" numOctaves="2" seed="31"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.055"/>
+      </feComponentTransfer>
+    </filter>
+    <style>
+      .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-fat { stroke: #1e1919; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .label { fill: #1e1919; font: 650 27px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .small { fill: #1e1919; font: 600 18px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .tiny { fill: #1e1919; font: 600 14px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="676" fill="#fffdf8"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.42"/>
+
+  <path d="M188 159 C299 119 431 101 581 108 C618 110 640 132 637 169 L618 452 C616 488 594 510 558 513 C437 522 314 547 198 587 C164 599 137 582 134 546 C122 422 126 305 149 195 C153 177 164 167 188 159 Z" fill="#ffffff"/>
+  <path class="ink" d="M188 159 C299 119 431 101 581 108 C618 110 640 132 637 169 L618 452 C616 488 594 510 558 513 C437 522 314 547 198 587 C164 599 137 582 134 546 C122 422 126 305 149 195 C153 177 164 167 188 159 Z"/>
+  <text x="196" y="203" class="label">tests/v1</text>
+  <path class="ink-thin" d="M184 226 C305 189 446 175 592 187"/>
+  <text x="197" y="259" class="small">name: matching-basics</text>
+  <text x="197" y="298" class="small">level: 2</text>
+  <text x="197" y="337" class="small">category: matching</text>
+  <text x="197" y="376" class="small">operation: validate</text>
+  <path class="ink-thin" d="M196 424 C309 394 457 384 579 397"/>
+  <text x="215" y="459" class="tiny">expect.errors: []</text>
+  <text x="215" y="489" class="tiny">expect.warnings: []</text>
+
+  <path d="M471 228 C576 196 710 186 833 202 C861 206 877 224 875 253 L861 488 C859 517 840 535 811 537 C713 540 612 556 515 585 C486 593 463 578 460 548 C448 440 449 338 464 253 C466 240 468 232 471 228 Z" fill="#f8c94a"/>
+  <path class="ink" d="M471 228 C576 196 710 186 833 202 C861 206 877 224 875 253 L861 488 C859 517 840 535 811 537 C713 540 612 556 515 585 C486 593 463 578 460 548 C448 440 449 338 464 253 C466 240 468 232 471 228 Z"/>
+  <text x="510" y="282" class="label">level 3</text>
+  <text x="510" y="326" class="small">queries</text>
+  <text x="510" y="365" class="small">expressions</text>
+  <text x="510" y="404" class="small">computed fields</text>
+  <path class="ink-thin" d="M502 452 C597 427 721 424 831 442"/>
+  <path class="ink-thin" d="M523 490 L544 509 L586 461"/>
+  <path class="ink-thin" d="M622 486 L642 505 L685 458"/>
+  <path class="ink-thin" d="M724 483 L744 501 L785 454"/>
+
+  <path d="M753 127 C855 118 957 132 1035 169 C1060 181 1069 203 1058 229 L961 465 C950 492 928 502 900 494 C819 470 727 463 632 476 C602 480 582 459 589 429 L650 183 C656 157 674 143 701 140 C718 138 735 132 753 127 Z" fill="#ff5f75"/>
+  <path class="ink" d="M753 127 C855 118 957 132 1035 169 C1060 181 1069 203 1058 229 L961 465 C950 492 928 502 900 494 C819 470 727 463 632 476 C602 480 582 459 589 429 L650 183 C656 157 674 143 701 140 C718 138 735 132 753 127 Z"/>
+  <text x="711" y="207" class="label">runner</text>
+  <text x="711" y="249" class="small">adapter: jsonl</text>
+  <text x="711" y="288" class="small">setup: files</text>
+  <text x="711" y="327" class="small">assert: envelope</text>
+  <path class="ink-thin" d="M700 365 C778 356 886 368 993 405"/>
+
+  <path d="M735 407 C779 369 843 355 903 378 C961 400 993 456 979 512 C963 574 897 604 825 586 C760 570 718 522 720 468 C721 445 725 423 735 407 Z" fill="#28b47a"/>
+  <path class="ink-fat" d="M735 407 C779 369 843 355 903 378 C961 400 993 456 979 512 C963 574 897 604 825 586 C760 570 718 522 720 468 C721 445 725 423 735 407 Z"/>
+  <path class="ink-fat" d="M773 482 L827 530 L925 424"/>
+  <text x="789" y="557" class="label">pass</text>
+
+  <path d="M944 75 C974 65 1007 76 1022 103 C1037 132 1022 163 989 172 C955 181 925 166 918 136 C912 110 922 83 944 75 Z" fill="#1f7aff"/>
+  <path class="ink" d="M944 75 C974 65 1007 76 1022 103 C1037 132 1022 163 989 172 C955 181 925 166 918 136 C912 110 922 83 944 75 Z"/>
+  <text x="948" y="130" fill="#fffdf8" font-family="Azeret Mono, DejaVu Sans Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="34" font-weight="700">14.3</text>
+
+  <path class="ink-thin" d="M79 202 C104 178 135 165 171 164"/>
+  <path class="ink-thin" d="M105 603 C139 618 177 616 215 599"/>
+  <path class="ink-thin" d="M1015 562 C1044 579 1083 578 1120 561"/>
+</svg>

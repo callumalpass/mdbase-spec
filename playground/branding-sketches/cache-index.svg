@@ -1,0 +1,62 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">mdbase cache index sketch</title>
+  <desc id="desc">A sketch of file hashes, mtime checks, cache rebuilds, and a clearable derived index.</desc>
+  <defs>
+    <filter id="paper" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="2" seed="83"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.052"/></feComponentTransfer>
+    </filter>
+    <style>
+      .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ink-fat { stroke: #1e1919; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .dash { stroke-dasharray: 10 13; }
+      .label { fill: #1e1919; font: 650 27px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .small { fill: #1e1919; font: 600 18px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+      .tiny { fill: #1e1919; font: 600 14px "Azeret Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="676" fill="#fffdf8"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.42"/>
+
+  <path d="M111 151 C197 128 297 132 383 164 C409 174 420 195 412 222 L344 462 C337 490 316 505 287 501 C216 491 144 497 75 519 C49 528 29 512 31 484 C39 374 62 269 98 181 C103 166 106 156 111 151 Z" fill="#ffffff"/>
+  <path class="ink" d="M111 151 C197 128 297 132 383 164 C409 174 420 195 412 222 L344 462 C337 490 316 505 287 501 C216 491 144 497 75 519 C49 528 29 512 31 484 C39 374 62 269 98 181 C103 166 106 156 111 151 Z"/>
+  <text x="103" y="213" class="label">files</text>
+  <path class="ink-thin" d="M101 240 C172 222 280 229 379 264"/>
+  <text x="112" y="293" class="small">a.md hash:a17</text>
+  <text x="112" y="334" class="small">b.md hash:9cc</text>
+  <text x="112" y="375" class="small">c.md hash:441</text>
+  <text x="112" y="416" class="small">types hash:e52</text>
+
+  <path d="M511 90 C611 70 725 84 823 129 C850 141 859 165 848 193 L743 484 C733 513 709 528 678 520 C592 500 501 500 411 525 C382 533 360 517 363 486 C376 355 413 230 466 122 C475 104 489 94 511 90 Z" fill="#1f7aff"/>
+  <path class="ink-fat" d="M511 90 C611 70 725 84 823 129 C850 141 859 165 848 193 L743 484 C733 513 709 528 678 520 C592 500 501 500 411 525 C382 533 360 517 363 486 C376 355 413 230 466 122 C475 104 489 94 511 90 Z"/>
+  <text x="494" y="159" class="label">.mdbase</text>
+  <path class="ink-thin" d="M489 188 C580 171 710 187 814 234"/>
+  <text x="503" y="244" class="small">derived index</text>
+  <text x="503" y="285" class="small">file metadata</text>
+  <text x="503" y="326" class="small">resolved links</text>
+  <text x="503" y="367" class="small">query rows</text>
+  <path d="M532 413 C587 397 656 402 714 427 C729 434 735 448 729 463 C723 478 708 486 691 481 C644 468 589 468 539 483 C522 488 508 480 506 463 C504 445 512 421 532 413 Z" fill="#fffdf8"/>
+  <path class="ink-thin" d="M532 413 C587 397 656 402 714 427 C729 434 735 448 729 463 C723 478 708 486 691 481 C644 468 589 468 539 483 C522 488 508 480 506 463 C504 445 512 421 532 413 Z"/>
+  <text x="545" y="456" class="tiny">safe to delete</text>
+
+  <path d="M879 162 C964 137 1065 141 1135 178 C1159 191 1167 213 1157 239 L1062 498 C1052 526 1029 539 999 531 C929 513 853 515 777 540 C749 549 728 534 730 504 C739 390 771 282 817 191 C826 174 840 166 879 162 Z" fill="#f8c94a"/>
+  <path class="ink" d="M879 162 C964 137 1065 141 1135 178 C1159 191 1167 213 1157 239 L1062 498 C1052 526 1029 539 999 531 C929 513 853 515 777 540 C749 549 728 534 730 504 C739 390 771 282 817 191 C826 174 840 166 879 162 Z"/>
+  <text x="858" y="224" class="label">staleness</text>
+  <path class="ink-thin" d="M856 252 C932 234 1041 244 1125 283"/>
+  <text x="867" y="307" class="small">mtime changed</text>
+  <text x="867" y="348" class="small">file created</text>
+  <text x="867" y="389" class="small">file deleted</text>
+  <text x="867" y="430" class="small">config changed</text>
+  <path class="ink-fat" d="M893 477 L922 504 L981 440"/>
+
+  <path class="ink-thin dash" d="M350 318 C398 285 447 268 505 266"/>
+  <path class="ink-thin dash" d="M736 330 C780 315 812 324 844 350"/>
+  <circle cx="505" cy="266" r="10" fill="#28b47a" class="ink-thin"/>
+  <circle cx="844" cy="350" r="10" fill="#ff5f75" class="ink-thin"/>
+
+  <path class="ink-thin" d="M65 104 C94 86 128 82 165 91"/>
+  <path class="ink-thin" d="M1012 591 C1047 607 1086 603 1124 581"/>
+</svg>

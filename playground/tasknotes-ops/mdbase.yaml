@@ -1,0 +1,12 @@
+spec_version: "0.2.1"
+name: "TaskNotes Ops Runtime Playground"
+description: "A draft mdbase runtime-profile model of the current Tickle TaskNotes ops automations."
+
+settings:
+  default_validation: warn
+  default_strict: warn
+  id_field: id
+  exclude:
+    - ".mdbase"
+    - "runs"
+    - "artifacts"

@@ -1,0 +1,48 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Risograph Field Notes: Query</title>
+  <desc id="desc">Risograph identity study for Query.</desc>
+  <defs>
+    <pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.7" fill="#1e1919" opacity="0.18"/></pattern>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="32"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .paper { fill: #fff5dc; }
+    .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+    .thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .magenta { fill: #ff4f78; opacity: 0.9; mix-blend-mode: multiply; }
+    .cyan { fill: #1f9dff; opacity: 0.82; mix-blend-mode: multiply; }
+    .yellow { fill: #ffd447; opacity: 0.92; mix-blend-mode: multiply; }
+    .green { fill: #39bf7a; opacity: 0.9; mix-blend-mode: multiply; }
+    .label { fill: #1e1919; font: 800 42px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .small { fill: #1e1919; font: 750 24px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .tiny { fill: #1e1919; font: 700 17px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="paper"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.28"/>
+  <rect x="70" y="78" width="1060" height="520" fill="url(#dots)" opacity="0.55"/>
+  <text x="108" y="152" class="label" >Query</text>
+  <text x="110" y="194" class="small" >filters over files</text>
+  <path d="M132 226C272 166 474 184 604 276L490 548C348 548 196 490 106 388C58 334 72 254 132 226Z" class="cyan"/>
+  <path d="M494 150L1038 266L910 560L378 444Z" class="yellow"/>
+  <path d="M744 126C874 94 1038 152 1082 286C1128 426 1008 564 856 548C716 534 612 414 634 280C646 208 676 142 744 126Z" class="magenta"/>
+  <text x="150" y="304" class="small" >type == &quot;task&quot;</text>
+<text x="150" y="350" class="small" >status == &quot;open&quot;</text>
+<text x="150" y="396" class="small" >order: due</text>
+  <path d="M746 326C818 308 914 320 976 354L954 468C888 452 822 452 760 466C744 417 742 370 746 326Z" fill="#fff5dc" opacity="0.9"/>
+  <text x="770" y="374" class="tiny" >deterministic rows</text>
+<text x="770" y="408" class="tiny" >body-aware filters</text>
+<text x="770" y="442" class="tiny" >metadata envelope</text>
+  <path d="M518 350C594 330 646 328 716 350" class="ink"/>
+  <path d="M638 304L716 350L628 398" class="ink"/>
+  <path d="M132 454L590 118L654 214L196 550Z" class="cyan"/>
+  <circle cx="982" cy="190" r="66" fill="none" class="ink" opacity="0.8"/>
+  <path d="M1030 238L1108 316" class="ink" opacity="0.8"/>
+  <path d="M940 190H1018M962 158H1002M962 222H1002" class="thin" opacity="0.82"/>
+</svg>

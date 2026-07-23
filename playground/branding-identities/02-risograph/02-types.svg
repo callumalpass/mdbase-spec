@@ -1,0 +1,49 @@
+<svg width="1200" height="676" viewBox="0 0 1200 676" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Risograph Field Notes: Types</title>
+  <desc id="desc">Risograph identity study for Types.</desc>
+  <defs>
+    <pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.7" fill="#1e1919" opacity="0.18"/></pattern>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" seed="31"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.06"/></feComponentTransfer>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="9" flood-color="#1e1919" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <style>
+    .paper { fill: #fff5dc; }
+    .ink { stroke: #1e1919; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+    .thin { stroke: #1e1919; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .magenta { fill: #ff4f78; opacity: 0.9; mix-blend-mode: multiply; }
+    .cyan { fill: #1f9dff; opacity: 0.82; mix-blend-mode: multiply; }
+    .yellow { fill: #ffd447; opacity: 0.92; mix-blend-mode: multiply; }
+    .green { fill: #39bf7a; opacity: 0.9; mix-blend-mode: multiply; }
+    .label { fill: #1e1919; font: 800 42px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .small { fill: #1e1919; font: 750 24px "DejaVu Sans", Arial, sans-serif; letter-spacing: 0; }
+    .tiny { fill: #1e1919; font: 700 17px "Azeret Mono", "DejaVu Sans Mono", monospace; letter-spacing: 0; }
+  </style>
+  <rect width="1200" height="676" class="paper"/>
+  <rect width="1200" height="676" fill="#1e1919" filter="url(#paper)" opacity="0.28"/>
+  <rect x="70" y="78" width="1060" height="520" fill="url(#dots)" opacity="0.55"/>
+  <text x="108" y="152" class="label" >Types</text>
+  <text x="110" y="194" class="small" >schema files with prose</text>
+  <path d="M184 134H398V562H184Z" class="cyan"/>
+  <path d="M364 110H588V562H364Z" class="yellow"/>
+  <path d="M548 138H778V562H548Z" class="green"/>
+  <path d="M728 108H994V562H728Z" class="magenta"/>
+  <path d="M208 248H950" class="thin"/>
+  <text x="228" y="318" class="small" >fields</text>
+<text x="228" y="362" class="small" >defaults</text>
+<text x="228" y="406" class="small" >strict mode</text>
+  <path d="M710 310C782 292 878 304 940 338L918 452C852 436 786 436 724 450C708 401 706 354 710 310Z" fill="#fff5dc" opacity="0.9"/>
+  <text x="734" y="358" class="tiny" >inherits rules</text>
+<text x="734" y="392" class="tiny" >validates records</text>
+<text x="734" y="426" class="tiny" >documents shape</text>
+  <path d="M428 438L480 490L620 320" class="ink"/>
+  <path d="M112 432C260 388 430 400 576 466L532 596C374 530 222 526 86 580Z" class="green"/>
+  <path d="M904 184H1080V384H904Z" fill="none" class="ink" opacity="0.72"/>
+  <path d="M930 226H1050M930 274H1024M930 322H1050" class="thin" opacity="0.78"/>
+  <path d="M866 212L904 238M866 298L904 298M866 356L904 334" class="ink" opacity="0.68"/>
+</svg>
