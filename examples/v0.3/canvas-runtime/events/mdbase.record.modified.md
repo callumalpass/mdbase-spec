@@ -10,11 +10,19 @@ schemas:
   dialect: json-schema-2020-12
   payload:
     type: object
-    required: [path, after]
+    required: [path, types]
     additionalProperties: false
     properties:
       path:
         type: string
+      types:
+        type: array
+        items:
+          type: string
+      previous_types:
+        type: array
+        items:
+          type: string
       before:
         type: object
         additionalProperties: true
@@ -25,9 +33,12 @@ schemas:
         type: array
         items:
           type: string
+      previous_revision:
+        type: string
+      revision:
+        type: string
 ---
 
 # Record modified
 
 Standard event emitted by write-capable runtimes after a record patch.
-

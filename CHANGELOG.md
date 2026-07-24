@@ -21,6 +21,8 @@ All notable changes to this specification and conformance suite are documented h
   action attempts, recovery, timer races, and atomic emitted events.
 - Revised the materialized run schema so queued runs no longer require a
   `started_at` value and all runs expose creation/update and pinned revisions.
+- Clarified that standard record-change events always expose post-change, or
+  last-known deletion, type membership through `payload.types`.
 
 ## 2026-07-21 (v0.3.0 draft)
 

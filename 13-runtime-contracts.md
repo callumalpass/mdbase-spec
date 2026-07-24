@@ -276,6 +276,21 @@ Event IDs MUST be unique within the delivering runtime's deduplication window.
 event or run that directly caused the event. Runtimes MUST preserve both trace
 values when dispatching actions and emitting follow-up events.
 
+### Portable Record Type Membership
+
+Providers that expose the standard `mdbase.record.created`,
+`mdbase.record.modified`, `mdbase.record.renamed`, or
+`mdbase.record.deleted` events use `payload.types` for the record's type
+membership after the change. For deletion, where no record remains,
+`payload.types` is the deleted record's last known membership. Rename and
+modification payloads MAY additionally expose the former membership as
+`payload.previous_types`.
+
+Consumers can therefore select a record type consistently with
+`"<type>" in event.payload.types`, including deletion criteria. They MUST NOT
+require `previous_types` for a deletion event. This naming rule is independent
+of whether a provider includes optional record content in its event contract.
+
 ### Durable Event Journal
 
 A durable workflow runtime accepts an event by atomically:
