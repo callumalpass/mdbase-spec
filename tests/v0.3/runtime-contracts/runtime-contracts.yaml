@@ -16,7 +16,7 @@ groups:
         expect:
           valid: true
           counts:
-            type_files: 11
+            type_files: 12
             providers: 2
             actions: 1
             events: 2

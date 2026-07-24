@@ -493,6 +493,9 @@ function validateDispatchContext(context: AuthorizationContext): void {
     !context.actor.kind ||
     !context.origin ||
     !context.run_id ||
+    !context.invocation_id ||
+    !Number.isInteger(context.attempt) ||
+    context.attempt < 1 ||
     !context.correlation_id ||
     !context.executor
   ) {

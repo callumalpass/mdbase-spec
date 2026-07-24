@@ -41,6 +41,10 @@ effects:
 emits:
   - mdbase.record.modified
 
+dispatch:
+  idempotency: invocation_id
+  cancellation: cooperative
+
 risk: medium
 ---
 
@@ -48,4 +52,3 @@ risk: medium
 
 This contract describes the portable `mdbase.record.patch` action. The runtime
 still supplies the handler.
-

@@ -67,6 +67,7 @@ export type {
   RuntimeRequirements,
   RuntimeRecordType,
   RuntimeRunRecord,
+  RuntimeTimerRecord,
   ValidationResult,
   WorkflowContract,
   WorkflowRunPolicy,

@@ -7,6 +7,7 @@ export type RuntimeRecordType =
   | "runtime_policy"
   | "runtime_run"
   | "runtime_checkpoint"
+  | "runtime_timer"
   | "runtime_diagnostic";
 
 export type RuntimeSeverity = "info" | "warning" | "error";
@@ -45,6 +46,10 @@ export interface ActionContract extends RuntimeContractRecord {
   requires?: Requires;
   effects?: string[];
   emits?: string[];
+  dispatch?: {
+    idempotency?: "invocation_id" | "none";
+    cancellation?: "cooperative" | "none";
+  };
 }
 
 export interface ProviderContract extends RuntimeContractRecord {
@@ -93,8 +98,19 @@ export interface RuntimePolicyContract extends RuntimeContractRecord {
 export interface RuntimeRunRecord extends RuntimeContractRecord {
   type: "runtime_run";
   workflow: string;
-  status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
-  started_at: string;
+  workflow_version: number;
+  workflow_revision: string;
+  registry_revision: string;
+  policy_revision?: string;
+  trigger: string;
+  event_id: string;
+  event_type?: string;
+  event_cursor?: number;
+  status: "queued" | "running" | "waiting" | "succeeded" | "failed" | "cancelled" | "indeterminate";
+  created_at: string;
+  updated_at: string;
+  started_at?: string;
+  finished_at?: string;
 }
 
 export interface RuntimeCheckpointRecord extends RuntimeContractRecord {
@@ -103,6 +119,22 @@ export interface RuntimeCheckpointRecord extends RuntimeContractRecord {
   status: "open" | "waiting" | "ready" | "completed" | "failed" | "cancelled";
   updated_at: string;
   state: Record<string, unknown>;
+}
+
+export interface RuntimeTimerRecord extends RuntimeContractRecord {
+  type: "runtime_timer";
+  generation: number;
+  status: "scheduled" | "firing" | "fired" | "cancelled";
+  fire_at: string;
+  event: {
+    type: string;
+    contract_version: number;
+    payload: Record<string, unknown>;
+  };
+  missed_run_policy?: "fire_once";
+  created_at: string;
+  updated_at: string;
+  fired_at?: string;
 }
 
 export interface RuntimeDiagnosticRecord extends RuntimeContractRecord {
@@ -190,6 +222,7 @@ export interface RuntimePackage {
   policies: MarkdownRecord<RuntimePolicyContract>[];
   runs: MarkdownRecord<RuntimeRunRecord>[];
   checkpoints: MarkdownRecord<RuntimeCheckpointRecord>[];
+  timers: MarkdownRecord<RuntimeTimerRecord>[];
   runtimeDiagnostics: MarkdownRecord<RuntimeDiagnosticRecord>[];
   diagnostics: RuntimeDiagnostic[];
 }
@@ -247,6 +280,8 @@ export interface AuthorizationContext {
     provider?: string;
   };
   run_id: string;
+  invocation_id: string;
+  attempt: number;
   correlation_id: string;
   causation_id?: string;
   executor: string;

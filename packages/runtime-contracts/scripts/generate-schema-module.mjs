@@ -20,6 +20,7 @@ const schemaPaths = {
   runtimePolicy: "runtime/runtime-policy.schema.json",
   run: "runtime/run.schema.json",
   checkpoint: "runtime/checkpoint.schema.json",
+  timer: "runtime/timer.schema.json",
   diagnostic: "runtime/diagnostic.schema.json",
   eventEnvelope: "runtime/event-envelope.schema.json",
 };

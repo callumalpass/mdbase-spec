@@ -41,6 +41,7 @@ export async function loadCanonicalSchemas(schemaRoot?: string): Promise<Canonic
     runtimePolicy: await readJson(join(schemaRoot, "runtime/runtime-policy.schema.json")),
     run: await readJson(join(schemaRoot, "runtime/run.schema.json")),
     checkpoint: await readJson(join(schemaRoot, "runtime/checkpoint.schema.json")),
+    timer: await readJson(join(schemaRoot, "runtime/timer.schema.json")),
     diagnostic: await readJson(join(schemaRoot, "runtime/diagnostic.schema.json")),
     eventEnvelope: await readJson(join(schemaRoot, "runtime/event-envelope.schema.json"))
   };

@@ -15,7 +15,7 @@ test("loads and preflights the canvas runtime example", async () => {
   const runtimePackage = result.contracts;
 
   assert.deepEqual(runtimePackage.diagnostics, []);
-  assert.equal(runtimePackage.typeFiles.length, 11);
+  assert.equal(runtimePackage.typeFiles.length, 12);
   assert.equal(runtimePackage.providers.length, 2);
   assert.equal(runtimePackage.actions.length, 1);
   assert.equal(runtimePackage.events.length, 2);
@@ -23,6 +23,7 @@ test("loads and preflights the canvas runtime example", async () => {
   assert.equal(runtimePackage.workflows.length, 1);
   assert.equal(runtimePackage.runs.length, 0);
   assert.equal(runtimePackage.checkpoints.length, 0);
+  assert.equal(runtimePackage.timers.length, 0);
   assert.equal(runtimePackage.runtimeDiagnostics.length, 0);
 
   const registry = result.registry;
@@ -85,6 +86,8 @@ test("authorizes effectful actions only through the selected policy", async () =
     actor: { id: "local-user", kind: "user" },
     origin: { workflow: "canvas.zone.set-status" },
     run_id: "run_01",
+    invocation_id: "inv_01",
+    attempt: 1,
     correlation_id: "corr_01",
     causation_id: "evt_01",
     executor: "obsidian"
@@ -247,6 +250,7 @@ test("loads materialized runtime state records outside the executable registry",
   try {
     await mkdir(resolve(root, "runs"), { recursive: true });
     await mkdir(resolve(root, "checkpoints"), { recursive: true });
+    await mkdir(resolve(root, "timers"), { recursive: true });
     await mkdir(resolve(root, "diagnostics"), { recursive: true });
     await writeFile(
       resolve(root, "runs/run_01.md"),
@@ -254,15 +258,26 @@ test("loads materialized runtime state records outside the executable registry",
 type: runtime_run
 id: run_01
 workflow: canvas.zone.set-status
-trigger_event: canvas.drop
+workflow_version: 1
+workflow_revision: sha256:7e4b0b28
+registry_revision: sha256:70e5581c
+policy_revision: sha256:4d322612
+trigger: drop-on-status-zone
+event_id: evt_01
+event_type: canvas.drop
 executor: obsidian
 idempotency_key: canvas.zone.set-status:evt_01:drop
 status: succeeded
+created_at: "2026-06-15T08:00:00Z"
 started_at: "2026-06-15T08:00:00Z"
+updated_at: "2026-06-15T08:00:01Z"
 finished_at: "2026-06-15T08:00:01Z"
 steps:
   - id: patch
     action: mdbase.record.patch
+    action_version: 1
+    invocation_id: inv_01
+    attempt: 1
     status: succeeded
 ---
 `,
@@ -297,12 +312,33 @@ workflow: canvas.zone.set-status
 `,
       "utf8"
     );
+    await writeFile(
+      resolve(root, "timers/timer_01.md"),
+      `---
+type: runtime_timer
+id: timer_01
+generation: 1
+status: scheduled
+fire_at: "2026-06-15T09:00:00Z"
+event:
+  type: timer.fired
+  contract_version: 1
+  payload:
+    subject: task_01
+missed_run_policy: fire_once
+created_at: "2026-06-15T08:00:00Z"
+updated_at: "2026-06-15T08:00:00Z"
+---
+`,
+      "utf8"
+    );
 
     const result = await loadRuntimeContracts(root);
 
     assert.equal(result.contracts.diagnostics.length, 0);
     assert.equal(result.contracts.runs.length, 1);
     assert.equal(result.contracts.checkpoints.length, 1);
+    assert.equal(result.contracts.timers.length, 1);
     assert.equal(result.contracts.runtimeDiagnostics.length, 1);
     assert.equal(result.registry.workflows.size, 0);
   } finally {

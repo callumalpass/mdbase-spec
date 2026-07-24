@@ -276,6 +276,32 @@ Event IDs MUST be unique within the delivering runtime's deduplication window.
 event or run that directly caused the event. Runtimes MUST preserve both trace
 values when dispatching actions and emitting follow-up events.
 
+### Durable Event Journal
+
+A durable workflow runtime accepts an event by atomically:
+
+1. validating its envelope and payload
+2. reserving `(source.runtime, event.id)` in the deduplication index
+3. assigning a monotonically increasing local cursor
+4. storing the complete envelope at the data authority
+5. admitting all runs derived from that event
+
+The event and its admitted runs become visible together. A crash cannot expose
+the event without its run admissions or run admissions without the event.
+Repeated delivery within the configured replay horizon returns the original
+cursor and MUST NOT create additional runs.
+
+The runtime documents its event retention, deduplication, and cursor-retention
+horizons. A cursor older than retained journal history fails explicitly with
+`event_cursor_expired` or a `reset_required` page; it MUST NOT silently resume
+from the newest event.
+Pruning removes envelopes, not dedupe tombstones, within the documented replay
+horizon. A journal read reports both the retained boundary and current head so
+consumers can distinguish an expired cursor from an empty page.
+Journal payloads remain at the authorized data authority. A routing or
+notification control plane receives only an opaque signal and cursor unless it
+is itself the authorized data authority.
+
 ## Actions And Authorization
 
 ### Action Contract
@@ -306,12 +332,27 @@ effects:
   - mdbase.record.write
 emits:
   - mdbase.record.modified
+dispatch:
+  idempotency: invocation_id
+  cancellation: cooperative
 ```
 
 The action ID resolves to a handler owned by the declared provider. The runtime
 validates evaluated input against `schemas.input` before dispatch and validates
 the returned value against `schemas.output`. Events named by `emits` validate
 before delivery.
+
+`dispatch.idempotency` declares the provider's replay contract:
+
+| Value | Meaning |
+| --- | --- |
+| `invocation_id` | repeated dispatch with the same invocation ID returns the same logical effect and receipt |
+| `none` | the provider makes no safe replay guarantee |
+
+`dispatch.cancellation` is `cooperative` when the provider accepts a runtime
+cancellation request and `none` when an in-flight dispatch cannot be cancelled.
+Omitted dispatch properties have `none` semantics. A runtime MUST NOT infer
+idempotency from an action name, transport, or successful prior response.
 
 ### Capabilities
 
@@ -387,6 +428,38 @@ effects, resource scope, and applicable policy limits. An action with effects
 MUST be denied unless the selected policy explicitly allows every required
 capability. Dispatch also requires a registered handler for the action ID.
 
+An admitted run dispatches against its pinned canonical action contract
+revision. The runtime validates input and output and derives declared effects,
+idempotency, and cancellation from that snapshot; a later registry definition
+MUST NOT silently replace it. Current policy and the host's current exact grant
+are nevertheless re-evaluated immediately before every provider call, so
+authorization can be narrowed or revoked after admission. If the pinned
+provider handler is unavailable, dispatch fails explicitly rather than falling
+back to another action definition.
+
+### Dispatch Identity And Receipts
+
+Every step or iteration item has a stable invocation ID derived before
+dispatch. The runtime persists the invocation ID, action contract revision,
+evaluated input, attempt number, and dispatch intent before calling the
+provider. The provider receives the invocation ID in its dispatch context.
+
+An idempotent provider persists or derives a receipt for the invocation ID and
+returns the same logical result when that invocation is replayed. The runtime
+stores the receipt and validated output before making emitted events visible.
+The result and emitted-event admissions form one durable completion boundary.
+
+If the executor restarts with a dispatch intent but no result:
+
+- an action declaring `dispatch.idempotency: invocation_id` is dispatched again
+  with the same invocation ID
+- an action with `dispatch.idempotency: none` becomes `indeterminate` and is not
+  dispatched automatically
+
+`indeterminate` means that the external effect may have occurred and requires
+provider-specific reconciliation or an explicit operator decision. Arbitrary
+external effects cannot be made exactly once by the runtime alone.
+
 ## Materialization
 
 Materialization writes an implicit contract or runtime state value as a
@@ -413,10 +486,12 @@ Runtimes MAY materialize state using the canonical runtime record schemas:
 | --- | --- |
 | runtime run | one workflow execution attempt, including step results |
 | runtime checkpoint | durable state for waiting or resuming a workflow |
+| runtime timer | one durable, generation-checked, one-shot timer |
 | runtime diagnostic | a validation or execution issue |
 
-Operational run and checkpoint data defaults to `.mdbase/runtime/`. That path
-is excluded from ordinary collection scanning and workflow triggers.
+Operational run, checkpoint, timer, event-journal, and action-receipt data
+defaults to `.mdbase/runtime/`. That path is excluded from ordinary collection
+scanning and workflow triggers.
 
 Runtimes MAY materialize human-significant summaries as ordinary collection
 records. Such records MUST redact secrets, follow the runtime's retention
@@ -429,20 +504,63 @@ Example run:
 type: runtime_run
 id: run_01j0
 workflow: canvas.zone.set-status
-trigger_event: canvas.drop
+workflow_version: 1
+workflow_revision: sha256:7e4b0b28
+registry_revision: sha256:70e5581c
+policy_revision: sha256:4d322612
+trigger: drop
+event_id: evt_01j0
+event_type: canvas.drop
+event_cursor: 42
 executor: desktop
 idempotency_key: canvas.zone.set-status:evt_01j0:drop
 status: succeeded
+created_at: "2026-06-15T08:00:00Z"
 started_at: "2026-06-15T08:00:00Z"
+updated_at: "2026-06-15T08:00:01Z"
 finished_at: "2026-06-15T08:00:01Z"
 steps:
   - id: patch
     action: mdbase.record.patch
+    action_version: 1
+    invocation_id: inv_01j0
+    attempt: 1
     status: succeeded
 ```
 
-Checkpoint records support durable waiting and resumable state. Claim and lease
-coordination uses runtime extensions.
+Every admitted run pins the canonical workflow revision, effective registry
+revision, selected policy revision, and resolved action contract revisions used
+to build it. A registry or policy change affects new admission and
+dispatch-time authorization, but MUST NOT silently rewrite an admitted run's
+plan.
+
+Checkpoint records support durable waiting and resumable state. Checkpoint
+updates use monotonically increasing revisions. A worker claims runnable state
+through a bounded lease containing an owner, opaque token, and expiry. Only the
+current lease token may commit a transition. Expired work can be reclaimed;
+stale workers MUST fail their writes.
+
+### Canonical Timer Provider
+
+Runtime profile 0.1 defines portable one-shot timers. Recurrence is expressed by
+upserting the next one-shot timer after a fire; cron and calendar recurrence are
+provider extensions until separately standardized.
+
+A timer provider supplies:
+
+- `timer.upsert`, keyed by timer ID and replacing the prior generation
+- `timer.cancel`, cancelling a named generation or the current generation
+- `timer.fired`, emitted once for the current generation after `fire_at`
+
+`fire_at` is an RFC 3339 instant. Local timezone and daylight-saving choices are
+resolved by the producer before upsert. Each successful upsert increments the
+timer generation. A claimed stale generation MUST NOT emit.
+
+The portable missed-run policy is `fire_once`: after downtime, the current
+overdue generation fires once with its original scheduled instant and actual
+fire time. Repeated scheduler polling, lease expiry, or restart can redeliver
+the same `timer.fired` event ID but cannot create a second logical fire.
+Cancellation and firing race through one atomic generation transition.
 
 ## Workflow Integration
 
@@ -460,10 +578,10 @@ Runtime profile 0.1 represents adjacent concerns with the following patterns:
 
 | Concern | Profile 0.1 pattern |
 | --- | --- |
-| schedule | event emitted by a timer provider |
+| schedule | canonical one-shot timer provider; recurrence is an extension |
 | approval | checkpoint plus policy or provider action |
 | secret | runtime-managed secret reference value |
-| lease or lock | cooperative runtime extension |
+| distributed lock beyond run/checkpoint leases | cooperative runtime extension |
 | artifact | action output or ordinary file |
 | subscription | workflow trigger |
 

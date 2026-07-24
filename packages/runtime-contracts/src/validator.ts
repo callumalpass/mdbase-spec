@@ -22,6 +22,7 @@ import type {
   RuntimeRecordType,
   RuntimeRegistry,
   RuntimeRunRecord,
+  RuntimeTimerRecord,
   ValidationResult,
   WorkflowContract
 } from "./types.js";
@@ -39,6 +40,7 @@ const runtimeTypes = new Set<RuntimeRecordType>([
   "runtime_policy",
   "runtime_run",
   "runtime_checkpoint",
+  "runtime_timer",
   "runtime_diagnostic"
 ]);
 
@@ -61,6 +63,7 @@ export class RuntimeContractValidator {
       runtime_policy: ajv.compile(schemas.runtimePolicy),
       runtime_run: ajv.compile(schemas.run),
       runtime_checkpoint: ajv.compile(schemas.checkpoint),
+      runtime_timer: ajv.compile(schemas.timer),
       runtime_diagnostic: ajv.compile(schemas.diagnostic),
       eventEnvelope: ajv.compile(schemas.eventEnvelope)
     };
@@ -83,6 +86,7 @@ export class RuntimeContractValidator {
     const policies: MarkdownRecord<RuntimePolicyContract>[] = [];
     const runs: MarkdownRecord<RuntimeRunRecord>[] = [];
     const checkpoints: MarkdownRecord<RuntimeCheckpointRecord>[] = [];
+    const timers: MarkdownRecord<RuntimeTimerRecord>[] = [];
     const runtimeDiagnostics: MarkdownRecord<RuntimeDiagnosticRecord>[] = [];
 
     for (const absolutePath of files) {
@@ -137,6 +141,9 @@ export class RuntimeContractValidator {
         case "runtime_checkpoint":
           checkpoints.push(runtimeRecord as MarkdownRecord<RuntimeCheckpointRecord>);
           break;
+        case "runtime_timer":
+          timers.push(runtimeRecord as MarkdownRecord<RuntimeTimerRecord>);
+          break;
         case "runtime_diagnostic":
           runtimeDiagnostics.push(runtimeRecord as MarkdownRecord<RuntimeDiagnosticRecord>);
           break;
@@ -155,6 +162,7 @@ export class RuntimeContractValidator {
       policies,
       runs,
       checkpoints,
+      timers,
       runtimeDiagnostics,
       diagnostics
     };

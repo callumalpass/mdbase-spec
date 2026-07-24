@@ -22,6 +22,7 @@ yet published package artifacts.
 | `runtime/runtime-policy.schema.json` | runtime policy records |
 | `runtime/run.schema.json` | materialized run records |
 | `runtime/checkpoint.schema.json` | materialized checkpoint records |
+| `runtime/timer.schema.json` | materialized generation-safe one-shot timers |
 | `runtime/diagnostic.schema.json` | materialized runtime diagnostic records |
 | `runtime/event-envelope.schema.json` | delivered runtime event envelopes |
 

@@ -75,16 +75,19 @@ For each delivered event, the runtime:
 
 1. validates the event envelope, contract version, provider provenance, and
    payload as defined in Chapter 13
-2. finds enabled workflows with triggers for the event ID
-3. applies trigger debounce and minimum-interval admission
-4. evaluates workflow variables, the trigger condition, and the workflow-level
+2. journals and deduplicates the event at the data authority
+3. finds enabled workflows with triggers for the event ID
+4. applies trigger debounce and minimum-interval admission
+5. evaluates workflow variables, the trigger condition, and the workflow-level
    condition
-5. applies execution-mode and executor policy
-6. derives the idempotency key and concurrency group and admits, queues, skips,
+6. applies execution-mode and executor policy
+7. derives the idempotency key and concurrency group and admits, queues, skips,
    or replaces the run
-7. creates a standard run record and executes steps in document order
-8. validates step outputs and emitted events and records every step result
-9. moves the run to a terminal status
+8. pins a canonical execution plan and atomically commits event and run
+   admission
+9. claims the run with a bounded lease and executes steps in document order
+10. validates step outputs and emitted events and records every step result
+11. moves the run to a terminal status
 
 This sequence is normative. A runtime may combine internal stages while
 preserving their validation, authorization, ordering, and diagnostic outcomes.
@@ -241,6 +244,10 @@ in a store shared by every process using the same executor identity. A prior
 reservation suppresses the duplicate run. The reservation remains valid across
 the provider's documented replay horizon.
 
+The idempotency reservation, concurrency decision, pinned execution plan, and
+run record are committed in the event-admission transaction. Reserving a key
+after dispatch begins is not conformant.
+
 A missing shared reservation store for a side-effecting `single_executor` run
 produces `idempotency_unavailable`. For `broadcast`, reservation scope includes
 the executor identity so each eligible executor can run once.
@@ -276,8 +283,22 @@ can be evaluated.
 
 ## Run And Step Results
 
-A run moves through `queued`, `running`, and one terminal state: `succeeded`,
-`failed`, or `cancelled`.
+A run follows these portable transitions:
+
+| From | To | Cause |
+| --- | --- | --- |
+| admitted | `queued` | concurrency policy delays execution |
+| admitted or `queued` | `running` | a worker obtains the current lease |
+| `running` | `waiting` | a durable checkpoint suspends execution |
+| `waiting` | `queued` | the checkpoint becomes ready |
+| `running` | `succeeded` | every required step completes |
+| `running` | `failed` | a deterministic failure or timeout is recorded |
+| `queued`, `running`, or `waiting` | `cancelled` | cancellation completes without ambiguous effects |
+| `running` | `indeterminate` | a non-idempotent dispatch has an unknown outcome |
+
+`succeeded`, `failed`, `cancelled`, and `indeterminate` are terminal.
+Implementations MUST reject transitions from a terminal state and writes made
+with a stale lease token.
 
 Each step result contains `id`, `action`, and `status`, with `output` or `error`
 when applicable. Step status is one of:
@@ -289,8 +310,10 @@ when applicable. Step status is one of:
 - `skipped`
 - `cancelled`
 - `timed_out`
+- `indeterminate`
 
-A run timeout records the active step as `timed_out` and the run as `failed`.
+A run deadline prevents every not-yet-started dispatch. If no dispatch intent
+is active, the current step is recorded as `timed_out` and the run as `failed`.
 Cancellation records the active step and run as `cancelled`. These outcomes
 remain distinct in diagnostics and run history.
 
@@ -303,6 +326,55 @@ behavior uses an `x-*` extension that defines retry conditions, limits, and
 result history. An action with external effects is retried only when its
 contract declares idempotency support or runtime policy explicitly authorizes
 the retry.
+
+### Durable Action Attempt Protocol
+
+For each step or iteration item, the executor:
+
+1. derives and persists a stable invocation ID
+2. evaluates and validates input
+3. performs current dispatch-time authorization
+4. persists a dispatch intent and attempt number
+5. invokes the provider with the invocation ID
+6. validates output and emitted events
+7. atomically persists the receipt, result, step state, and emitted-event
+   admissions
+
+Provider timeout does not prove that an effect failed. An executor MUST NOT
+erase an active dispatch intent or report a non-idempotent effect as merely
+`timed_out`. If no result is durable, recovery follows the action's declared
+idempotency contract from Chapter 13: an idempotent invocation may be replayed
+with the same invocation ID to reconcile its receipt, while a non-idempotent
+invocation becomes `indeterminate`. Reconciliation never permits a new
+invocation or subsequent workflow step after the run deadline. If an
+idempotent provider returns a committed result after the deadline, the runtime
+records its receipt and effect, marks the step `timed_out`, and fails the run.
+
+### Crash Recovery
+
+On startup and periodically, an executor reclaims expired run and checkpoint
+leases. Recovery resumes from the last committed state:
+
+- pending work can be claimed normally
+- an idempotent dispatch intent is replayed with its original invocation ID
+- a non-idempotent dispatch intent becomes `indeterminate`
+- a committed step result is never dispatched again
+- a committed emitted event can be redelivered but is deduplicated by event ID
+
+Recovery MUST NOT infer success from elapsed time or infer failure from a lost
+transport connection.
+
+### Cancellation And Replacement
+
+Cancellation is durable intent. Queued work can be cancelled immediately.
+Cooperative actions receive a cancellation request; actions declaring
+`dispatch.cancellation: none` are allowed to finish before the run reaches a
+terminal state. Completed effects are never rolled back implicitly.
+
+`replace` records cancellation intent for the active run, waits until that run
+is terminal, and then makes the replacement runnable. If the active run becomes
+`indeterminate`, the replacement remains queued until policy or an operator
+explicitly allows it to proceed.
 
 ## Workflow Sources
 
