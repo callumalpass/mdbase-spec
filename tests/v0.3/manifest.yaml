@@ -83,11 +83,27 @@ claim_profiles:
   - id: runtime_contracts/0.1
     status: draft
     requires: []
-    requirements: []
+    requirements:
+      - deterministic_registry
+      - strict_contract_validation
+      - event_and_action_schema_validation
+      - provider_registration
+      - policy_preflight
   - id: workflow/0.1
     status: draft
     requires: [runtime_contracts/0.1, cel]
-    requirements: []
+    requirements:
+      - durable_event_admission
+      - trigger_admission
+      - variables_and_conditions
+      - deterministic_steps_and_iteration
+      - dispatch_authorization
+      - execution_modes
+      - idempotency_and_concurrency
+      - run_state_machine
+      - durable_action_attempts
+      - lease_and_crash_recovery
+      - one_shot_timers
   - id: watch
     status: draft
     requires: [core_read]
@@ -139,3 +155,8 @@ fixture_sets:
     coverage_targets: [runtime_contracts/0.1]
     files:
       - runtime-contracts/runtime-contracts.yaml
+  - id: workflow_execution
+    description: durable workflow admission, execution, recovery, cancellation, journals, and timers.
+    coverage_targets: [workflow/0.1]
+    files:
+      - workflow-execution/workflow-execution.yaml

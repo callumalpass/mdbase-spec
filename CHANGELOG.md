@@ -2,6 +2,26 @@
 
 All notable changes to this specification and conformance suite are documented here.
 
+## 2026-07-24 (v0.3.0 runtime RC)
+
+### Added
+
+- Durable event-journal admission, local cursors, and explicit retention
+  behaviour for runtime events.
+- Stable action invocation IDs, provider receipts, dispatch idempotency and
+  cancellation declarations, and honest `indeterminate` outcomes.
+- Portable run and checkpoint leases, pinned execution-plan revisions, and
+  crash-recovery rules.
+- Generation-safe one-shot runtime timers with deterministic `fire_once`
+  missed-run behaviour.
+
+### Changed
+
+- Expanded workflow conformance from in-process execution to durable admission,
+  action attempts, recovery, timer races, and atomic emitted events.
+- Revised the materialized run schema so queued runs no longer require a
+  `started_at` value and all runs expose creation/update and pinned revisions.
+
 ## 2026-07-21 (v0.3.0 draft)
 
 ### Added

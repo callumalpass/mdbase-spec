@@ -98,6 +98,8 @@ const context = {
   actor: { id: "test", kind: "user" },
   origin: { provider: "test" },
   run_id: "run-1",
+  invocation_id: "invocation-1",
+  attempt: 1,
   correlation_id: "correlation-1",
   executor: "test",
 };

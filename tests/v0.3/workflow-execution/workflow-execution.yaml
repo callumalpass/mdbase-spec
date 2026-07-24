@@ -1,0 +1,148 @@
+name: "v0.3 workflow execution and recovery conformance"
+spec_version: "0.3.0"
+fixture_set: workflow_execution
+category: workflow
+spec_ref: "v0.3/13, v0.3/14"
+
+groups:
+  - name: "durable admission and deterministic execution"
+    tests:
+      - id: workflow.atomic-admission
+        name: "event journal and every derived run become visible atomically"
+        covers: [workflow/0.1.durable_event_admission, workflow/0.1.trigger_admission]
+        operation: runtime_admit_event
+        input:
+          event_id: evt_atomic
+          workflows: [first.workflow, second.workflow]
+          failpoint: before_commit
+          retry_after_restart: true
+        expect:
+          before_retry:
+            event_visible: false
+            runs_visible: []
+          after_retry:
+            cursor: 1
+            event_count: 1
+            admitted_workflows: [first.workflow, second.workflow]
+
+      - id: workflow.deterministic-plan
+        name: "variables conditions and iteration are deterministic and bounded"
+        covers: [workflow/0.1.variables_and_conditions, workflow/0.1.deterministic_steps_and_iteration]
+        operation: runtime_execute_event
+        input:
+          event_id: evt_iteration
+          items: [alpha, beta]
+          max_items: 2
+        expect:
+          status: succeeded
+          dispatched_items: [alpha, beta]
+          dispatch_order: document
+
+      - id: workflow.executor-concurrency
+        name: "single executor idempotency and concurrency decisions are shared"
+        covers: [workflow/0.1.execution_modes, workflow/0.1.idempotency_and_concurrency]
+        operation: runtime_race_workers
+        input:
+          workers: 16
+          duplicate_event_deliveries: 16
+          concurrency:
+            group: shared
+            policy: queue
+        expect:
+          event_count: 1
+          run_count: 1
+          concurrent_dispatches: 1
+
+  - name: "authorization attempts and recovery"
+    tests:
+      - id: workflow.dispatch-authorization
+        name: "current policy and host authorization are checked immediately before dispatch"
+        covers: [workflow/0.1.dispatch_authorization]
+        operation: runtime_execute_event
+        input:
+          admit_with_policy: allow
+          change_policy_before_dispatch: deny
+        expect:
+          status: failed
+          error_code: capability_denied
+          provider_calls: 0
+
+      - id: workflow.idempotent-recovery
+        name: "unknown idempotent dispatch reuses its invocation ID after lease recovery"
+        covers: [workflow/0.1.durable_action_attempts, workflow/0.1.lease_and_crash_recovery]
+        operation: runtime_recover_dispatch
+        input:
+          dispatch_idempotency: invocation_id
+          failpoint: after_provider_effect_before_result_commit
+          expire_lease: true
+        expect:
+          status: succeeded
+          logical_effects: 1
+          dispatches: 2
+          same_invocation_id: true
+
+      - id: workflow.non-idempotent-recovery
+        name: "unknown non-idempotent dispatch becomes indeterminate without replay"
+        covers: [workflow/0.1.durable_action_attempts, workflow/0.1.lease_and_crash_recovery]
+        operation: runtime_recover_dispatch
+        input:
+          dispatch_idempotency: none
+          failpoint: after_provider_effect_before_result_commit
+          expire_lease: true
+        expect:
+          status: indeterminate
+          dispatches: 1
+
+      - id: workflow.state-machine
+        name: "terminal transitions and stale lease writes are rejected"
+        covers: [workflow/0.1.run_state_machine]
+        operation: runtime_transition_run
+        input:
+          transitions:
+            - [queued, running]
+            - [running, succeeded]
+            - [succeeded, running]
+          stale_lease_commit: true
+        expect:
+          accepted:
+            - [queued, running]
+            - [running, succeeded]
+          rejected:
+            - transition: [succeeded, running]
+              code: invalid_run_transition
+            - stale_lease_commit: true
+              code: stale_lease
+
+  - name: "timers and retained journals"
+    tests:
+      - id: workflow.one-shot-timer
+        name: "only the current overdue timer generation fires once after restart"
+        covers: [workflow/0.1.one_shot_timers]
+        operation: runtime_fire_timer
+        input:
+          timer_id: reminder
+          generations:
+            - { generation: 1, fire_at: "2026-07-24T00:00:00Z" }
+            - { generation: 2, fire_at: "2026-07-24T00:01:00Z" }
+          restart_at: "2026-07-24T00:02:00Z"
+          scheduler_polls: 3
+        expect:
+          event_type: timer.fired
+          fired_generation: 2
+          logical_events: 1
+          missed_run_policy: fire_once
+
+      - id: workflow.journal-reset
+        name: "pruning keeps dedupe tombstones and reports expired cursors"
+        covers: [workflow/0.1.durable_event_admission]
+        operation: runtime_prune_journal
+        input:
+          deliver_event: evt_retained
+          prune_through: 1
+          redeliver_same_event: true
+          read_after: 0
+        expect:
+          duplicate: true
+          original_cursor: 1
+          reset_required: true
+          retained_after: 1

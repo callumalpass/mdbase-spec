@@ -14,6 +14,7 @@ const RUNTIME_TYPES: &[&str] = &[
     "runtime_policy",
     "runtime_run",
     "runtime_checkpoint",
+    "runtime_timer",
     "runtime_diagnostic",
 ];
 
@@ -57,6 +58,7 @@ pub struct RuntimeSchemas {
     runtime_policy: Value,
     run: Value,
     checkpoint: Value,
+    timer: Value,
     diagnostic: Value,
 }
 
@@ -180,6 +182,7 @@ impl RuntimeSchemas {
             runtime_policy: read_json(schema_root.join("runtime/runtime-policy.schema.json"))?,
             run: read_json(schema_root.join("runtime/run.schema.json"))?,
             checkpoint: read_json(schema_root.join("runtime/checkpoint.schema.json"))?,
+            timer: read_json(schema_root.join("runtime/timer.schema.json"))?,
             diagnostic: read_json(schema_root.join("runtime/diagnostic.schema.json"))?,
         })
     }
@@ -195,6 +198,7 @@ impl RuntimeSchemas {
             ("runtime-policy", &self.runtime_policy),
             ("run", &self.run),
             ("checkpoint", &self.checkpoint),
+            ("timer", &self.timer),
             ("diagnostic", &self.diagnostic),
         ] {
             compile_schema(schema).map_err(|error| format!("{name} schema is invalid: {error}"))?;
@@ -212,6 +216,7 @@ impl RuntimeSchemas {
             "runtime_policy" => Some(&self.runtime_policy),
             "runtime_run" => Some(&self.run),
             "runtime_checkpoint" => Some(&self.checkpoint),
+            "runtime_timer" => Some(&self.timer),
             "runtime_diagnostic" => Some(&self.diagnostic),
             _ => None,
         }
@@ -331,7 +336,7 @@ mod tests {
         .expect("load contracts");
 
         assert_eq!(package.diagnostics, []);
-        assert_eq!(package.type_files.len(), 11);
+        assert_eq!(package.type_files.len(), 12);
         assert_eq!(package.providers.len(), 2);
         assert_eq!(package.actions.len(), 1);
         assert_eq!(package.events.len(), 2);

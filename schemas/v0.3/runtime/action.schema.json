@@ -65,6 +65,9 @@
         "$ref": "#/$defs/identifier"
       }
     },
+    "dispatch": {
+      "$ref": "#/$defs/dispatch"
+    },
     "risk": {
       "enum": ["low", "medium", "high", "destructive"]
     }
@@ -81,6 +84,18 @@
     "jsonSchema": {
       "type": "object",
       "additionalProperties": true
+    },
+    "dispatch": {
+      "type": "object",
+      "properties": {
+        "idempotency": {
+          "enum": ["invocation_id", "none"]
+        },
+        "cancellation": {
+          "enum": ["cooperative", "none"]
+        }
+      },
+      "additionalProperties": false
     },
     "requires": {
       "type": "object",

@@ -26,6 +26,7 @@ export type {
   RuntimeLoadResult,
   RuntimeEventEnvelope,
   RuntimeCheckpointRecord,
+  RuntimeTimerRecord,
   RuntimeContractRecord,
   RuntimeDiagnosticRecord,
   RuntimeDiagnostic,

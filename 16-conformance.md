@@ -92,7 +92,9 @@ The v0.3 core codes include `unsupported_profile`, `type_conflict`,
 0.1 additionally defines `contract_conflict`, `contract_version_mismatch`,
 `event_provider_mismatch`, `provider_version_mismatch`, `capability_denied`,
 `policy_not_selected`, `executor_not_selected`, and
-`idempotency_unavailable`.
+`idempotency_unavailable`, `event_cursor_expired`, `stale_lease`,
+`invalid_run_transition`, `action_outcome_indeterminate`, and
+`stale_timer_generation`.
 
 ## Core Read Requirements
 
@@ -280,6 +282,7 @@ preflight, and materialization. Workflow execution has its own profile.
 Workflow implementations MUST:
 
 - follow the preflight and event-to-run sequence in Chapter 14
+- atomically journal, deduplicate, and admit delivered events
 - apply trigger debounce and minimum-interval admission
 - evaluate workflow variables and detect dependency cycles
 - evaluate trigger, workflow, and step conditions in their defined contexts
@@ -289,8 +292,16 @@ Workflow implementations MUST:
 - apply execution mode and runtime-policy executor selection
 - reserve idempotency keys with the required executor scope
 - apply concurrency policy, run limits, and `on_error`
-- record standard run and step results
+- pin canonical workflow, registry, action, and policy revisions
+- claim work with bounded leases and reject stale lease writes
+- persist stable invocation IDs and dispatch intents before provider calls
+- recover idempotent attempts and mark ambiguous non-idempotent attempts
+  `indeterminate`
+- record standard run, step, attempt, receipt, and checkpoint results
 - validate action outputs and emitted events
+- commit action results and emitted-event admissions atomically
+- provide generation-safe one-shot timer upsert, cancel, fire, and missed-run
+  behavior when claiming canonical timer support
 - report unsupported actions, capabilities, and unsafe execution state through
   runtime diagnostics
 

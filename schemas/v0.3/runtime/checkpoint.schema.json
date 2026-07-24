@@ -30,6 +30,32 @@
     },
     "next_step": {
       "$ref": "#/$defs/identifier"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "resume_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "lease": {
+      "type": "object",
+      "required": ["owner", "token", "expires_at"],
+      "properties": {
+        "owner": {
+          "$ref": "#/$defs/identifier"
+        },
+        "token": {
+          "type": "string",
+          "minLength": 16
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "patternProperties": {

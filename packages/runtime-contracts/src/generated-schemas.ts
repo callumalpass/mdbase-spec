@@ -1552,6 +1552,9 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
           "$ref": "#/$defs/identifier"
         }
       },
+      "dispatch": {
+        "$ref": "#/$defs/dispatch"
+      },
       "risk": {
         "enum": [
           "low",
@@ -1573,6 +1576,24 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
       "jsonSchema": {
         "type": "object",
         "additionalProperties": true
+      },
+      "dispatch": {
+        "type": "object",
+        "properties": {
+          "idempotency": {
+            "enum": [
+              "invocation_id",
+              "none"
+            ]
+          },
+          "cancellation": {
+            "enum": [
+              "cooperative",
+              "none"
+            ]
+          }
+        },
+        "additionalProperties": false
       },
       "requires": {
         "type": "object",
@@ -2194,8 +2215,14 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
       "type",
       "id",
       "workflow",
+      "workflow_version",
+      "workflow_revision",
+      "registry_revision",
+      "trigger",
+      "event_id",
       "status",
-      "started_at"
+      "created_at",
+      "updated_at"
     ],
     "properties": {
       "type": {
@@ -2207,8 +2234,31 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
       "workflow": {
         "$ref": "#/$defs/identifier"
       },
-      "trigger_event": {
+      "workflow_version": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "workflow_revision": {
+        "$ref": "#/$defs/revision"
+      },
+      "registry_revision": {
+        "$ref": "#/$defs/revision"
+      },
+      "policy_revision": {
+        "$ref": "#/$defs/revision"
+      },
+      "trigger": {
         "$ref": "#/$defs/identifier"
+      },
+      "event_id": {
+        "$ref": "#/$defs/identifier"
+      },
+      "event_type": {
+        "$ref": "#/$defs/identifier"
+      },
+      "event_cursor": {
+        "type": "integer",
+        "minimum": 1
       },
       "executor": {
         "$ref": "#/$defs/identifier"
@@ -2216,20 +2266,41 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
       "idempotency_key": {
         "type": "string"
       },
+      "concurrency_group": {
+        "type": "string"
+      },
       "status": {
         "enum": [
           "queued",
           "running",
+          "waiting",
           "succeeded",
           "failed",
-          "cancelled"
+          "cancelled",
+          "indeterminate"
         ]
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
       },
       "started_at": {
         "type": "string",
         "format": "date-time"
       },
+      "timeout_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
       "finished_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "cancel_requested_at": {
         "type": "string",
         "format": "date-time"
       },
@@ -2249,6 +2320,17 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
             "action": {
               "$ref": "#/$defs/identifier"
             },
+            "action_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "invocation_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "attempt": {
+              "type": "integer",
+              "minimum": 1
+            },
             "status": {
               "enum": [
                 "pending",
@@ -2257,13 +2339,27 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
                 "failed",
                 "skipped",
                 "cancelled",
-                "timed_out"
+                "timed_out",
+                "indeterminate"
               ]
             },
+            "input": {},
             "output": {},
+            "receipt": {
+              "type": "object",
+              "additionalProperties": true
+            },
             "error": {
               "type": "object",
               "additionalProperties": true
+            },
+            "started_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "finished_at": {
+              "type": "string",
+              "format": "date-time"
             }
           },
           "patternProperties": {
@@ -2281,6 +2377,10 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
       "identifier": {
         "type": "string",
         "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+      },
+      "revision": {
+        "type": "string",
+        "minLength": 8
       }
     }
   },
@@ -2330,6 +2430,123 @@ export const GENERATED_CANONICAL_SCHEMAS: Record<string, Record<string, unknown>
       },
       "next_step": {
         "$ref": "#/$defs/identifier"
+      },
+      "revision": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "resume_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "lease": {
+        "type": "object",
+        "required": [
+          "owner",
+          "token",
+          "expires_at"
+        ],
+        "properties": {
+          "owner": {
+            "$ref": "#/$defs/identifier"
+          },
+          "token": {
+            "type": "string",
+            "minLength": 16
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "patternProperties": {
+      "^x-[A-Za-z0-9._:-]+$": true
+    },
+    "additionalProperties": false,
+    "$defs": {
+      "identifier": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+      }
+    }
+  },
+  "timer": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://mdbase.dev/schemas/runtime/v0.1/timer.schema.json",
+    "title": "mdbase runtime one-shot timer record",
+    "type": "object",
+    "required": [
+      "type",
+      "id",
+      "generation",
+      "status",
+      "fire_at",
+      "event",
+      "created_at",
+      "updated_at"
+    ],
+    "properties": {
+      "type": {
+        "const": "runtime_timer"
+      },
+      "id": {
+        "$ref": "#/$defs/identifier"
+      },
+      "generation": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "status": {
+        "enum": [
+          "scheduled",
+          "firing",
+          "fired",
+          "cancelled"
+        ]
+      },
+      "fire_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "event": {
+        "type": "object",
+        "required": [
+          "type",
+          "contract_version",
+          "payload"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/$defs/identifier"
+          },
+          "contract_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "missed_run_policy": {
+        "const": "fire_once"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "fired_at": {
+        "type": "string",
+        "format": "date-time"
       }
     },
     "patternProperties": {

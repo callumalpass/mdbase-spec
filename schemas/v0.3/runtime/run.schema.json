@@ -3,7 +3,19 @@
   "$id": "https://mdbase.dev/schemas/runtime/v0.1/run.schema.json",
   "title": "mdbase runtime run record",
   "type": "object",
-  "required": ["type", "id", "workflow", "status", "started_at"],
+  "required": [
+    "type",
+    "id",
+    "workflow",
+    "workflow_version",
+    "workflow_revision",
+    "registry_revision",
+    "trigger",
+    "event_id",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
   "properties": {
     "type": {
       "const": "runtime_run"
@@ -14,8 +26,31 @@
     "workflow": {
       "$ref": "#/$defs/identifier"
     },
-    "trigger_event": {
+    "workflow_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "workflow_revision": {
+      "$ref": "#/$defs/revision"
+    },
+    "registry_revision": {
+      "$ref": "#/$defs/revision"
+    },
+    "policy_revision": {
+      "$ref": "#/$defs/revision"
+    },
+    "trigger": {
       "$ref": "#/$defs/identifier"
+    },
+    "event_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "event_type": {
+      "$ref": "#/$defs/identifier"
+    },
+    "event_cursor": {
+      "type": "integer",
+      "minimum": 1
     },
     "executor": {
       "$ref": "#/$defs/identifier"
@@ -23,14 +58,41 @@
     "idempotency_key": {
       "type": "string"
     },
+    "concurrency_group": {
+      "type": "string"
+    },
     "status": {
-      "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+      "enum": [
+        "queued",
+        "running",
+        "waiting",
+        "succeeded",
+        "failed",
+        "cancelled",
+        "indeterminate"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
     },
     "started_at": {
       "type": "string",
       "format": "date-time"
     },
+    "timeout_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "finished_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "cancel_requested_at": {
       "type": "string",
       "format": "date-time"
     },
@@ -46,6 +108,17 @@
           "action": {
             "$ref": "#/$defs/identifier"
           },
+          "action_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "invocation_id": {
+            "$ref": "#/$defs/identifier"
+          },
+          "attempt": {
+            "type": "integer",
+            "minimum": 1
+          },
           "status": {
             "enum": [
               "pending",
@@ -54,13 +127,27 @@
               "failed",
               "skipped",
               "cancelled",
-              "timed_out"
+              "timed_out",
+              "indeterminate"
             ]
           },
+          "input": {},
           "output": {},
+          "receipt": {
+            "type": "object",
+            "additionalProperties": true
+          },
           "error": {
             "type": "object",
             "additionalProperties": true
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finished_at": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "patternProperties": {
@@ -78,6 +165,10 @@
     "identifier": {
       "type": "string",
       "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    },
+    "revision": {
+      "type": "string",
+      "minLength": 8
     }
   }
 }

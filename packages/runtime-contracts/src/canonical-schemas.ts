@@ -18,6 +18,7 @@ export interface CanonicalSchemas {
   runtimePolicy: Record<string, unknown>;
   run: Record<string, unknown>;
   checkpoint: Record<string, unknown>;
+  timer: Record<string, unknown>;
   diagnostic: Record<string, unknown>;
   eventEnvelope: Record<string, unknown>;
 }
